@@ -5,9 +5,7 @@ add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 # GLAD
 set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
-set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
-        Camera.cpp
-        Camera.h)
+set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)
@@ -41,8 +39,8 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(LupusFire_core main.cpp ${GLAD_SOURCE}
     Shader.cpp
     Shader.h
-    GUI.cpp
-    GUI.h
+    ${CMAKE_SOURCE_DIR}/src/GUI.cpp
+    ${CMAKE_SOURCE_DIR}/src/GUI.h
     Cube.cpp
     Cube.h
     Camera.cpp

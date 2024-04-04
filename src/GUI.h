@@ -2,10 +2,10 @@
 // Created by Simeon-PC on 3/27/2024.
 //
 
-#ifndef ZGN_ENGINE_GUI_H
-#define ZGN_ENGINE_GUI_H
+#ifndef GUI_H
+#define GUI_H
 
-#include "Shader.h"
+#include "../Shader.h"
 
 class GUI {
 public:
@@ -16,4 +16,4 @@ private:
 };
 
 
-#endif //ZGN_ENGINE_GUI_H
+#endif //GUI_H
