@@ -1,6 +1,6 @@
 #include "Cube.h"
+
 Cube::Cube() {
-    // Vertices of a unit cube
     vertices = {
         // positions          // normals
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -59,6 +59,7 @@ void Cube::SetupMesh() {
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
     // Set the vertex attribute pointers
+
     // Position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);

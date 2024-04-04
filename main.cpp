@@ -8,9 +8,9 @@
 #include <glm.hpp>
 #include <gtc/type_ptr.hpp>
 
-#include "GUI.h"
 #include "Shader.h"
 #include "Cube.h"
+#include "Camera.h"
 
 #include <fstream>
 #include <sstream>
@@ -22,14 +22,23 @@ void errorCallback(int error, const char* description) {
     std::cerr << "Error: " << error << " " << description << std::endl;
 }
 
-const GLint WIDTH = 800;
-const GLint HEIGHT = 600;
-glm::mat4 viewMatrix;
-glm::mat4 projectionMatrix;
 GLuint FBO;
 GLuint texture_id;
 GLuint RBO;
 Cube* cube;
+
+const GLint DEFAULT_WIDTH = 800;
+const GLint DEFAULT_HEIGHT = 600;
+
+GLint WIDTH = DEFAULT_WIDTH;
+GLint HEIGHT = DEFAULT_HEIGHT;
+
+static float fov = 90.0f;
+
+glm::vec3 cameraPosition = glm::vec3(0.0f, 1.0f, -10.0f);
+Camera camera(cameraPosition, // Camera position
+              glm::vec3(0.0f, 0.0f, 0.0f),   // Target position (looking at the origin)
+              glm::vec3(0.0f, 1.0f, 0.0f));  // Up direction
 
 void create_framebuffer()
 {
@@ -43,19 +52,35 @@ void create_framebuffer()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id, 0);
 
+    // Check for errors after each OpenGL call
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cout << "OpenGL error: " << error << " - Failed to create color texture attachment." << std::endl;
+        return;
+    }
+
     glGenRenderbuffers(1, &RBO);
     glBindRenderbuffer(GL_RENDERBUFFER, RBO);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
+    // Check for errors after each OpenGL call
+    error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cout << "OpenGL error: " << error << " - Failed to create renderbuffer attachment." << std::endl;
+        return;
+    }
+
+    // Check framebuffer completeness
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+        return;
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
-
 
 // Function to read shader file contents into a string
 std::string ReadShaderFile(const std::string& filePath) {
@@ -85,19 +110,36 @@ GLuint CompileShader(GLenum shaderType, const char* shaderSource) {
     return shader;
 }
 
+void DrawGrid(float size, float step) {
+    m_shader->Use();
+    m_shader->setVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
 
-void Render3DScene(float display_w, float display_h, glm::mat4 projection, glm::mat4 view) {
-    ImVec2 pos = ImGui::GetWindowPos();
-    ImVec2 size = ImGui::GetWindowSize();
+    glBegin(GL_LINES);
 
-    float window_y = display_h - (pos.y + size.y);
+    for (float i = -size; i <= size; i += step) {
+        // Draw lines parallel to the Z-axis (front and back)
+        glVertex3f(-size, 0.0f, i);
+        glVertex3f(size, 0.0f, i);
 
-    glViewport(pos.x, window_y, size.x, size.y);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Draw lines parallel to the X-axis (left and right)
+        glVertex3f(i, 0.0f, -size);
+        glVertex3f(i, 0.0f, size);
+    }
 
-    glEnable(GL_DEPTH_TEST);
+    glEnd();
+}
 
-    glm::mat4 model = glm::mat4(1.0f); // Identity matrix (no transformation)
+
+void Render3DScene(float display_w, float display_h, glm::mat4 model, glm::mat4 projection, glm::mat4 view) {
+    glViewport(0, 0, static_cast<int>(display_w), static_cast<int>(display_h));
+
+    if (m_shader == nullptr) {
+        std::cout << "m_shader is not initialized!" << std::endl;
+        return;
+    }
+
+    glClear(GL_DEPTH_BUFFER_BIT);
+
 
     m_shader->Use();
     m_shader->setMat4("model", model);
@@ -105,54 +147,72 @@ void Render3DScene(float display_w, float display_h, glm::mat4 projection, glm::
     m_shader->setMat4("projection", projection);
     m_shader->setVec3("objectColor", glm::vec3(1.0f, 0.0f, 0.0f));
 
-    glm::vec3 lightDir = glm::vec3(0.0f, 1.0f, 0.0f);
-    m_shader->setVec3("ambientColor", lightDir);
+    if (cube == nullptr) {
+        std::cout << "cube is not initialized!" << std::endl;
+        return;
+    }
 
-    cube->Draw(reinterpret_cast<Shader &>(m_shader));
+    cube->Draw(*m_shader);
 
     glFlush();
 }
-static bool showSceneView = false;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+static bool framebufferInitialized = false;
+static bool depthTestEnabled = false;
+float aspectRatio = static_cast<float>(1920) / static_cast<float>(1280);
+
 
 void renderSceneView(int display_w, int display_h) {
     ImGui::Begin("Scene View");
-    if (ImGui::Button("Scene")) {
-        showSceneView = !showSceneView;
+    float aspectRatio2 = ImGui::GetWindowSize().x / ImGui::GetWindowSize().y;
 
-        if (showSceneView)
-        {
-        //    create_framebuffer();
-
-         //   glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-           // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            float aspectRatio = ImGui::GetWindowSize().x / ImGui::GetWindowSize().y;
-
-            glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspectRatio, 1.0f, 100.0f);
-
-            glm::mat4 view = glm::lookAt(glm::vec3(1.0f, 2.0f, 3.0f),  // Camera position (eye)
-                                         glm::vec3(0.0f, 0.0f, 0.0f),  // Camera target (center)
-                                         glm::vec3(0.0f, 1.0f, 0.0f)); // Up vector
-
-            Render3DScene(display_w, display_h, projection, view);
-
-        //    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (!framebufferInitialized || display_w != WIDTH || display_h != HEIGHT) {
+        if (display_w <= 0 || display_h <= 0) {
+            // Do not render if window is minimized
+            ImGui::End();
+            return;
         }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Game")) {
+
+        WIDTH = display_w;
+        HEIGHT = display_h;
+        create_framebuffer();
+        framebufferInitialized = true;
     }
 
-    if (showSceneView)
-    {
-        ImGui::Image((void*)(intptr_t)texture_id, ImVec2(1280, HEIGHT));
+    if (!depthTestEnabled) {
+        glEnable(GL_DEPTH_TEST);
+        depthTestEnabled = true;
     }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    DrawGrid(10.0f, 1.0f);
+
+    // Adjust aspect ratio
+    glm::mat4 projection = glm::perspective(glm::radians(fov), aspectRatio2, 1.0f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 model = glm::mat4(1.0f);
+
+    //float angle = glfwGetTime();
+    // model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    Render3DScene(WIDTH, HEIGHT, model, projection, view);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    ImVec2 windowSize = ImGui::GetWindowSize();
+    ImGui::Image((void*)(intptr_t)texture_id, windowSize, ImVec2(0, 1), ImVec2(1, 0));
+
     ImGui::End();
-
 }
 
 
-void renderGameView() {
+void renderGameView(){
     ImGui::Begin("Game View");
     ImGui::Text("Game View");
     ImGui::End();
@@ -173,13 +233,10 @@ void renderHierarchy() {
 void renderProjectExplorer() {
     ImGui::Begin("Project Explorer");
     ImGui::Text("Project Explorer");
-
-
     ImGui::End();
 }
 
-
-int main(int argc, char** argv) {
+int main() {
 
     glfwSetErrorCallback(errorCallback);
 
@@ -202,7 +259,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Read the shader source code from the files
     std::string vertexShaderSource = ReadShaderFile(SOURCE_DIR "/shaders/basic.vert");
     std::string fragmentShaderSource = ReadShaderFile(SOURCE_DIR "/shaders/basic.frag");
 
@@ -217,22 +273,21 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    Shader shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
+    m_shader = new Shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
 
     GLint success;
     GLchar infoLog[512];
 
     // Check shader program linking
-    glGetProgramiv(shader.getProgramId(), GL_LINK_STATUS, &success);
+    glGetProgramiv(m_shader->getProgramId(), GL_LINK_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(shader.getProgramId(), 512, NULL, infoLog);
+        glGetProgramInfoLog(m_shader->getProgramId(), 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-        return -1;  // Return -1 if linking failed
+        return -1;
     }
 
-    GUI gui(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
-
+    cube = new Cube();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -243,8 +298,16 @@ int main(int argc, char** argv) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
     //MAIN LOOP
     while (!glfwWindowShouldClose(window)) {
+
+        // Check if the window is minimized
+        if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
+            glfwWaitEvents();
+            continue;
+        }
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -293,6 +356,10 @@ int main(int argc, char** argv) {
     printf("OpenGL %s, GLSL %s\n", glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     // Cleanup
+
+    delete m_shader;
+    delete cube;
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

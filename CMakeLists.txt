@@ -5,7 +5,9 @@ add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 # GLAD
 set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
-set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
+set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
+        Camera.cpp
+        Camera.h)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)
@@ -38,9 +40,12 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(LupusFire_core main.cpp ${GLAD_SOURCE}
     Shader.cpp
-Shader.h
-GUI.cpp
-GUI.h
-Cube.cpp
-Cube.h)
+    Shader.h
+    GUI.cpp
+    GUI.h
+    Cube.cpp
+    Cube.h
+    Camera.cpp
+    Camera.h)
+
 target_link_libraries(LupusFire_core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32)

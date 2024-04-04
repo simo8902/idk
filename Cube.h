@@ -24,7 +24,7 @@ private:
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
     GLuint VAO, VBO, EBO;
-    glm::vec3 color; // Color of the object
+    glm::vec3 color;
 
     void SetupMesh();
 };
