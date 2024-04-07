@@ -5,7 +5,7 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include "../Shader.h"
+#include "Shader.h"
 
 class GUI {
 public:

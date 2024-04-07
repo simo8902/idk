@@ -5,7 +5,19 @@ add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 # GLAD
 set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
-set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
+set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
+        src/Scene.cpp
+        src/Scene.h
+        src/Components/Component.cpp
+        src/Components/Component.h
+        src/Components/Renderer.cpp
+        src/Components/Renderer.h
+        src/Components/Transform.cpp
+        src/Components/Transform.h
+        src/Utils.cpp
+        src/Utils.h
+        src/Components/BoundingBox.cpp
+        src/Components/BoundingBox.h)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)
@@ -37,13 +49,15 @@ include_directories(${GLAD_INCLUDE_DIR})
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(LupusFire_core main.cpp ${GLAD_SOURCE}
-    Shader.cpp
-    Shader.h
-    ${CMAKE_SOURCE_DIR}/src/GUI.cpp
-    ${CMAKE_SOURCE_DIR}/src/GUI.h
-    Cube.cpp
-    Cube.h
-    Camera.cpp
-    Camera.h)
+        src/Shader.cpp
+        src/Shader.h
+    src/GameObject.cpp
+    src/GameObject.h
+    src/GUI.cpp
+    src/GUI.h
+        src/Cube.cpp
+        src/Cube.h
+        src/Camera.cpp
+        src/Camera.h)
 
 target_link_libraries(LupusFire_core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32)

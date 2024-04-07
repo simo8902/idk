@@ -5,7 +5,7 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "libs/glad/include/glad/glad.h"
+#include "glad/glad.h"
 
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
@@ -15,11 +15,19 @@
 class Shader {
 public:
     Shader(const char* vertexShaderCode, const char* fragmentShaderCode);
-    void Use();
-    GLuint getProgramId();
+    ~Shader();
 
-    void setMat4(const char* name, const glm::mat4& matrix);
+    void Use() const;
+
+    GLuint getProgramId();
+    void setProgramId(GLuint programId) { shaderProgram = programId; }
+
+    void setMat4(const std::string& name, const glm::mat4& matrix) const;
     void setVec3(const std::string& name, const glm::vec3& value) const;
+
+    std::string readShaderFile(const std::string& filePath);
+    GLuint compileShader(GLenum shaderType, const std::string& shaderSource);
+
 private:
     GLuint shaderProgram;
 

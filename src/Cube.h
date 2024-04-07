@@ -7,13 +7,18 @@
 
 #include <vector>
 
-#include "libs/glad/include/glad/glad.h"
+#include "glad/glad.h"
 #include "Shader.h"
 
-class Cube {
+#include "GameObject.h"
+
+class Cube : public GameObject {
 public:
-    Cube();
-    void Draw(Shader& shader);
+    Cube(const std::string& name);
+    ~Cube();
+
+    void Draw(Shader& shader) override;
+
     void setColor(glm::vec3 color) {
         this->color = color;
     }

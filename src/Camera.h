@@ -5,11 +5,13 @@
 #ifndef LUPUSFIRE_CORE_CAMERA_H
 #define LUPUSFIRE_CORE_CAMERA_H
 
-#include <glm.hpp>
-#include <gtc/type_ptr.hpp>
+#include "glm.hpp"
+#include "gtc/type_ptr.hpp"
 
 class Camera {
 public:
+    Camera(){}
+
     glm::vec3 Position;
     glm::vec3 Target;
     glm::vec3 Up;

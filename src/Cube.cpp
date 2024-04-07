@@ -1,6 +1,7 @@
 #include "Cube.h"
 
-Cube::Cube() {
+Cube::Cube(const std::string & name)
+: GameObject(name){
     vertices = {
         // positions          // normals
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -48,6 +49,10 @@ Cube::Cube() {
 
     SetupMesh();
 }
+Cube::~Cube() {
+    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &VAO);
+}
 
 void Cube::SetupMesh() {
     glGenVertexArrays(1, &VAO);
@@ -72,6 +77,7 @@ void Cube::SetupMesh() {
 }
 
 void Cube::Draw(Shader& shader) {
+   // std::cout << "Drawing Cube: " << this->getName() << std::endl;
     shader.Use();
 
     glBindVertexArray(VAO);
