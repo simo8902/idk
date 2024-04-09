@@ -19,17 +19,10 @@ public:
 
     void Draw(Shader& shader) override;
 
-    void setColor(glm::vec3 color) {
-        this->color = color;
-    }
-    glm::vec3 getColor() const {
-        return color;
-    }
 private:
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
     GLuint VAO, VBO, EBO;
-    glm::vec3 color;
 
     void SetupMesh();
 };

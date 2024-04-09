@@ -4,8 +4,9 @@
 
 #include "Scene.h"
 #include "imgui.h"
-#include "Components/Transform.h"
-#include "Utils.h"
+#include "../../components/Transform.h"
+#include "../../Utils.h"
+#include "../../components/colliders/BoxCollider.h"
 
 using Utils::operator<<;
 
@@ -54,23 +55,28 @@ void Scene::Render3DScene(float display_w, float display_h) {
     m_shader->setMat4("view", view);
     m_shader->setMat4("projection", projection);
 
-    for (const auto& obj  : m_objects) {
-        std::cout << "Rendering object: " << obj->getName() << std::endl;
+    for (const std::shared_ptr<GameObject>& obj  : m_objects) {
+        // std::cout << "Rendering object: " << obj->getName() << std::endl;
 
         Transform *transformComponent = obj->getComponent<Transform>();
+        BoxCollider *boxCollider = obj->getComponent<BoxCollider>();
 
         if (transformComponent) {
-            std::cout << "Address of Transform component: " <<* transformComponent << std::endl;
+           // std::cout << "Address of Transform component: " <<* transformComponent << std::endl;
 
             glm::mat4 model = transformComponent->getModelMatrix();
             m_shader->setMat4("model", model);
-            m_shader->setVec3("objectColor", obj->getColor());
+             m_shader->setVec3("objectColor", obj->getColor());
 
-            std::cout << "Model matrix: " << model << std::endl;
+            // std::cout << "Model matrix: " << model << std::endl;
 
-            // Cubes are the only objects for now
-            obj->Draw(*m_shader);
         }
+
+        if (boxCollider != nullptr) {
+            obj->DebugDraw(*m_shader);
+         }
+
+        obj->Draw(*m_shader);
     }
 
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -211,4 +217,10 @@ glm::mat4 Scene::calculateProjectionMatrix(int display_w, int display_h) {
     float farPlane = 100.0f;
 
     return glm::perspective(fov, aspectRatio, nearPlane, farPlane);
+}
+
+void Scene::renderGameView(){
+    ImGui::Begin("Game View");
+    ImGui::Text("Game View");
+    ImGui::End();
 }

@@ -6,18 +6,31 @@ add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
 # GLAD
 set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
 set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
-        src/Scene.cpp
-        src/Scene.h
+        src/editor/windows/Scene.cpp
+        src/editor/windows/Scene.h
         src/Components/Component.cpp
         src/Components/Component.h
-        src/Components/Renderer.cpp
-        src/Components/Renderer.h
+        src/editor/windows/Renderer.cpp
+        src/editor/windows/Renderer.h
         src/Components/Transform.cpp
         src/Components/Transform.h
         src/Utils.cpp
         src/Utils.h
         src/Components/BoundingBox.cpp
-        src/Components/BoundingBox.h)
+        src/Components/BoundingBox.h
+        src/editor/windows/HierarchyManager.cpp
+        src/editor/windows/HierarchyManager.h
+        src/editor/windows/InspectorManager.cpp
+        src/editor/windows/InspectorManager.h
+        src/editor/windows/ProjectExplorer.cpp
+        src/editor/windows/ProjectExplorer.h
+        src/editor/windows/SceneLoader.cpp
+        src/editor/windows/SceneLoader.h
+        src/components/colliders/Collider.cpp
+        src/components/colliders/Collider.h
+        src/components/colliders/Ray.cpp
+        src/components/colliders/Ray.h
+        src/components/colliders/BoxCollider.h)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)

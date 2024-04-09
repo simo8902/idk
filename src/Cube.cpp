@@ -49,6 +49,7 @@ Cube::Cube(const std::string & name)
 
     SetupMesh();
 }
+
 Cube::~Cube() {
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &VAO);

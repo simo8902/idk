@@ -27,6 +27,7 @@ public:
 
     std::string readShaderFile(const std::string& filePath);
     GLuint compileShader(GLenum shaderType, const std::string& shaderSource);
+    Shader* createShaderProgram(Shader* shaderProgram);
 
 private:
     GLuint shaderProgram;

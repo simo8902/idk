@@ -26,6 +26,46 @@ Shader::~Shader() {
     delete& shaderProgram;
 }
 
+Shader *Shader::createShaderProgram(Shader* shaderProgram) {
+    std::string vertexShaderSource = shaderProgram->readShaderFile(SOURCE_DIR "/shaders/basic.vert");
+    std::string fragmentShaderSource = shaderProgram->readShaderFile(SOURCE_DIR "/shaders/basic.frag");
+
+    shaderProgram = new Shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
+
+    GLuint vertexShaderID = shaderProgram->compileShader(GL_VERTEX_SHADER, vertexShaderSource.c_str());
+    GLuint fragShaderID = shaderProgram->compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource.c_str());
+
+    if (vertexShaderID == 0) {
+        std::cerr << "Failed to compile vertex shader" << std::endl;
+        return nullptr;
+    }
+
+    if (fragShaderID == 0) {
+        std::cerr << "Failed to compile fragment shader" << std::endl;
+        return nullptr;
+    }
+
+    GLuint programId = glCreateProgram();
+    glAttachShader(programId, vertexShaderID);
+    glAttachShader(programId, fragShaderID);
+    glLinkProgram(programId);
+
+    // Check for linking errors
+    GLint success;
+    GLchar infoLog[512];
+    glGetProgramiv(programId, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(programId, 512, NULL, infoLog);
+        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+        return nullptr;
+    }
+
+    shaderProgram->setProgramId(programId);
+
+    return shaderProgram;
+}
+
+
 void Shader::setMat4(const std::string &name, const glm::mat4 &matrix) const {
     GLuint uniformLocation = glGetUniformLocation(shaderProgram, name.c_str());
     if (uniformLocation == -1) {

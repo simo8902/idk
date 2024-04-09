@@ -23,6 +23,10 @@ public:
     void setRotation(const glm::vec3& rot) { rotation = rot; }
     void setScale(const glm::vec3& scale) { m_scale = scale; }
 
+    glm::vec3 getPosition() const { return position; }
+    glm::vec3 getRotation() const { return rotation; }
+    glm::vec3 getScale() const { return m_scale; }
+
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 rotation = glm::vec3(0.0f);
     glm::vec3 m_scale = glm::vec3(1.0f);
@@ -43,6 +47,7 @@ public:
 
         return transform;
     }
+
     friend std::ostream& operator<<(std::ostream& os, const Transform& transform) {
         os << "Transform(position: ";
         Utils::operator<<(os, transform.position);

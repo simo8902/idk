@@ -21,11 +21,31 @@ public:
         std::cout << "GameObject created: " << this->getName() << std::endl;
     }
 
+    // Object Management
+    template <typename T>
+    std::shared_ptr<T> addObject(const std::string& name){
+        std::shared_ptr<T> newObject = std::make_shared<T>(name);
+
+        std::cerr << "Obj added successfully\n";
+
+        return newObject;
+    }
+
     // Component Management
     template <typename T>
     T* addComponent() {
         T* newComponent = new T();
         m_components.emplace_back(std::unique_ptr<Component>(newComponent));
+
+        return newComponent;
+    }
+
+    template <typename T, typename... Args>
+    T* addComponent(Args&&... args) {
+        T* newComponent = new T(std::forward<Args>(args)...);
+        m_components.emplace_back(std::unique_ptr<Component>(newComponent));
+        std::cout << "Debug: Added component of type " << typeid(T).name() << " at address " << newComponent << " to object " << getName() << std::endl;
+
         return newComponent;
     }
 
@@ -33,36 +53,13 @@ public:
     T* getComponent() {
         for (auto& component : m_components) {
             if (T* comp = dynamic_cast<T*>(component.get())) {
+                std::cout << "Debug: Retrieved component of type " << typeid(T).name() << " at address " << comp << " from object " << getName() << std::endl;
                 return comp;
             }
         }
+        std::cout << "Debug: No component of type " << typeid(T).name() << " found in object " << getName() << std::endl;
+
         return nullptr;
-    }
-
-
-    void update() {
-        // Update the game object...
-
-        // Update the bounding box
-        BoundingBox* boundingBox = getComponent<BoundingBox>();
-        if (boundingBox) {
-            Transform* transform = getComponent<Transform>();
-            if (transform) {
-                glm::mat4 modelMatrix = transform->getModelMatrix();
-
-                // Transform the bounding box
-                boundingBox->min = glm::vec3(modelMatrix * glm::vec4(boundingBox->min, 1.0f));
-                boundingBox->max = glm::vec3(modelMatrix * glm::vec4(boundingBox->max, 1.0f));
-            }
-        }
-    }
-
-    void setColor(const glm::vec3& color) {
-        this->color = color;
-    }
-
-    glm::vec3 getColor() const {
-        return color;
     }
 
 
@@ -70,10 +67,21 @@ public:
     virtual void Draw(Shader& shader) = 0;
     bool isSelected = false;
 
+    void DebugDraw(Shader& shader);
+
+    void setColor(glm::vec3 m_color) {
+        this->color = m_color;
+    }
+
+    glm::vec3 getColor() const {
+        return color;
+    }
 private:
     std::string m_name;
     std::vector<std::unique_ptr<Component>> m_components;
     glm::vec3 color;
+    unsigned int VAO, VBO, EBO;
+    bool useBoxColliderColor;
 
 };
 

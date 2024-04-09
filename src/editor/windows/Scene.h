@@ -7,11 +7,11 @@
 
 #include <vector>
 #include <memory>
-#include "GameObject.h"
-#include "Shader.h"
-#include "Camera.h"
-#include "Cube.h"
-#include "Components/Transform.h"
+#include "../../GameObject.h"
+#include "../../Shader.h"
+#include "../../Camera.h"
+#include "../../Cube.h"
+#include "../../components/Transform.h"
 
 class Scene {
 public:
@@ -32,7 +32,7 @@ public:
 
     glm::mat4 calculateViewMatrix();
     glm::mat4 calculateProjectionMatrix(int display_w, int display_h);
-
+    void renderGameView();
 private:
     std::vector<std::shared_ptr<GameObject>> m_objects;
 
@@ -55,7 +55,7 @@ private:
     glm::mat4 m_viewMatrix;
     glm::mat4 m_projectionMatrix;
     Scene *scene;
-
+    bool debugMode = true;
 };
 
 #endif //LUPUSFIRE_CORE_SCENE_H
