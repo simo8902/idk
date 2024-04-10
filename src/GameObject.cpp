@@ -58,5 +58,5 @@ void GameObject::DebugDraw(Shader &shader) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    shader.setVec3("objectColor", objectColor);
+    shader.setVec3("objectColor", color);
 }

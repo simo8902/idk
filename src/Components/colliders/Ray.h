@@ -6,14 +6,23 @@
 #define LUPUSFIRE_CORE_RAY_H
 
 #include "glm.hpp"
+#include <iostream>
 
 class Ray {
 public:
     Ray(const glm::vec3& origin, const glm::vec3& direction)
             : m_origin(origin), m_direction(glm::normalize(direction)) {}
 
-    const glm::vec3& getOrigin() const { return m_origin; }
-    const glm::vec3& getDirection() const { return m_direction; }
+    const glm::vec3& getOrigin() const {
+        std::cout << "Ray - getOrigin() called." << std::endl;
+        return m_origin;
+    }
+
+    const glm::vec3& getDirection() const {
+        std::cout << "Ray - getDirection() called." << std::endl;
+        return m_direction;
+    }
+
     glm::vec3 m_origin;
     glm::vec3 m_direction;
 private:

@@ -12,7 +12,7 @@
 class Collider : public Component {
 public:
     // Check if a ray intersects with this collider
-    virtual bool intersects(const Ray& ray) = 0;
+    virtual bool intersectsRay(const Ray& ray) = 0;
 };
 
 

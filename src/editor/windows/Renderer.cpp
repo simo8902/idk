@@ -160,6 +160,10 @@ void Renderer::initializeImGui(GLFWwindow* window) {
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
+    if (io.MouseDown[0]) {
+        std::cout << "Mouse is clicked at position: (" << io.MousePos.x << ", " << io.MousePos.y << ")" << std::endl;
+    }
+
     io.Fonts->Clear();
 
     const char *fontPath = SOURCE_DIR "/CascadiaCode.ttf";

@@ -34,16 +34,16 @@ public:
     glm::mat4 getModelMatrix() const {
         glm::mat4 transform = glm::mat4(1.0f);
 
-        // Translate
-        transform = glm::translate(transform, position);
+        // Scale
+        transform = glm::scale(transform, m_scale);
 
         // Rotate
         transform = glm::rotate(transform, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
         transform = glm::rotate(transform, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
         transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-        // Scale
-        transform = glm::scale(transform, m_scale);
+        // Translate
+        transform = glm::translate(transform, position);
 
         return transform;
     }
