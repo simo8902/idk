@@ -15,16 +15,17 @@
 #include "imgui.h"
 #include "InspectorManager.h"
 #include "../../components/colliders/BoxCollider.h"
-#include "../../../Gizmo.h"
+#include "../../components/Gizmo.h"
 
 class Scene {
 public:
-    Scene(Shader *shader);
+    Scene();
     ~Scene();
 
     void Render3DScene(float display_w, float display_h);
     void renderSceneView(int display_w, int display_h);
-    void update();
+    void setShader(Shader& shader);
+    void setCamera(Camera& camera);
 
     void addGameObject(std::shared_ptr<GameObject> object) {
         std::cout << "Adding GameObject: " << object->getName() << std::endl;
@@ -35,23 +36,29 @@ public:
         return m_objects;
     }
 
-    glm::mat4 calculateViewMatrix();
+    void selectObject(std::shared_ptr<GameObject> object) {
+        if (m_selectedObject) {
+            m_selectedObject->deselect();
+        }
+        m_selectedObject = object;
+        if (m_selectedObject) {
+            m_selectedObject->select();
+        }
+    }
 
-    glm::mat4 calculateProjectionMatrix(int display_w, int display_h);
+    void deselectCurrentObject() {
+        if (m_selectedObject) {
+            m_selectedObject->deselect();
+            m_selectedObject.reset();
+        }
+    }
 
-    void renderGameView();
-
-    std::shared_ptr<GameObject> raycastFromMouse(const ImVec2 &mousePos, int display_w, int display_h);
-    glm::vec2 calculateNormalizedPosition(const ImVec2& mousePos, int display_w, int display_h);
-    void renderGizmo(Transform* transform);
-    void renderRay(const Ray& ray, const glm::vec3& color);
     void printMatrix(const glm::mat4& matrix);
-    bool aabbIntersection(const Ray& ray, const BoxCollider* boxCollider);
-
 private:
     InspectorManager* inspectorManager;
     std::vector<std::shared_ptr<GameObject>> m_objects;
-    std::shared_ptr<Shader> m_shader;
+    Shader* m_shader;
+    Camera* m_camera;
     std::shared_ptr<GameObject> m_selectedObject;
 
     int FBO_width;
@@ -63,7 +70,6 @@ private:
     std::shared_ptr<Gizmo> m_gizmo;
 
     GLuint texture_id;
-    bool framebufferInitialized = false;
     bool depthTestEnabled = false;
 
     Transform gridTransform;
@@ -74,8 +80,6 @@ private:
 
     glm::mat4 m_viewMatrix;
     glm::mat4 m_projectionMatrix;
-    Scene *scene;
-    bool debugMode = true;
 };
 
 #endif //LUPUSFIRE_CORE_SCENE_H

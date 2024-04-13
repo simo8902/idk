@@ -11,29 +11,25 @@
 #include "gtc/type_ptr.hpp"
 
 #include <iostream>
+#include <memory>
 
 class Shader {
 public:
-    Shader(const char* vertexShaderCode, const char* fragmentShaderCode);
-    ~Shader();
-
-    void Use() const;
-
-    GLuint getProgramId();
-    void setProgramId(GLuint programId) { shaderProgram = programId; }
-
-    void setMat4(const std::string& name, const glm::mat4& matrix) const;
-    void setVec3(const std::string& name, const glm::vec3& value) const;
-
-    std::string readShaderFile(const std::string& filePath);
-    GLuint compileShader(GLenum shaderType, const std::string& shaderSource);
-    Shader* createShaderProgram(Shader* shaderProgram);
-
-private:
     GLuint shaderProgram;
 
+    Shader() : shaderProgram(0) {}
+    ~Shader() {
+        glDeleteProgram(shaderProgram);
+    }
+
+    static std::shared_ptr<Shader> createShaderProgram();
+    static std::string readShaderFile(const std::string& filePath);
+    static GLuint compileShader(GLenum shaderType, const std::string& shaderSource);
+
+    void setMat4(const std::string &name, const glm::mat4 &matrix) const;
+    void Use() const;
+    GLuint getProgramId() const;
+    void setVec3(const std::string& name, const glm::vec3& value) const;
 };
-
-
 
 #endif //SHADER_H

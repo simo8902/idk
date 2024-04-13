@@ -7,7 +7,7 @@ std::string glmVersionString() {
 }
 
 int main() {
-    Renderer renderer(1280, 720, "LupusFire");
+    Renderer renderer(1280, 720, "LupusFire", 90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 
     //MAIN LOOP
     while (!renderer.ShouldClose()) {

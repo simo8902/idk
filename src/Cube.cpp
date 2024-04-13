@@ -77,9 +77,11 @@ void Cube::SetupMesh() {
     glBindVertexArray(0);
 }
 
-void Cube::Draw(Shader& shader) {
+void Cube::Draw(Shader& shader, const glm::mat4& modelMatrix) {
    // std::cout << "Drawing Cube: " << this->getName() << std::endl;
     shader.Use();
+
+    shader.setMat4("model", modelMatrix);
 
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);

@@ -8,7 +8,6 @@
 void GameObject::DebugDraw(Shader &shader) {
     BoxCollider* collider = getComponent<BoxCollider>();
 
-    glm::vec3 objectColor = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 boxColliderColor = glm::vec3(0.0f, 1.0f, 0.0f);
 
     if (collider) {
@@ -57,6 +56,4 @@ void GameObject::DebugDraw(Shader &shader) {
         glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
-
-    shader.setVec3("objectColor", color);
 }

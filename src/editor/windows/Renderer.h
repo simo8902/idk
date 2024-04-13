@@ -14,10 +14,9 @@
 #include "ProjectExplorer.h"
 #include "SceneLoader.h"
 
-
 class Renderer {
 public:
-    Renderer(int width, int height, const char* title);
+    Renderer(int width, int height, const char *title, float fov, float aspectRatio, float nearPlane, float farPlane);
     ~Renderer();
 
     void render();
@@ -28,14 +27,18 @@ public:
     void initializeImGui(GLFWwindow* window);
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     bool ShouldClose();
+    Ray generateRayFromMouse(const glm::vec2& ndc, int display_w, int display_h);
+    void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+   // void drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color);
+
 private:
+    GLFWwindow* m_Window;
     int m_WindowWidth;
     int m_WindowHeight;
-
-    GLFWwindow* m_Window;
+    Camera m_camera;
     Scene* globalScene;
-    Shader* shaderProgram;
     SceneLoader* loader;
+    std::shared_ptr<Shader> shaderProgram;
     HierarchyManager hierarchyManager;
     InspectorManager inspectorManager;
     ProjectExplorer projectExplorer;

@@ -8,79 +8,53 @@
 #include <sstream>
 #include "Collider.h"
 #include "Ray.h"
-#include "../BoundingBox.h"
+#include "gtx/string_cast.hpp"
 
 class BoxCollider : public Collider {
 public:
     BoxCollider(const glm::vec3& position, const glm::vec3& min, const glm::vec3& max)
-            : m_position(position), m_min(min), m_max(max) {}
+            : m_position(position), m_worldMin(position + min), m_worldMax(position + max) {} // Calculate in world space
 
-    const glm::vec3& getMin() const { return m_min; }
-    const glm::vec3& getMax() const { return m_max; }
+    const glm::vec3& getPosition() const { return m_position; }
+    const glm::vec3& getMin() const { return m_worldMin; }
+    const glm::vec3& getMax() const { return m_worldMax; }
 
-    const glm::vec3 & getPosition() const {
-        return m_position;
-    }
+    bool intersectsRay(const Ray& ray, const glm::mat4& transformMatrix) override {
+        glm::mat4 invTransform = glm::inverse(transformMatrix);
+        glm::vec3 rayOriginLocal = glm::vec3(invTransform * glm::vec4(ray.getOrigin(), 1.0));
+        glm::vec3 rayDirectionLocal = glm::normalize(glm::vec3(invTransform * glm::vec4(ray.getDirection(), 0.0)));
 
-    bool intersectsRay(const Ray& ray) override {
-        const float epsilon = 0.0001f; // A small tolerance value
+        Ray transformedRay(rayOriginLocal, rayDirectionLocal);
 
-        // Calculate tmin and tmax for each axis
-        float tmin = (m_min.x - ray.m_origin.x) / ray.m_direction.x;
-        float tmax = (m_max.x - ray.m_origin.x) / ray.m_direction.x;
+        glm::vec3 invDir = 1.0f / transformedRay.getDirection();
+        glm::vec3 t0s = (m_worldMin - transformedRay.getOrigin()) * invDir;
+        glm::vec3 t1s = (m_worldMax - transformedRay.getOrigin()) * invDir;
 
-        if (tmin > tmax) std::swap(tmin, tmax);
+        glm::vec3 tmin = glm::min(t0s, t1s);
+        glm::vec3 tmax = glm::max(t0s, t1s);
 
-        float tymin = (m_min.y - ray.m_origin.y) / ray.m_direction.y;
-        float tymax = (m_max.y - ray.m_origin.y) / ray.m_direction.y;
+        float tMin = std::max(tmin.x, std::max(tmin.y, tmin.z));
+        float tMax = std::min(tmax.x, std::min(tmax.y, tmax.z));
 
-        if (tymin > tymax) std::swap(tymin, tymax);
+        std::cout << "Ray Origin (Local): " << glm::to_string(rayOriginLocal) << "\n";
+        std::cout << "Ray Direction (Local): " << glm::to_string(rayDirectionLocal) << "\n";
+        std::cout << "tMin: " << tMin << ", tMax: " << tMax << "\n";
+        std::cout << "Intersects: " << (tMin <= tMax && tMax >= 0 ? "Yes" : "No") << "\n";
 
-        if ((tmin > tymax) || (tymin > tmax))
-            return false;
-
-        if (tymin > tmin)
-            tmin = tymin;
-
-        if (tymax < tmax)
-            tmax = tymax;
-
-        float tzmin = (m_min.z - ray.m_origin.z) / ray.m_direction.z;
-        float tzmax = (m_max.z - ray.m_origin.z) / ray.m_direction.z;
-
-        if (tzmin > tzmax) std::swap(tzmin, tzmax);
-
-        if ((tmin > tzmax) || (tzmin > tmax))
-            return false;
-
-        if (tzmin > tmin)
-            tmin = tzmin;
-
-        if (tzmax < tmax)
-            tmax = tzmax;
-
-        // Early-out if ray's Y-component is near-zero
-        if (fabsf(ray.m_direction.y) < epsilon) {
-            return false;
+        // Check if the ray intersects the AABB
+        if (tMax < 0 || tMin > tMax) {
+            return false; // No valid intersection
         }
 
-        // Final overlap check with tolerance
-        if (tmin > tmax + epsilon || tmax < -epsilon) {
-            return false;
-        }
-
-        return true;
+        // The ray intersects the box if tMin is within the range [0, tMax]
+        return tMin <= tMax && tMax >= 0;
     }
-    glm::vec3 m_min;
-    glm::vec3 m_max;
+
+    glm::vec3 m_worldMin; // World space min bound
+    glm::vec3 m_worldMax; // World space max bound
+
 private:
     glm::vec3 m_position;
-
-    std::string vec3_to_string(const glm::vec3& v) const { // Make this function const
-        std::ostringstream oss;
-        oss << "glm::vec3(" << v.x << ", " << v.y << ", " << v.z << ")";
-        return oss.str();
-    }
     std::shared_ptr<GameObject> m_gameObject_weak;
 };
 

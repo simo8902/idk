@@ -187,14 +187,6 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/Scene.cpp.obj: CXX_COMPIL
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
-build CMakeFiles/LupusFire_core.dir/src/components/Component.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/components/Component.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\components\Component.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\components
-
 build CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/editor/windows/Renderer.cpp || cmake_object_order_depends_target_LupusFire_core
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\editor\windows\Renderer.cpp.obj.d
@@ -202,30 +194,6 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj: CXX_COM
   INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
-
-build CMakeFiles/LupusFire_core.dir/src/components/Transform.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/components/Transform.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\components\Transform.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\components
-
-build CMakeFiles/LupusFire_core.dir/src/Utils.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/Utils.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\Utils.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src
-
-build CMakeFiles/LupusFire_core.dir/src/components/BoundingBox.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/components/BoundingBox.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\components\BoundingBox.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\components
 
 build CMakeFiles/LupusFire_core.dir/src/editor/windows/HierarchyManager.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/editor/windows/HierarchyManager.cpp || cmake_object_order_depends_target_LupusFire_core
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
@@ -251,21 +219,13 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj: 
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
-build CMakeFiles/LupusFire_core.dir/src/components/colliders/Collider.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/components/colliders/Collider.cpp || cmake_object_order_depends_target_LupusFire_core
+build CMakeFiles/LupusFire_core.dir/src/components/Gizmo.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/components/Gizmo.cpp || cmake_object_order_depends_target_LupusFire_core
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\components\colliders\Collider.cpp.obj.d
+  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\components\Gizmo.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
   INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\components\colliders
-
-build CMakeFiles/LupusFire_core.dir/Gizmo.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/Gizmo.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\Gizmo.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir
+  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\components
 
 build CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/Shader.cpp || cmake_object_order_depends_target_LupusFire_core
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
@@ -283,25 +243,9 @@ build CMakeFiles/LupusFire_core.dir/src/GameObject.cpp.obj: CXX_COMPILER__LupusF
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src
 
-build CMakeFiles/LupusFire_core.dir/src/GUI.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/GUI.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\GUI.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src
-
 build CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/Cube.cpp || cmake_object_order_depends_target_LupusFire_core
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\Cube.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src
-
-build CMakeFiles/LupusFire_core.dir/src/Camera.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/Camera.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\Camera.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
   INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
@@ -315,7 +259,7 @@ build CMakeFiles/LupusFire_core.dir/src/Camera.cpp.obj: CXX_COMPILER__LupusFire_
 #############################################
 # Link the executable LupusFire_core.exe
 
-build LupusFire_core.exe: CXX_EXECUTABLE_LINKER__LupusFire_core_Debug CMakeFiles/LupusFire_core.dir/main.cpp.obj CMakeFiles/LupusFire_core.dir/libs/glad/src/glad.c.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Scene.cpp.obj CMakeFiles/LupusFire_core.dir/src/components/Component.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj CMakeFiles/LupusFire_core.dir/src/components/Transform.cpp.obj CMakeFiles/LupusFire_core.dir/src/Utils.cpp.obj CMakeFiles/LupusFire_core.dir/src/components/BoundingBox.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/HierarchyManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/InspectorManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj CMakeFiles/LupusFire_core.dir/src/components/colliders/Collider.cpp.obj CMakeFiles/LupusFire_core.dir/Gizmo.cpp.obj CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj CMakeFiles/LupusFire_core.dir/src/GameObject.cpp.obj CMakeFiles/LupusFire_core.dir/src/GUI.cpp.obj CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj CMakeFiles/LupusFire_core.dir/src/Camera.cpp.obj | C$:/Users/Simeon/Documents/LupusFire$ Core/libs/GLFW/lib/libglfw3.a libImGui.a || libImGui.a
+build LupusFire_core.exe: CXX_EXECUTABLE_LINKER__LupusFire_core_Debug CMakeFiles/LupusFire_core.dir/main.cpp.obj CMakeFiles/LupusFire_core.dir/libs/glad/src/glad.c.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Scene.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/HierarchyManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/InspectorManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj CMakeFiles/LupusFire_core.dir/src/components/Gizmo.cpp.obj CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj CMakeFiles/LupusFire_core.dir/src/GameObject.cpp.obj CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj | C$:/Users/Simeon/Documents/LupusFire$ Core/libs/GLFW/lib/libglfw3.a libImGui.a || libImGui.a
   FLAGS = -g
   LINK_LIBRARIES = "C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/lib/libglfw3.a"  libImGui.a  -lopengl32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir

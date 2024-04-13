@@ -3,16 +3,20 @@
 //
 
 #include "Renderer.h"
-#include "../../components/Component.h"
-#include "../../components/Transform.h"
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include "gtx/string_cast.hpp"
 
-
-Renderer::Renderer(int width, int height, const char *title) : m_WindowWidth(width), m_WindowHeight(height)
+Renderer::Renderer(int width, int height, const char *title, float fov, float aspectRatio, float nearPlane, float farPlane) :
+        m_WindowWidth(width), m_WindowHeight(height),
+        m_camera(glm::vec3(0.0f, 1.0f, -10.0f),
+                 glm::vec3(0.0f, 0.0f, -1.0f),
+                 glm::vec3(0.0f, 1.0f, 0.0f), fov, aspectRatio, nearPlane, farPlane)
 {
+    m_camera.printCameraParams();
+
     if (!initializeGLFW()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return;
@@ -32,17 +36,34 @@ Renderer::Renderer(int width, int height, const char *title) : m_WindowWidth(wid
         return;
     }
 
-    initializeImGui(m_Window);
+    glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods) {
+        void* ptr = glfwGetWindowUserPointer(window);
+        if (ptr) {
+            static_cast<Renderer*>(ptr)->mouseButtonCallback(window, button, action, mods);
+        }
+    });
 
+    glfwSetWindowUserPointer(m_Window, this); // Do this in your Renderer's constructor or initialization method.
     glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
 
-    shaderProgram = shaderProgram->createShaderProgram(shaderProgram);
-    if (shaderProgram == nullptr) {
-        std::cerr << "Shader is null\n";
+    initializeImGui(m_Window);
+
+
+    shaderProgram = Shader::createShaderProgram();
+    if (!shaderProgram) {
+        std::cerr << "Failed to create shader program." << std::endl;
         return;
     }
 
-    globalScene = new Scene(shaderProgram);
+    try {
+        globalScene = new Scene();
+        globalScene->setShader(*shaderProgram);
+    } catch (const std::bad_alloc& e) {
+        std::cerr << "Failed to allocate memory for scene: " << e.what() << '\n';
+        return;
+    }
+
+    globalScene->setCamera(m_camera);
 
     loader = new SceneLoader(globalScene);
     loader->initialize();
@@ -56,21 +77,75 @@ Renderer::~Renderer() {
     glfwDestroyWindow(m_Window);
     glfwTerminate();
 }
+
+Ray Renderer::generateRayFromMouse(const glm::vec2& ndc,int display_w,int display_h) {
+    glm::vec4 rayStart_NDC(ndc.x, ndc.y, -1.0f, 1.0f);
+    glm::vec4 rayEnd_NDC(ndc.x, ndc.y, 0.0f, 1.0f);
+
+    glm::mat4 invProjMatrix = glm::inverse(m_camera.getProjectionMatrix(display_w, display_h));
+    glm::mat4 invViewMatrix = glm::inverse(m_camera.getViewMatrix());
+
+    glm::vec4 rayStart_world = invViewMatrix * invProjMatrix * rayStart_NDC;
+    rayStart_world /= rayStart_world.w;
+    glm::vec4 rayEnd_world = invViewMatrix * invProjMatrix * rayEnd_NDC;
+    rayEnd_world /= rayEnd_world.w;
+
+    glm::vec3 rayDir_world(glm::normalize(rayEnd_world - rayStart_world));
+
+
+    return Ray(glm::vec3(rayStart_world), rayDir_world);
+}
+
+
+void Renderer::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        double mouseX, mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+
+        int windowWidth, windowHeight;
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+        glm::vec2 ndc = {
+                (2.0f * mouseX) / windowWidth - 1.0f,
+                1.0f - (2.0f * mouseY) / windowHeight
+        };
+
+        std::cerr << "NDC Coords: "<< glm::to_string(ndc) << std::endl;
+
+        Ray ray = generateRayFromMouse(ndc, windowWidth, windowHeight);
+        bool objectSelected = false;
+        for (const auto& object : globalScene->getGameObjects()) {
+            Transform* transform = object->getComponent<Transform>();
+            BoxCollider* collider = object->getComponent<BoxCollider>();
+
+            if (collider && transform) {
+                glm::mat4 transformMatrix = transform->getModelMatrix();
+                if (collider->intersectsRay(ray, transformMatrix)) {
+                    std::cout << "Object selected: " << object->getName() << std::endl;
+                    globalScene->selectObject(object);
+                    objectSelected = true;
+                    break;
+                }
+            }
+        }
+        if (!objectSelected) {
+            std::cout << "No object selected." << std::endl;
+            globalScene->deselectCurrentObject();
+        }
+    }
+}
+
 bool Renderer::ShouldClose() {
     return glfwWindowShouldClose(m_Window);
 }
 
-
-// Inside Loop
-void Renderer::render() {
-
+//Main Loop
+void Renderer::render(){
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-
     glfwGetFramebufferSize(m_Window, &m_WindowWidth, &m_WindowHeight);
-    globalScene->calculateProjectionMatrix(m_WindowWidth, m_WindowHeight);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -92,17 +167,13 @@ void Renderer::render() {
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     hierarchyManager.renderHierarchy(globalScene);
 
-    globalScene->update();
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     globalScene->renderSceneView(m_WindowWidth, m_WindowHeight);
-
 
     std::shared_ptr<GameObject> selectedObjectSharedPtr = HierarchyManager::selectedObject ? std::shared_ptr<GameObject>(HierarchyManager::selectedObject) : nullptr;
 
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     inspectorManager.renderInspector(selectedObjectSharedPtr);
-    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
-    globalScene->renderGameView();
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     projectExplorer.renderProjectExplorer();
 
@@ -117,7 +188,6 @@ void Renderer::render() {
     }
 
 }
-
 
 void Renderer::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -160,10 +230,6 @@ void Renderer::initializeImGui(GLFWwindow* window) {
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
-    if (io.MouseDown[0]) {
-        std::cout << "Mouse is clicked at position: (" << io.MousePos.x << ", " << io.MousePos.y << ")" << std::endl;
-    }
-
     io.Fonts->Clear();
 
     const char *fontPath = SOURCE_DIR "/CascadiaCode.ttf";
@@ -180,6 +246,7 @@ void Renderer::initializeImGui(GLFWwindow* window) {
 
     ImGuiStyle &style = ImGui::GetStyle();
     style.WindowMenuButtonPosition = ImGuiDir_None;
+
     ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     ImVec4 greyColor = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
     ImVec4 grey2Color = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
@@ -188,13 +255,12 @@ void Renderer::initializeImGui(GLFWwindow* window) {
 
     ImVec4 redColorHovered = ImVec4(1.0f, 0.5f, 0.5f, 1.0f);
     ImVec4 redColorActive = ImVec4(0.8f, 0.2f, 0.2f, 1.0f);
-
-  //  style.Colors[ImGuiCol_Border] = redColor;
+    //  style.Colors[ImGuiCol_Border] = redColor;
     style.Colors[ImGuiCol_Text] = greyColor;
-   // style.Colors[ImGuiCol_TextDisabled] = greyColor;
+    // style.Colors[ImGuiCol_TextDisabled] = greyColor;
 
     style.Colors[ImGuiCol_FrameBg] = grey2Color;
- //   style.Colors[ImGuiCol_FrameBgHovered] = redColor;
+    //   style.Colors[ImGuiCol_FrameBgHovered] = redColor;
 //    style.Colors[ImGuiCol_FrameBgActive] = redColor;
     style.Colors[ImGuiCol_HeaderActive] = grey2Color;
     style.Colors[ImGuiCol_HeaderHovered] = black2Color;
@@ -204,11 +270,9 @@ void Renderer::initializeImGui(GLFWwindow* window) {
     style.Colors[ImGuiCol_TabUnfocusedActive] = grey2Color;
     style.Colors[ImGuiCol_TabHovered] = grey2Color;
     style.Colors[ImGuiCol_Tab] = redColor;
-
-
-
 //  style.Colors[ImGuiCol_TitleBg] = redColor;
-style.Colors[ImGuiCol_TitleBgActive] = blackColor;
+    style.Colors[ImGuiCol_TitleBgActive] = blackColor;
 //  style.Colors[ImGuiCol_TitleBgCollapsed] = redColorActive;
+
 
 }

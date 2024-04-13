@@ -7,8 +7,8 @@
 
 #include <vector>
 #include "glm.hpp"
-#include "src/components/Transform.h"
-#include "src/Shader.h"
+#include "Transform.h"
+#include "../Shader.h"
 
 class Gizmo {
 public:

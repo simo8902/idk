@@ -8,16 +8,10 @@ set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
 set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
         src/editor/windows/Scene.cpp
         src/editor/windows/Scene.h
-        src/Components/Component.cpp
         src/Components/Component.h
         src/editor/windows/Renderer.cpp
         src/editor/windows/Renderer.h
-        src/Components/Transform.cpp
         src/Components/Transform.h
-        src/Utils.cpp
-        src/Utils.h
-        src/Components/BoundingBox.cpp
-        src/Components/BoundingBox.h
         src/editor/windows/HierarchyManager.cpp
         src/editor/windows/HierarchyManager.h
         src/editor/windows/InspectorManager.cpp
@@ -25,12 +19,11 @@ set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
         src/editor/windows/ProjectExplorer.cpp
         src/editor/windows/ProjectExplorer.h
         src/editor/windows/SceneLoader.h
-        src/components/colliders/Collider.cpp
         src/components/colliders/Collider.h
         src/components/colliders/Ray.h
         src/components/colliders/BoxCollider.h
-        Gizmo.cpp
-        Gizmo.h)
+        src/components/Gizmo.cpp
+        src/components/Gizmo.h)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)
@@ -62,15 +55,12 @@ include_directories(${GLAD_INCLUDE_DIR})
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(LupusFire_core main.cpp ${GLAD_SOURCE}
-        src/Shader.cpp
-        src/Shader.h
+    src/Shader.cpp
+    src/Shader.h
     src/GameObject.cpp
     src/GameObject.h
-    src/GUI.cpp
-    src/GUI.h
-        src/Cube.cpp
-        src/Cube.h
-        src/Camera.cpp
-        src/Camera.h)
+    src/Cube.cpp
+    src/Cube.h
+    src/Camera.h)
 
 target_link_libraries(LupusFire_core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32)

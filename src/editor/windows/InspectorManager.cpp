@@ -42,12 +42,12 @@ void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& select
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Min");
             ImGui::SameLine(100);
-            ImGui::InputFloat3("##Min", glm::value_ptr(boxCollider->m_min), "%.2f");
+            ImGui::InputFloat3("##Min", glm::value_ptr(boxCollider->m_worldMin), "%.2f");
 
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Max");
             ImGui::SameLine(100);
-            ImGui::InputFloat3("##Max", glm::value_ptr(boxCollider->m_max), "%.2f");
+            ImGui::InputFloat3("##Max", glm::value_ptr(boxCollider->m_worldMax), "%.2f");
         }
 
     } else {

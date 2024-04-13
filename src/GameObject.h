@@ -12,7 +12,6 @@
 #include "gtc/type_ptr.hpp"
 #include "Shader.h"
 #include "components/Component.h"
-#include "components/BoundingBox.h"
 #include "components/Transform.h"
 
 class GameObject {
@@ -40,8 +39,6 @@ public:
     T* addComponent(Args&&... args) {
         T* newComponent = new T(std::forward<Args>(args)...);
         m_components.emplace_back(std::unique_ptr<Component>(newComponent));
-      //  std::cout << "Debug: Added component of type " << typeid(T).name() << " at address " << newComponent << " to object " << getName() << std::endl;
-
         return newComponent;
     }
 
@@ -49,20 +46,18 @@ public:
     T* getComponent() {
         for (std::unique_ptr<Component> & component : m_components) {
             if (T* comp = dynamic_cast<T*>(component.get())) {
-               // std::cout << "Debug: Retrieved component of type " << typeid(T).name() << " at address " << comp << " from object " << getName() << std::endl;
                 return comp;
             }
         }
-       // std::cerr << "Debug: No component of type " << typeid(T).name() << " found in object " << getName() << std::endl;
+        std::cerr << "Debug: No component of type " << typeid(T).name() << " found in object " << getName() << std::endl;
 
         return nullptr;
     }
 
 
     const std::string& getName() const { return m_name; }
-    virtual void Draw(Shader& shader) = 0;
-    bool isSelected = false;
 
+    virtual void Draw(Shader& shader, const glm::mat4& modelMatrix) = 0;
     void DebugDraw(Shader& shader);
 
     void setColor(glm::vec3 m_color) {
@@ -73,16 +68,19 @@ public:
         return color;
     }
 
-    glm::vec3 getOriginalColor() const {
-        return color; // We'll make it simple for now
+    void select() {
+        color = glm::vec3(1.0f, 1.0f, 0.0f);
     }
+
+    void deselect() {
+        color = glm::vec3(1.0f, 0.0f, 0.0f);
+    }
+    glm::vec3 color;
 
 private:
     std::string m_name;
     std::vector<std::unique_ptr<Component>> m_components;
-    glm::vec3 color;
     unsigned int VAO, VBO, EBO;
-    bool useBoxColliderColor;
 
 };
 

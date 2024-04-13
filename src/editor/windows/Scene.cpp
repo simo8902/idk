@@ -5,15 +5,12 @@
 #include <sstream>
 #include "Scene.h"
 #include "imgui.h"
-#include "../../components/Transform.h"
-#include "../../Utils.h"
-#include "../../components/colliders/BoxCollider.h"
-#include <algorithm>
+
+#include "gtx/string_cast.hpp"
 
 using Utils::operator<<;
 
-Scene::Scene(Shader* shader) : m_shader(shader), FBO_width(0), FBO_height(0) {
-    fov = glm::radians(90.0f);
+Scene::Scene() : FBO_width(0), FBO_height(0), m_camera(nullptr), m_shader(nullptr) {
     gridTransform.setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
     m_gizmo = std::make_shared<Gizmo>();
 }
@@ -22,48 +19,16 @@ Scene::~Scene() {
 
 }
 
-bool Scene::aabbIntersection(const Ray& ray, const BoxCollider* boxCollider) {
-    glm::vec3 tmin = (boxCollider->getMin() - ray.getOrigin()) / ray.getDirection();
-    glm::vec3 tmax = (boxCollider->getMax() - ray.getOrigin()) / ray.getDirection();
-
-    // Find the largest minimum, smallest maximum in each dimension
-    tmin = glm::min(tmin, tmax);
-    tmax = glm::max(tmin, tmax);
-
-    // Ensure the ray intersects in all 3 dimensions
-    return (tmax.x >= tmin.x) && (tmax.y >= tmin.y) && (tmax.z >= tmin.z) &&
-           (tmin.x <= 1.0f) && (tmin.y <= 1.0f) && (tmin.z <= 1.0f);
+void Scene::setShader(Shader& shader) {
+    m_shader = &shader;
 }
 
-
-std::string vec3_to_string(const glm::vec3& v) {
-    std::ostringstream oss;
-    oss << "glm::vec3(" << v.x << ", " << v.y << ", " << v.z << ")";
-    return oss.str();
+void Scene::setCamera(Camera& camera) {
+    m_camera = &camera;
 }
-
-std::ostream& operator<<(std::ostream& out, const glm::mat4& mat) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            out << mat[i][j] << " ";
-        }
-        out << std::endl;
-    }
-    return out;
-}
-
-
-void Scene::update() {
-    // Currently a placeholder - will be replaced with actual updates later
-    /*
-    static float rotationAngle = 0.0f;
-    cube->setRotation(glm::vec3(0.0f, rotationAngle, 0.0f));
-    rotationAngle += 0.5f;*/
-}
-
 
 void Scene::Render3DScene(float display_w, float display_h) {
-     glViewport(0, 0, static_cast<int>(display_w), static_cast<int>(display_h));
+    glViewport(0, 0, static_cast<int>(display_w), static_cast<int>(display_h));
 
      if (m_shader == nullptr) {
          std::cout << "m_shader is not initialized!" << std::endl;
@@ -72,8 +37,10 @@ void Scene::Render3DScene(float display_w, float display_h) {
 
     m_shader->Use();
 
-    glm::mat4 view = calculateViewMatrix();
-    glm::mat4 projection = calculateProjectionMatrix(display_w, display_h);
+    glm::mat4 view = m_camera->getViewMatrix();
+    glm::mat4 projection = m_camera->getProjectionMatrix(display_w, display_h);
+    // std::cerr << "View Matrix:" << std::endl << glm::to_string(view) << std::endl;
+    // std::cerr << "Projection Matrix:" << std::endl << glm::to_string(projection) << std::endl;
 
     m_shader->setMat4("view", view);
     m_shader->setMat4("projection", projection);
@@ -85,102 +52,24 @@ void Scene::Render3DScene(float display_w, float display_h) {
         if (transformComponent) {
             glm::mat4 model = transformComponent->getModelMatrix();
             m_shader->setMat4("model", model);
+            obj->Draw(*m_shader, model);
+
         }
 
         if (boxCollider != nullptr) {
             obj->DebugDraw(*m_shader);
         }
 
-        if (obj == m_selectedObject) {
-            m_shader->setVec3("objectColor", glm::vec3(1.0f, 1.0f, 0.0f)); // Example: Yellow highlight
-         //   m_gizmo->render(*m_shader, *obj->getComponent<Transform>());
-        } else {
-            m_shader->setVec3("objectColor", obj->getColor());
-        }
-
-        obj->Draw(*m_shader);
+        m_shader->setVec3("objectColor", obj->color);
     }
-
 
     glClear(GL_DEPTH_BUFFER_BIT);
     glFlush();
 }
 
-void Scene::renderRay(const Ray& ray, const glm::vec3& color) {
-    m_shader->Use();
-
-    GLuint shaderProgramId = m_shader->getProgramId();
-    glUseProgram(shaderProgramId);
-
-    // Error checking for shader compilation and linking
-    GLint success;
-    GLchar infoLog[512];
-    glGetProgramiv(shaderProgramId, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgramId, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-
-    glDisable(GL_LIGHTING);
-
-    // Set line color
-    glUniform3f(glGetUniformLocation(shaderProgramId, "objectColor"), color.x, color.y, color.z);
-
-    // Switch to line mode
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    // Create Vertex Array Object (VAO) if not already created
-    if (VAO == 0) {
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-    }
-
-    glBindVertexArray(VAO);
-
-    // Bind vertex data (one vertex for origin, one for direction)
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glm::vec3 vertices[2] = {
-            ray.getOrigin(),
-            ray.getOrigin() + ray.getDirection() * 10.0f // Extend ray by a visible amount
-    };
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Enable vertex attribute
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-    // Render the line
-    glDrawArrays(GL_LINES, 0, 2);
-
-    // Cleanup (optional)
-    glDisableVertexAttribArray(0);
-    glBindVertexArray(0);
-
-    // Cleanup (optional, if rendering multiple lines)
-   // glDisableVertexAttribArray(0);
-   // glBindVertexArray(0);
-
-}
-
 void Scene::renderSceneView(int display_w, int display_h) {
     glViewport(0, 0, display_w, display_h);
      ImGui::Begin("Scene View");
-
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
-        ImVec2 mousePos = ImGui::GetMousePos();
-
-        std::shared_ptr<GameObject> clickedObject = raycastFromMouse(mousePos, display_w, display_h);
-
-
-        if (clickedObject != nullptr) {
-            m_selectedObject = clickedObject;
-            std::cout << "Clicked object: " << clickedObject->getName() << std::endl;
-            inspectorManager->renderInspector(m_selectedObject);
-        } else {
-            m_selectedObject = nullptr; // Clear selection if clicked outside an object
-            std::cout << "Clicked outside any object." << std::endl;
-        }
-    }
 
     // Only resize the fbo if the display size has actually changed
     if (FBO_width != display_w || FBO_height != display_h) {
@@ -209,166 +98,6 @@ void Scene::renderSceneView(int display_w, int display_h) {
     ImVec2 windowSize = ImGui::GetWindowSize();
     ImGui::Image((void*)(intptr_t)texture_id, windowSize, ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
-}
-
-void Scene::renderGizmo(Transform* transform) {
-    glm::mat4 modelMatrix = transform->getModelMatrix();
-
-    // Set gizmo color
-    glColor3f(1.0f, 1.0f, 0.0f); // Yellow
-
-    // Draw the wireframe cube
-    glBegin(GL_LINES);
-    // Bottom square
-    glVertex3f(-0.5f, -0.5f, -0.5f);
-    glVertex3f(0.5f, -0.5f, -0.5f);
-
-    glVertex3f(0.5f, -0.5f, -0.5f);
-    glVertex3f(0.5f, -0.5f, 0.5f);
-
-    glVertex3f(0.5f, -0.5f, 0.5f);
-    glVertex3f(-0.5f, -0.5f, 0.5f);
-
-    glVertex3f(-0.5f, -0.5f, 0.5f);
-    glVertex3f(-0.5f, -0.5f, -0.5f);
-
-    // Top square
-    glVertex3f(-0.5f, 0.5f, -0.5f);
-    glVertex3f(0.5f, 0.5f, -0.5f);
-
-    glVertex3f(0.5f, 0.5f, -0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);
-
-    glVertex3f(0.5f, 0.5f, 0.5f);
-    glVertex3f(-0.5f, 0.5f, 0.5f);
-
-    glVertex3f(-0.5f, 0.5f, 0.5f);
-    glVertex3f(-0.5f, 0.5f, -0.5f);
-
-    // Connecting lines
-    glVertex3f(-0.5f, -0.5f, -0.5f);
-    glVertex3f(-0.5f, 0.5f, -0.5f);
-
-    glVertex3f(0.5f, -0.5f, -0.5f);
-    glVertex3f(0.5f, 0.5f, -0.5f);
-
-    glVertex3f(-0.5f, -0.5f, 0.5f);
-    glVertex3f(-0.5f, 0.5f, 0.5f);
-
-    glVertex3f(0.5f, -0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);
-
-    glEnd();
-}
-
-
-std::shared_ptr<GameObject> Scene::raycastFromMouse(const ImVec2& mousePos, int display_w, int display_h) {
-    std::shared_ptr<GameObject> clickedObject = nullptr;
-
-    glm::vec2 normalizedMousePos = glm::vec2(mousePos.x / display_w, (display_h - mousePos.y) / display_h); // Flip y for NDC
-    std::cout << "Normalized Mouse Position: (" << normalizedMousePos.x << ", " << normalizedMousePos.y << ")" << std::endl;
-
-    glm::vec4 rayClip = glm::vec4(normalizedMousePos.x, normalizedMousePos.y, -1.0, 1.0);
-    std::cout << "Ray Clip: (" << rayClip.x << ", " << rayClip.y << ", " << rayClip.z << ", " << rayClip.w << ")" << std::endl;
-
-    // Ray Generation in Clip Space
-    glm::mat4 projMatrix = calculateProjectionMatrix(display_w, display_h);
-    std::cout << "Projection Matrix:" << std::endl;
-    printMatrix(projMatrix);
-
-    glm::vec4 rayEye = glm::inverse(projMatrix) * rayClip;
-    std::cout << "Ray Eye: (" << rayEye.x << ", " << rayEye.y << ", " << rayEye.z << ", " << rayEye.w << ")" << std::endl;
-
-    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0, 0.0); // Setting z, w for direction
-
-    // Ray Direction and Origin in World Space
-    glm::mat4 viewMatrix = calculateViewMatrix();
-    std::cout << "View Matrix:" << std::endl;
-    printMatrix(viewMatrix);
-
-    glm::vec4 rayWorld = glm::inverse(viewMatrix) * rayEye;
-    std::cout << "Ray World: (" << rayWorld.x << ", " << rayWorld.y << ", " << rayWorld.z << ", " << rayWorld.w << ")" << std::endl;
-
-    glm::vec3 cameraForward = glm::vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
-
-    glm::vec3 rayDirection = glm::normalize(glm::vec3(rayWorld));
-    glm::vec3 rayOrigin = glm::vec3(rayWorld) - cameraForward * 0.1f; // Offset by 0.1 units
-
-    std::cout << "Ray Origin: (" << rayOrigin.x << ", " << rayOrigin.y << ", " << rayOrigin.z << ")" << std::endl;
-    std::cout << "Ray Direction: (" << rayDirection.x << ", " << rayDirection.y << ", " << rayDirection.z << ")" << std::endl;
-
-    // Unproject mouse position to get the ray origin in world space
-    glm::vec3 nearPlaneWorld = glm::unProject(glm::vec3(mousePos.x, mousePos.y, 0.0f), viewMatrix, projMatrix, glm::vec4(0, 0, display_w, display_h));
-    glm::vec3 farPlaneWorld = glm::unProject(glm::vec3(mousePos.x, mousePos.y, 1.0f), viewMatrix, projMatrix, glm::vec4(0, 0, display_w, display_h));
-
-      glm::vec3 rayOriginWorld = glm::vec3(0.0f, 0.5f, -5.0f);
-    glm::vec3 rayDirectionWorld = glm::vec3(0.0f, 0.0f, 1.0f); // Pointing directly forwards
-
-    renderRay(Ray(rayOrigin, rayDirection), glm::vec3(1.0f, 0.0f, 0.0f)); // Red ray
-
-    std::cout << "======= Raycasting Debug Info =======" << std::endl;
-    std::cout << "Ray Origin (World Space): (" << rayOriginWorld.x << ", " << rayOriginWorld.y << ", " << rayOriginWorld.z << ")" << std::endl;
-    std::cout << "Ray Direction (World Space): (" << rayDirectionWorld.x << ", " << rayDirectionWorld.y << ", " << rayDirectionWorld.z << ")" << std::endl;    std::cout << "-----------------------------------" << std::endl;
-
-    clickedObject = nullptr;
-
-    for (const std::shared_ptr<GameObject>& obj : m_objects) {
-        BoxCollider* boxCollider = obj->getComponent<BoxCollider>();
-        if (!boxCollider) {
-            std::cerr << "Warning: Object " << obj->getName() << " does not have a BoxCollider component." << std::endl;
-            continue;
-        }
-        std::cout << "=========================================================" << std::endl;
-        Transform* cubeTransform = obj->getComponent<Transform>();
-        std::cout << "Object Name: " << obj->getName() << std::endl;
-        std::cout << "Model Matrix:" << std::endl;
-        printMatrix(cubeTransform->getModelMatrix());
-        std::cout << "=========================================================" << std::endl;
-
-        std::cout << "BoxCollider Position: " << vec3_to_string(boxCollider->getPosition()) << std::endl;
-        std::cout << "BoxCollider Min: " << vec3_to_string(boxCollider->getMin()) << std::endl;
-        std::cout << "BoxCollider Max: " << vec3_to_string(boxCollider->getMax()) << std::endl;
-
-        std::cout << "------------------------------------------- " << std::endl;
-
-
-        if (boxCollider && aabbIntersection(Ray(rayOrigin, rayDirection), boxCollider)) {
-
-            if(boxCollider->intersectsRay(Ray(rayOrigin, rayDirection))){
-
-                clickedObject = obj;  // <-- Moved inside for correct logic
-                std::cout << "Object clicked: " << obj->getName() << std::endl; // Print clicked object's name
-
-                if (clickedObject != m_selectedObject) {
-                    if (m_selectedObject) {
-                        // Update objectColor for deselection
-                        m_shader->Use();
-                        m_shader->setVec3("objectColor", m_selectedObject->getColor());
-                        m_selectedObject->Draw(*m_shader);
-                    }
-                    m_selectedObject = clickedObject;
-                }
-                break;
-            }
-        }
-    }
-
-    /*
-    if (clickedObject != nullptr) {
-        if (m_selectedObject && m_selectedObject != clickedObject) {
-            m_selectedObject->setColor(m_selectedObject->getOriginalColor());
-        }
-        m_selectedObject = clickedObject;
-        m_selectedObject->setColor(glm::vec3(1.0f, 1.0f, 0.0f)); // Highlight color
-    } else */
-
-    if (m_selectedObject) {
-        std::cerr << "Deselection block executing!" << std::endl; // Add this line
-        m_selectedObject->setColor(m_selectedObject->getOriginalColor());
-        m_selectedObject = nullptr;
-    }
-
-    return clickedObject;
 }
 
 void Scene::printMatrix(const glm::mat4& matrix) {
@@ -464,45 +193,4 @@ void Scene::DrawGrid(float gridSize, float gridStep) {
 
     // Delete the VBO if you won't need the grid again
     glDeleteBuffers(1, &gridVBO);
-}
-
-
-glm::vec2 Scene::calculateNormalizedPosition(const ImVec2& mousePos, int display_w, int display_h) {
-    // 1. Convert mouse coordinates to range [0, display_w] and [0, display_h]
-    float x = mousePos.x;
-    float y = display_h - mousePos.y; // Invert Y (assuming the origin is at the top-left)
-
-    // 2. Normalize to range [0, 1]
-    float normalizedX = x / display_w;
-    float normalizedY = y / display_h;
-
-    // 3. Remap to NDC range [-1, 1]
-    float ndcX = (normalizedX * 2.0f) - 1.0f;
-    float ndcY = (normalizedY * 2.0f) - 1.0f;
-
-    return glm::vec2(ndcX, ndcY);
-}
-
-
-glm::mat4 Scene::calculateViewMatrix() {
-    glm::vec3 cameraPosition = glm::vec3(0.0f, 1.0f, -10.0f);
-    glm::vec3 cameraTarget   = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 cameraUp       = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    return glm::lookAt(cameraPosition, cameraTarget, cameraUp);
-}
-
-glm::mat4 Scene::calculateProjectionMatrix(int display_w, int display_h) {
-    float aspectRatio = (display_w > 0 && display_h > 0) ?
-                        (float)display_w / (float)display_h : 1.0f;
-    float nearPlane = 0.1f;
-    float farPlane = 100.0f;
-
-    return glm::perspective(fov, aspectRatio, nearPlane, farPlane);
-}
-
-void Scene::renderGameView(){
-    ImGui::Begin("Game View");
-    ImGui::Text("Game View");
-    ImGui::End();
 }

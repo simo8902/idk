@@ -14,12 +14,10 @@ public:
             : m_origin(origin), m_direction(glm::normalize(direction)) {}
 
     const glm::vec3& getOrigin() const {
-        std::cout << "Ray - getOrigin() called." << std::endl;
         return m_origin;
     }
 
     const glm::vec3& getDirection() const {
-        std::cout << "Ray - getDirection() called." << std::endl;
         return m_direction;
     }
 
