@@ -24,7 +24,7 @@ void SceneLoader::init() {
     Transform* cube1Transform = cube1->getComponent<Transform>();
     std::cerr << glm::to_string(cube1Transform->getPosition()) << std::endl;
 
-    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
+    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-3.0f), glm::vec3(3.0f));
     cube1Transform->setPosition(glm::vec3(1.0f, 1.5f, -2.5f));
 
 

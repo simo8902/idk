@@ -8,7 +8,10 @@
 
 std::shared_ptr<GameObject> HierarchyManager::selectedObject = nullptr;
 
-void HierarchyManager::renderHierarchy() {
+void HierarchyManager::renderHierarchy(Renderer* renderer) {
+   if(renderer == nullptr)
+       std::cerr << "Renderer is null\n";
+
     if (renderer) {
         ImGui::Begin("Hierarchy");
 
@@ -20,6 +23,6 @@ void HierarchyManager::renderHierarchy() {
 
         ImGui::End();
     } else {
-        ImGui::Text("No global scene available");
+        ImGui::Text("No renderer available");
     }
 }

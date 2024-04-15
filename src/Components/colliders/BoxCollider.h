@@ -19,13 +19,13 @@ public:
     const glm::vec3& getMin() const { return m_worldMin; }
     const glm::vec3& getMax() const { return m_worldMax; }
 
-    bool intersectsRay(const Ray& ray, const glm::mat4& transformMatrix, float * outT) override {
-       // std::cerr << "Input Ray Direction Length: " << glm::length(ray.getDirection()) << std::endl;
+    bool intersectsRay(const Ray& ray, const glm::mat4& transformMatrix) {
+        // std::cerr << "Input Ray Direction Length: " << glm::length(ray.getDirection()) << std::endl;
 
         // Debug output
-      //  std::cerr << "Transform Matrix: " << glm::to_string(transformMatrix) << std::endl;
-        std::cout << "World Min: " << glm::to_string(m_worldMin) << ", World Max: " << glm::to_string(m_worldMax) << std::endl;
-    //    std::cerr << "Ray Direction Length (Before Transform): " << glm::length(ray.getDirection()) << std::endl;
+        //  std::cerr << "Transform Matrix: " << glm::to_string(transformMatrix) << std::endl;
+        // std::cout << "World Min: " << glm::to_string(m_worldMin) << ", World Max: " << glm::to_string(m_worldMax) << std::endl;
+        //    std::cerr << "Ray Direction Length (Before Transform): " << glm::length(ray.getDirection()) << std::endl;
         // Inverse transformation matrix
         glm::mat4 invTransform = glm::inverse(transformMatrix);
 
@@ -33,8 +33,8 @@ public:
         glm::vec3 rayOriginLocal = glm::vec3(invTransform * glm::vec4(ray.getOrigin(), 1.0f));
         glm::vec3 rayDirectionLocal = glm::normalize(glm::vec3(invTransform * glm::vec4(ray.getDirection(), 0.0f))); // Normalize here!
 
-       // std::cerr << "Ray origin local: " << glm::to_string(rayOriginLocal) << std::endl;
-       // std::cerr << "Ray direction local: " << glm::to_string(rayDirectionLocal) << std::endl;
+        // std::cerr << "Ray origin local: " << glm::to_string(rayOriginLocal) << std::endl;
+        // std::cerr << "Ray direction local: " << glm::to_string(rayDirectionLocal) << std::endl;
 
         glm::vec3 rayDirectionWorld = glm::vec3(transformMatrix * glm::vec4(rayDirectionLocal, 0.0f));
         if (glm::dot(rayDirectionWorld, m_worldMax - ray.getOrigin()) < 0) {
@@ -47,10 +47,6 @@ public:
             std::cerr << "Error: Ray direction is not normalized!" << std::endl;
             return false;
         }
-
-        // Debug output
-       // std::cout << "Ray Origin (Local): " << glm::to_string(rayOriginLocal) << std::endl;
-       // std::cout << "Ray Direction (Local): " << glm::to_string(rayDirectionLocal) << std::endl;
 
         // Check bounding box dimensions
         if (m_worldMin.x >= m_worldMax.x || m_worldMin.y >= m_worldMax.y || m_worldMin.z >= m_worldMax.z) {
@@ -74,22 +70,16 @@ public:
 
         float tMin = std::max(tmin.x, std::max(tmin.y, tmin.z));
         float tMax = std::min(tmax.x, std::min(tmax.y, tmax.z));
-
-        // Debug output
-        std::cout << "tMin: " << tMin << ", tMax: " << tMax << std::endl;
+        //   std::cout << "tMin: " << tMin << ", tMax: " << tMax << std::endl;
 
         // Check if the ray intersects the AABB
         if (tMax < 0 || tMin > tMax) {
-            std::cerr << "No valid intersection\n";
+            //    std::cerr << "No valid intersection\n";
             return false;
-        }
-
-        // The ray intersects the box if tMin is within the range [0, tMax]
-        if (outT != nullptr) {
-            *outT = tMin;
         }
         return true;
     }
+
 
     glm::vec3 m_worldMin; // World space min bound
     glm::vec3 m_worldMax; // World space max bound

@@ -24,7 +24,6 @@ public:
     ~Scene();
 
     void Render3DScene(float display_w, float display_h);
-    void renderSceneView(int display_w, int display_h, GLFWwindow* window);
     void setShader(Shader& shader);
     void setCamera(Camera& camera);
 
@@ -64,22 +63,12 @@ private:
     Shader* m_shader;
     Camera* m_camera;
     std::shared_ptr<GameObject> m_selectedObject;
-    int FBO_width;
-    int FBO_height;
-    GLuint FBO;
-    GLuint RBO;
-    GLuint VAO;
-    GLuint VBO;
+
     std::shared_ptr<Gizmo> m_gizmo;
 
-    GLuint texture_id;
-    bool depthTestEnabled = false;
 
-    Transform gridTransform;
 
     float fov;
-    void create_framebuffer(float display_w, float display_h);
-    void DrawGrid(float gridSize, float gridStep);
 
     glm::mat4 m_viewMatrix;
     glm::mat4 m_projectionMatrix;

@@ -13,6 +13,8 @@
 #include "InspectorManager.h"
 #include "ProjectExplorer.h"
 
+class HierarchyManager;
+
 class Renderer {
 public:
     Renderer();
@@ -53,11 +55,17 @@ public:
         return m_objects;
     }
 
+    void renderSceneView();
+    void create_framebuffer();
     void initialize();
+    void DrawGrid(float gridSize, float gridStep);
+    void Render3DScene();
+    Ray generateRayFromMouse(const glm::vec2& ndc);
 private:
     std::vector<std::shared_ptr<GameObject>> m_objects;
     GameObject* object;
-
+    Renderer* myRenderer;
+    Transform gridTransform;
     GLFWwindow* m_Window;
     int display_w = 1280;
     int display_h = 720;
@@ -76,6 +84,17 @@ private:
     float m_aspectRatio;
     float m_nearPlane;
     float m_farPlane;
+
+    int FBO_width;
+    int FBO_height;
+    GLuint FBO;
+    GLuint RBO;
+    GLuint VAO;
+    GLuint VBO;
+    GLuint texture_id;
+    bool depthTestEnabled = false;
+
+
 };
 
 
