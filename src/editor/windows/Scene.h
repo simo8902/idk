@@ -16,6 +16,7 @@
 #include "InspectorManager.h"
 #include "../../components/colliders/BoxCollider.h"
 #include "../../components/Gizmo.h"
+#include "GLFW/glfw3.h"
 
 class Scene {
 public:
@@ -23,18 +24,11 @@ public:
     ~Scene();
 
     void Render3DScene(float display_w, float display_h);
-    void renderSceneView(int display_w, int display_h);
+    void renderSceneView(int display_w, int display_h, GLFWwindow* window);
     void setShader(Shader& shader);
     void setCamera(Camera& camera);
 
-    void addGameObject(std::shared_ptr<GameObject> object) {
-        std::cout << "Adding GameObject: " << object->getName() << std::endl;
-        m_objects.push_back(std::move(object));
-    }
 
-    const std::vector<std::shared_ptr<GameObject>> &getGameObjects() const {
-        return m_objects;
-    }
 
     void selectObject(std::shared_ptr<GameObject> object) {
         if (m_selectedObject) {
@@ -53,14 +47,23 @@ public:
         }
     }
 
-    void printMatrix(const glm::mat4& matrix);
+    static Scene* getCurrentScene(){
+        return globalScene;
+    }
+    void setScene(Scene& scene);
+    GLFWwindow* setWindow(GLFWwindow* window){
+        return m_window;
+    }
+
+
 private:
+    static Scene* globalScene;
+    GLFWwindow* m_window;
+
     InspectorManager* inspectorManager;
-    std::vector<std::shared_ptr<GameObject>> m_objects;
     Shader* m_shader;
     Camera* m_camera;
     std::shared_ptr<GameObject> m_selectedObject;
-
     int FBO_width;
     int FBO_height;
     GLuint FBO;

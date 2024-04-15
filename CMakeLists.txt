@@ -23,7 +23,9 @@ set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
         src/components/colliders/Ray.h
         src/components/colliders/BoxCollider.h
         src/components/Gizmo.cpp
-        src/components/Gizmo.h)
+        src/components/Gizmo.h
+        src/editor/windows/SceneLoader.cpp
+        src/editor/windows/RenderingManagement.h)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)

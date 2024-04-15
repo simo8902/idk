@@ -9,20 +9,17 @@
 #include <backends/imgui_impl_opengl3.h>
 #include "gtx/string_cast.hpp"
 
-Renderer::Renderer(int width, int height, const char *title, float fov, float aspectRatio, float nearPlane, float farPlane) :
-        m_WindowWidth(width), m_WindowHeight(height),
-        m_camera(glm::vec3(0.0f, 1.0f, -10.0f),
-                 glm::vec3(0.0f, 0.0f, -1.0f),
-                 glm::vec3(0.0f, 1.0f, 0.0f), fov, aspectRatio, nearPlane, farPlane)
-{
-    m_camera.printCameraParams();
+Renderer::Renderer(){
+    initialization(1280, 720, "LupusFire", 90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+
+    m_Camera->printCameraParams();
 
     if (!initializeGLFW()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return;
     }
 
-    m_Window = createGLFWWindow(width, height, title);
+    m_Window = createGLFWWindow(m_width, m_height);
     if (!m_Window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -36,14 +33,8 @@ Renderer::Renderer(int width, int height, const char *title, float fov, float as
         return;
     }
 
-    glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods) {
-        void* ptr = glfwGetWindowUserPointer(window);
-        if (ptr) {
-            static_cast<Renderer*>(ptr)->mouseButtonCallback(window, button, action, mods);
-        }
-    });
 
-    glfwSetWindowUserPointer(m_Window, this); // Do this in your Renderer's constructor or initialization method.
+    glfwSetWindowUserPointer(m_Window, this);
     glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
 
     initializeImGui(m_Window);
@@ -57,16 +48,17 @@ Renderer::Renderer(int width, int height, const char *title, float fov, float as
 
     try {
         globalScene = new Scene();
+        globalScene->setScene(*globalScene);
+        std::cerr << globalScene << std::endl;
         globalScene->setShader(*shaderProgram);
     } catch (const std::bad_alloc& e) {
         std::cerr << "Failed to allocate memory for scene: " << e.what() << '\n';
         return;
     }
 
-    globalScene->setCamera(m_camera);
+    globalScene->setCamera(*m_Camera);
+    globalScene->setWindow(m_Window);
 
-    loader = new SceneLoader(globalScene);
-    loader->initialize();
 }
 
 Renderer::~Renderer() {
@@ -78,74 +70,91 @@ Renderer::~Renderer() {
     glfwTerminate();
 }
 
-Ray Renderer::generateRayFromMouse(const glm::vec2& ndc,int display_w,int display_h) {
-    glm::vec4 rayStart_NDC(ndc.x, ndc.y, -1.0f, 1.0f);
-    glm::vec4 rayEnd_NDC(ndc.x, ndc.y, 0.0f, 1.0f);
-
-    glm::mat4 invProjMatrix = glm::inverse(m_camera.getProjectionMatrix(display_w, display_h));
-    glm::mat4 invViewMatrix = glm::inverse(m_camera.getViewMatrix());
-
-    glm::vec4 rayStart_world = invViewMatrix * invProjMatrix * rayStart_NDC;
-    rayStart_world /= rayStart_world.w;
-    glm::vec4 rayEnd_world = invViewMatrix * invProjMatrix * rayEnd_NDC;
-    rayEnd_world /= rayEnd_world.w;
-
-    glm::vec3 rayDir_world(glm::normalize(rayEnd_world - rayStart_world));
-
-
-    return Ray(glm::vec3(rayStart_world), rayDir_world);
-}
-
-
-void Renderer::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        double mouseX, mouseY;
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-
-        int windowWidth, windowHeight;
-        glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
-        glm::vec2 ndc = {
-                (2.0f * mouseX) / windowWidth - 1.0f,
-                1.0f - (2.0f * mouseY) / windowHeight
-        };
-
-        std::cerr << "NDC Coords: "<< glm::to_string(ndc) << std::endl;
-
-        Ray ray = generateRayFromMouse(ndc, windowWidth, windowHeight);
-        bool objectSelected = false;
-        for (const auto& object : globalScene->getGameObjects()) {
-            Transform* transform = object->getComponent<Transform>();
-            BoxCollider* collider = object->getComponent<BoxCollider>();
-
-            if (collider && transform) {
-                glm::mat4 transformMatrix = transform->getModelMatrix();
-                if (collider->intersectsRay(ray, transformMatrix)) {
-                    std::cout << "Object selected: " << object->getName() << std::endl;
-                    globalScene->selectObject(object);
-                    objectSelected = true;
-                    break;
-                }
-            }
-        }
-        if (!objectSelected) {
-            std::cout << "No object selected." << std::endl;
-            globalScene->deselectCurrentObject();
-        }
-    }
-}
 
 bool Renderer::ShouldClose() {
     return glfwWindowShouldClose(m_Window);
 }
 
+void Renderer::initialize(){
+    //CUBE1
+    std::shared_ptr<Cube> cube1 = object->addObject<Cube>("Cube1");
+    cube1->addComponent<Transform>();
+    //   cube1->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+
+    Transform* cube1Transform = cube1->getComponent<Transform>();
+
+    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
+    cube1Transform->setPosition(glm::vec3(1.0f, 1.5f, -2.5f));
+
+    //CUBE2
+    std::shared_ptr<Cube> cube2 = object->addObject<Cube>("Cube2");
+    cube2->addComponent<Transform>();
+    //   cube2->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+
+    Transform* cube2Transform = cube2->getComponent<Transform>();
+
+    cube2->addComponent<BoxCollider>(cube2Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
+    cube2Transform->setPosition(glm::vec3(-1.0f, 1.5f, -2.5f));
+
+    addGameObject(cube1);
+    addGameObject(cube2);
+}
+
+
 //Main Loop
 void Renderer::render(){
+    glfwPollEvents();
+
+
+    glfwGetFramebufferSize(m_Window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
+    glEnable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Check framebuffer completeness
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "Framebuffer is not complete!\n";
+    }
+
+    shaderProgram->Use();
+
+    glm::mat4 view = m_Camera->getViewMatrix();
+    glm::mat4 projection = m_Camera->getProjectionMatrix(display_w, display_h);
+
+    shaderProgram->setMat4("view", view);
+    shaderProgram->setMat4("projection", projection);
+
+    for ( auto& obj : m_objects) {
+
+        auto *transformComponent = obj->getComponent<Transform>();
+        auto *boxCollider = obj->getComponent<BoxCollider>();
+
+        if (transformComponent == nullptr){
+            std::cerr << "transform is null\n";
+        }
+        if(boxCollider == nullptr){
+            std::cerr << "boxCollider is null\n";
+        }
+
+        if (transformComponent && boxCollider) {
+            //   boxCollider->setPosition(transformComponent->getPosition());
+
+            glm::mat4 model = transformComponent->getModelMatrix();
+            shaderProgram->setMat4("model", model);
+        }
+
+        if (boxCollider){
+            obj->DebugDraw(*shaderProgram);
+        }
+        obj->Draw(*shaderProgram, transformComponent->getModelMatrix());
+    }
+
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    glfwGetFramebufferSize(m_Window, &m_WindowWidth, &m_WindowHeight);
+    glfwGetFramebufferSize(m_Window, &display_w, &display_h);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -168,7 +177,7 @@ void Renderer::render(){
     hierarchyManager.renderHierarchy(globalScene);
 
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
-    globalScene->renderSceneView(m_WindowWidth, m_WindowHeight);
+    globalScene->renderSceneView(display_w, display_h, m_Window);
 
     std::shared_ptr<GameObject> selectedObjectSharedPtr = HierarchyManager::selectedObject ? std::shared_ptr<GameObject>(HierarchyManager::selectedObject) : nullptr;
 
@@ -181,7 +190,6 @@ void Renderer::render(){
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(m_Window);
-    glfwPollEvents();
 
     if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_Window, true);
@@ -193,8 +201,8 @@ void Renderer::framebuffer_size_callback(GLFWwindow* window, int width, int heig
     glViewport(0, 0, width, height);
 }
 
-GLFWwindow* Renderer::createGLFWWindow(int width, int height, const char* title) {
-    GLFWwindow* window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+GLFWwindow* Renderer::createGLFWWindow(int width, int height) {
+    GLFWwindow* window = glfwCreateWindow(width, height, m_title, nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();

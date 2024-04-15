@@ -6,14 +6,14 @@
 #define LUPUSFIRE_CORE_HIERARCHYMANAGER_H
 
 #include "imgui.h"
-#include "Scene.h"
+#include "Renderer.h"
 
 class HierarchyManager {
 public:
     static std::shared_ptr<GameObject> selectedObject;
-    void renderHierarchy(Scene* globalScene);
+    void renderHierarchy();
 private:
-
+    Renderer* renderer;
 };
 
 

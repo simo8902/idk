@@ -12,36 +12,70 @@
 #include "HierarchyManager.h"
 #include "InspectorManager.h"
 #include "ProjectExplorer.h"
-#include "SceneLoader.h"
 
 class Renderer {
 public:
-    Renderer(int width, int height, const char *title, float fov, float aspectRatio, float nearPlane, float farPlane);
+    Renderer();
     ~Renderer();
+
+    void initialization(int width, int height, const char *title, float fov, float aspectRatio, float nearPlane,
+                        float farPlane) {
+        glm::vec3 position = glm::vec3(0.0f, 1.0f, -10.0f);
+        glm::vec3 target = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 upDirection = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        m_Camera = new Camera(position, target, upDirection, fov, aspectRatio, nearPlane, farPlane);
+
+        this->m_width = width;
+        this->m_height = height;
+        this->m_title = title;
+        this->m_fov = fov;
+        this->m_aspectRatio = aspectRatio;
+        this->m_nearPlane = nearPlane;
+        this->m_farPlane = farPlane;
+    }
 
     void render();
 
-    GLFWwindow * createGLFWWindow(int width, int height, const char* title);
+    GLFWwindow * createGLFWWindow(int width, int height);
     bool initializeGLFW();
     bool initializeOpenGL();
     void initializeImGui(GLFWwindow* window);
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     bool ShouldClose();
-    Ray generateRayFromMouse(const glm::vec2& ndc, int display_w, int display_h);
-    void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-   // void drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color);
 
+    void addGameObject(std::shared_ptr<GameObject> object) {
+        std::cout << "Adding GameObject: " << object->getName() << std::endl;
+        m_objects.push_back(std::move(object));
+    }
+
+    const std::vector<std::shared_ptr<GameObject>> &getGameObjects() const {
+        return m_objects;
+    }
+
+    void initialize();
 private:
+    std::vector<std::shared_ptr<GameObject>> m_objects;
+    GameObject* object;
+
     GLFWwindow* m_Window;
-    int m_WindowWidth;
-    int m_WindowHeight;
-    Camera m_camera;
+    int display_w = 1280;
+    int display_h = 720;
+
+    Camera* m_Camera;
     Scene* globalScene;
-    SceneLoader* loader;
     std::shared_ptr<Shader> shaderProgram;
     HierarchyManager hierarchyManager;
     InspectorManager inspectorManager;
     ProjectExplorer projectExplorer;
+
+    int m_width;
+    int m_height;
+    const char *m_title;
+    float m_fov;
+    float m_aspectRatio;
+    float m_nearPlane;
+    float m_farPlane;
 };
 
 

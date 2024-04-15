@@ -9,10 +9,12 @@
 #include "gtx/string_cast.hpp"
 
 using Utils::operator<<;
+Scene* Scene::globalScene = nullptr;
 
 Scene::Scene() : FBO_width(0), FBO_height(0), m_camera(nullptr), m_shader(nullptr) {
     gridTransform.setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
     m_gizmo = std::make_shared<Gizmo>();
+
 }
 
 Scene::~Scene() {
@@ -27,6 +29,12 @@ void Scene::setCamera(Camera& camera) {
     m_camera = &camera;
 }
 
+
+void Scene::setScene(Scene& scene) {
+    globalScene = &scene;
+}
+
+
 void Scene::Render3DScene(float display_w, float display_h) {
     glViewport(0, 0, static_cast<int>(display_w), static_cast<int>(display_h));
 
@@ -35,39 +43,13 @@ void Scene::Render3DScene(float display_w, float display_h) {
          return;
      }
 
-    m_shader->Use();
 
-    glm::mat4 view = m_camera->getViewMatrix();
-    glm::mat4 projection = m_camera->getProjectionMatrix(display_w, display_h);
-    // std::cerr << "View Matrix:" << std::endl << glm::to_string(view) << std::endl;
-    // std::cerr << "Projection Matrix:" << std::endl << glm::to_string(projection) << std::endl;
-
-    m_shader->setMat4("view", view);
-    m_shader->setMat4("projection", projection);
-
-    for (const std::shared_ptr<GameObject>& obj : m_objects) {
-        Transform *transformComponent = obj->getComponent<Transform>();
-        BoxCollider *boxCollider = obj->getComponent<BoxCollider>();
-
-        if (transformComponent) {
-            glm::mat4 model = transformComponent->getModelMatrix();
-            m_shader->setMat4("model", model);
-            obj->Draw(*m_shader, model);
-
-        }
-
-        if (boxCollider != nullptr) {
-            obj->DebugDraw(*m_shader);
-        }
-
-        m_shader->setVec3("objectColor", obj->color);
-    }
 
     glClear(GL_DEPTH_BUFFER_BIT);
     glFlush();
 }
 
-void Scene::renderSceneView(int display_w, int display_h) {
+void Scene::renderSceneView(int display_w, int display_h, GLFWwindow* window) {
     glViewport(0, 0, display_w, display_h);
      ImGui::Begin("Scene View");
 
@@ -97,16 +79,8 @@ void Scene::renderSceneView(int display_w, int display_h) {
 
     ImVec2 windowSize = ImGui::GetWindowSize();
     ImGui::Image((void*)(intptr_t)texture_id, windowSize, ImVec2(0, 1), ImVec2(1, 0));
-    ImGui::End();
-}
 
-void Scene::printMatrix(const glm::mat4& matrix) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            std::cout << matrix[i][j] << "\t";
-        }
-        std::cout << std::endl;
-    }
+    ImGui::End();
 }
 
 void Scene::create_framebuffer(float display_w, float display_h) {
@@ -149,10 +123,6 @@ void Scene::create_framebuffer(float display_w, float display_h) {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
-
-struct Vertex {
-    glm::vec3 position;
-};
 
 void Scene::DrawGrid(float gridSize, float gridStep) {
     struct Vertex {
