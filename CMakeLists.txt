@@ -22,7 +22,6 @@ set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
         src/components/colliders/Collider.h
         src/components/colliders/Ray.h
         src/components/colliders/BoxCollider.h
-        src/components/Gizmo.cpp
         src/components/Gizmo.h
         src/editor/windows/SceneLoader.cpp
         src/editor/windows/RenderingManagement.h)
