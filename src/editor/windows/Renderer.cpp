@@ -73,6 +73,12 @@ Renderer::~Renderer() {
     glfwTerminate();
 }
 
+struct Line {
+    glm::vec3 start;
+    glm::vec3 end;
+    glm::vec3 color;
+};
+std::vector<Line> lines;
 
 bool Renderer::ShouldClose() {
     return glfwWindowShouldClose(m_Window);
@@ -87,6 +93,7 @@ void Renderer::Render3DScene() {
         return;
     }
 
+
     shaderProgram->Use();
 
     glm::mat4 view = m_Camera->getViewMatrix();
@@ -94,6 +101,10 @@ void Renderer::Render3DScene() {
 
     shaderProgram->setMat4("view", view);
     shaderProgram->setMat4("projection", projection);
+
+    glfwGetFramebufferSize(m_Window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
+
 
     for ( auto& obj : m_objects) {
 
@@ -123,8 +134,6 @@ void Renderer::Render3DScene() {
     glClear(GL_DEPTH_BUFFER_BIT);
     glFlush();
 }
-
-
 
 void Renderer::initialize(){
     //CUBE1
@@ -192,6 +201,36 @@ void Renderer::DrawGrid(float gridSize, float gridStep) {
     glDeleteBuffers(1, &gridVBO);
 }
 
+void Renderer::drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color) {
+    GLfloat vertices[] = {
+            start.x, start.y, start.z,
+            end.x, end.y, end.z
+    };
+
+    // Create and Bind Vertex Array Object (VAO)
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    // Create Vertex Buffer Object (VBO) for Vertex Data
+    GLuint vertexBuffer;
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Enable Vertex Attributes
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // Set the color using the shader
+    shaderProgram->Use();
+    shaderProgram->setVec3("objectColor", color);
+
+    // Draw the Line
+    glDrawArrays(GL_LINES, 0, 2);
+
+}
+
 void Renderer::renderSceneView() {
     glViewport(0, 0, display_w, display_h);
     ImGui::Begin("Scene View");
@@ -215,6 +254,54 @@ void Renderer::renderSceneView() {
 
     DrawGrid(10.0f, 1.0f);
     Render3DScene();
+
+    if (glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+
+        double mouseX, mouseY;
+        glfwGetCursorPos(m_Window, &mouseX, &mouseY);
+
+        mouseX -= windowPos.x;
+        mouseY -= windowPos.y;
+
+        glm::vec2 ndc = {
+                (2.0f * mouseX) / windowSize.x - 1.0f,
+                1.0f - (2.0f * mouseY) / windowSize.y
+        };
+
+        Ray ray = generateRayFromMouse(ndc);
+
+        lines.push_back({glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f, 0.0f, 10.0f), glm::vec3(1.0f, 1.0f, 0.0f)});
+        bool objectSelected = false;
+
+        for (const auto &object: m_objects) {
+            Transform *transform = object->getComponent<Transform>();
+            BoxCollider *collider = object->getComponent<BoxCollider>();
+
+            if (collider && transform) {
+                glm::mat4 transformMatrix = transform->getModelMatrix();
+                if (collider->intersectsRay(ray, transformMatrix)) {
+                    objectSelected = true;
+                    if (objectSelected == true) {
+                        std::cout << "Object selected: " << object->getName() << std::endl;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (!objectSelected) {
+            std::cerr << "obj not selected!\n";
+        } else {
+            //      lines.clear();
+            //      lines.push_back({ray.getDirection(), ray.getOrigin(), glm::vec3(1.0f, 0.0f, 0.0f)});
+        }
+    }
+
+    for (const Line& line : lines) {
+        drawLine(line.start, line.end, line.color);
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, display_w, display_h); // Restore viewport
@@ -286,24 +373,16 @@ Ray Renderer::generateRayFromMouse(const glm::vec2& ndc) {
     return Ray(glm::vec3(rayStart_world), rayDir_world);
 }
 
-struct Line {
-    glm::vec3 start;
-    glm::vec3 end;
-    glm::vec3 color;
-};
-std::vector<Line> lines;
-
-
 //Main Loop
 void Renderer::render(){
     glfwPollEvents();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-
-    glfwGetFramebufferSize(m_Window, &display_w, &display_h);
 
     ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
@@ -334,48 +413,19 @@ void Renderer::render(){
     projectExplorer.renderProjectExplorer();
 
     ImGui::Render();
+
+    // Save OpenGL state
+    GLint last_program;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-
-    if (glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        double mouseX, mouseY;
-        glfwGetCursorPos(m_Window, &mouseX, &mouseY);
-        glm::vec2 ndc = {
-                (mouseX / display_w) * 2.0f - 1.0f,
-                1.0f - (mouseY / display_h) * 2.0f
-        };
-
-        Ray ray = generateRayFromMouse(ndc);
-        lines.push_back({glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f, 0.0f, 10.0f), glm::vec3(1.0f, 1.0f, 0.0f)});
-        //camera.handleMouseInput(mouseX, mouseY);
-        bool objectSelected = false;
-
-        for (const auto &object: m_objects) {
-            Transform *transform = object->getComponent<Transform>();
-            BoxCollider *collider = object->getComponent<BoxCollider>();
-
-            if (collider && transform) {
-                glm::mat4 transformMatrix = transform->getModelMatrix();
-                if (collider->intersectsRay(ray, transformMatrix)) {
-                    objectSelected = true;
-                    if (objectSelected == true) {
-                        std::cout << "Object selected: " << object->getName() << std::endl;
-                    }
-                    break;
-                }
-            }
-        }
-        if (!objectSelected) {
-            std::cerr << "obj not selected!\n";
-        }
-    }
-
+    glUseProgram(last_program);
+    
     glfwSwapBuffers(m_Window);
 
     if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_Window, true);
     }
-
 }
 
 void Renderer::framebuffer_size_callback(GLFWwindow* window, int width, int height) {

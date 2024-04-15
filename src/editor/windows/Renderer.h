@@ -61,6 +61,7 @@ public:
     void DrawGrid(float gridSize, float gridStep);
     void Render3DScene();
     Ray generateRayFromMouse(const glm::vec2& ndc);
+    void drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color);
 private:
     std::vector<std::shared_ptr<GameObject>> m_objects;
     GameObject* object;
