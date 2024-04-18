@@ -18,5 +18,4 @@ jobs:
 
       - name: Update badge
         run: |
-          LINES=$(cloc --exclude-dir=node_modules . | awk 'END {print $5}')
-          sed -i "s/\<lines_of_code\>/$LINES/g" README.md
+            ./bin/cloc.exe --exclude-dir=node_modules .
