@@ -17,6 +17,9 @@ jobs:
       - name: Install cloc
         run: sudo apt-get install cloc
 
+      - name: Print lines of code
+        run: echo $LINES_OF_CODE
+
       - name: Count lines of code
         id: cloc
         run: echo "::set-output name=lines_of_code::$(cloc --exclude-dir=node_modules . | tail -n 1 | awk '{print $5}')"
