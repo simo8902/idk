@@ -17,15 +17,11 @@ jobs:
       - name: Install cloc
         run: sudo apt-get install cloc
 
-      - name: Print lines of code
-        run: echo $LINES_OF_CODE
-
       - name: Run cloc and print output
+        id: cloc
         run: |
           cloc_output=$(cloc --exclude-dir=node_modules .)
-          echo "$cloc_output"
           echo "::set-output name=lines_of_code::$(echo "$cloc_output" | tail -n 1 | awk '{print $5}')"
-        id: cloc
 
       - name: Update badge
         run: |
