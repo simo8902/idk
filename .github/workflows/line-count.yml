@@ -23,7 +23,8 @@ jobs:
 
       - name: Update badge
         run: |
-          sed -i "s/<lines_of_code>/${{ steps.cloc.outputs.lines_of_code }}/g" README.md
+          LINES_OF_CODE=${{ steps.cloc.outputs.lines_of_code }}
+          sed -i "s|Lines%20of%20Code-<lines_of_code>-green|Lines%20of%20Code-$LINES_OF_CODE-green|g" README.md
 
       - name: Commit changes
         run: |
