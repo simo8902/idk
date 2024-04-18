@@ -141,7 +141,7 @@ void Renderer::initialize(){
     cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
 
     //--------------------------------------------------------------------------------------
-    
+
     std::shared_ptr<Cube> cube2 = objects->addObject<Cube>("Cube2");
 
     cube2->addComponent<Transform>();

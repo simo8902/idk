@@ -1,0 +1,22 @@
+name: Update Line Count Badge
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  count-lines:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Count lines of code
+        run: |
+          cloc --exclude-dir=node_modules .
+
+      - name: Update badge
+        run: |
+          LINES=$(cloc --exclude-dir=node_modules . | awk 'END {print $5}')
+          sed -i "s/\<lines_of_code\>/$LINES/g" README.md
