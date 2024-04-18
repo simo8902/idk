@@ -15,7 +15,11 @@ jobs:
           token: ${{ secrets.MY_PAT }}
 
       - name: Install cloc
-        run: sudo apt-get install cloc
+        run: |
+          sudo add-apt-repository universe
+          sudo apt-get update
+          sudo apt-get install cloc
+
 
       - name: Run cloc and print output
         id: cloc
