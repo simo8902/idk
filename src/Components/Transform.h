@@ -8,14 +8,6 @@
 #include <iostream>
 #include "Component.h"
 
-namespace Utils
-{
-    inline std::ostream& operator<<(std::ostream& os, const glm::vec3& vec) {
-        os << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
-        return os;
-    }
-}
-
 class Transform : public Component {
 public:
     // Transform Data
@@ -47,18 +39,6 @@ public:
 
         return transform;
     }
-
-    friend std::ostream& operator<<(std::ostream& os, const Transform& transform) {
-        os << "Transform(position: ";
-        Utils::operator<<(os, transform.position);
-        os << ", rotation: ";
-        Utils::operator<<(os, transform.rotation);
-        os << ", scale: ";
-        Utils::operator<<(os, transform.m_scale);
-        os << ")";
-        return os;
-    }
-
 
 };
 

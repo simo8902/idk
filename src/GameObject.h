@@ -12,7 +12,6 @@
 #include "gtc/type_ptr.hpp"
 #include "Shader.h"
 #include "components/Component.h"
-#include "components/Transform.h"
 
 class GameObject {
 public:
@@ -57,8 +56,8 @@ public:
 
     const std::string& getName() const { return m_name; }
 
-    virtual void Draw(Shader& shader, const glm::mat4& modelMatrix) = 0;
-    void DebugDraw(Shader& shader);
+    virtual void Draw(const Shader& shader) = 0;
+    void DebugDraw(const Shader& wireframe);
 
     void setColor(glm::vec3 m_color) {
         this->color = m_color;
@@ -76,11 +75,16 @@ public:
         color = glm::vec3(1.0f, 0.0f, 0.0f);
     }
     glm::vec3 color;
+    void setOriginalColor(glm::vec3 m_color) {
+        this->originalColor = m_color;
+    }
 
+    glm::vec3 originalColor;
 private:
     std::string m_name;
     std::vector<std::unique_ptr<Component>> m_components;
     unsigned int VAO, VBO, EBO;
+
 
 };
 

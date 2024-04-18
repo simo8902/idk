@@ -4,6 +4,7 @@
 
 #include "InspectorManager.h"
 #include "../../components/colliders/BoxCollider.h"
+#include "../../components/Transform.h"
 
 
 void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& selectedObject) {
@@ -19,7 +20,7 @@ void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& select
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Position");
             ImGui::SameLine(100);
-            ImGui::InputFloat3("##Position", glm::value_ptr(transform->position), "%.2f");
+            ImGui::InputFloat3("##TransformPos", glm::value_ptr(transform->position), "%.2f");
 
             //Rotation
             ImGui::AlignTextToFramePadding();
@@ -48,6 +49,14 @@ void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& select
             ImGui::Text("Max");
             ImGui::SameLine(100);
             ImGui::InputFloat3("##Max", glm::value_ptr(boxCollider->m_worldMax), "%.2f");
+
+            /*
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Position");
+            ImGui::SameLine(100);
+            ImGui::InputFloat3("##BoxPos", glm::value_ptr(boxCollider->m_position), "%.2f");
+            // std::cout << "ImGui modified position: " << glm::to_string(boxCollider->m_position) << std::endl;
+        */
         }
 
     } else {

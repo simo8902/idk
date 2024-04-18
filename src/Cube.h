@@ -17,7 +17,7 @@ public:
     Cube(const std::string& name);
     ~Cube();
 
-    void Draw(Shader& shader, const glm::mat4& modelMatrix) override;
+    void Draw(const Shader& shader) override;
 
 private:
     std::vector<float> vertices;

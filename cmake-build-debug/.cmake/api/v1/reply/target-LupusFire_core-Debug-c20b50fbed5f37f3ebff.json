@@ -30,19 +30,31 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 58,
+				"line" : 56,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 67,
+				"line" : 65,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
 				"line" : 4,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 49,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 50,
 				"parent" : 0
 			},
 			{
@@ -55,18 +67,6 @@
 				"command" : 3,
 				"file" : 0,
 				"line" : 52,
-				"parent" : 0
-			},
-			{
-				"command" : 3,
-				"file" : 0,
-				"line" : 53,
-				"parent" : 0
-			},
-			{
-				"command" : 3,
-				"file" : 0,
-				"line" : 54,
 				"parent" : 0
 			}
 		]
@@ -125,8 +125,7 @@
 				12,
 				19,
 				21,
-				23,
-				25
+				23
 			]
 		},
 		{
@@ -233,8 +232,7 @@
 				12,
 				19,
 				21,
-				23,
-				25
+				23
 			]
 		},
 		{
@@ -256,8 +254,7 @@
 				20,
 				22,
 				24,
-				26,
-				27
+				25
 			]
 		}
 	],
@@ -342,11 +339,6 @@
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/editor/windows/SceneLoader.h",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
 			"path" : "src/components/colliders/Collider.h",
 			"sourceGroupIndex" : 1
 		},
@@ -362,18 +354,12 @@
 		},
 		{
 			"backtrace" : 1,
-			"path" : "src/components/Gizmo.h",
+			"path" : "src/editor/windows/RenderingManagement.h",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "src/editor/windows/SceneLoader.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"path" : "src/editor/windows/RenderingManagement.h",
+			"path" : "src/components/rendering/Gizmo.h",
 			"sourceGroupIndex" : 1
 		},
 		{

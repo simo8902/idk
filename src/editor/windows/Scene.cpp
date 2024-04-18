@@ -8,12 +8,9 @@
 
 #include "gtx/string_cast.hpp"
 
-using Utils::operator<<;
 Scene* Scene::globalScene = nullptr;
 
 Scene::Scene(): m_camera(nullptr), m_shader(nullptr) {
-    m_gizmo = std::make_shared<Gizmo>();
-
 }
 
 Scene::~Scene() {

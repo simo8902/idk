@@ -8,13 +8,11 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #include "gtx/string_cast.hpp"
+#include "../../components/rendering/Gizmo.h"
 
 Renderer::Renderer(){
     initialization(1280, 720, "LupusFire", 90.0f, 16.0f / 9.0f, 0.1f, 100.0f);
     myRenderer = this;
-    gridTransform.setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-
-    m_Camera->printCameraParams();
 
     if (!initializeGLFW()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -35,18 +33,13 @@ Renderer::Renderer(){
         return;
     }
 
-
     glfwSetWindowUserPointer(m_Window, this);
     glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
 
+    shaderProgram = new Shader(SOURCE_DIR "/shaders/basicVertex.glsl", SOURCE_DIR "/shaders/basicFragment.glsl");
+    wireframe = new Shader(SOURCE_DIR "/shaders/wireframeVert.glsl", SOURCE_DIR "/shaders/wireframeFrag.glsl");
+
     initializeImGui(m_Window);
-
-
-    shaderProgram = Shader::createShaderProgram();
-    if (!shaderProgram) {
-        std::cerr << "Failed to create shader program." << std::endl;
-        return;
-    }
 
     try {
         globalScene = new Scene();
@@ -73,91 +66,8 @@ Renderer::~Renderer() {
     glfwTerminate();
 }
 
-struct Line {
-    glm::vec3 start;
-    glm::vec3 end;
-    glm::vec3 color;
-};
-std::vector<Line> lines;
-
 bool Renderer::ShouldClose() {
     return glfwWindowShouldClose(m_Window);
-}
-
-
-void Renderer::Render3DScene() {
-    glViewport(0, 0, static_cast<int>(display_w), static_cast<int>(display_h));
-
-    if (shaderProgram == nullptr) {
-        std::cout << "m_shader is not initialized!" << std::endl;
-        return;
-    }
-
-
-    shaderProgram->Use();
-
-    glm::mat4 view = m_Camera->getViewMatrix();
-    glm::mat4 projection = m_Camera->getProjectionMatrix(display_w, display_h);
-
-    shaderProgram->setMat4("view", view);
-    shaderProgram->setMat4("projection", projection);
-
-    glfwGetFramebufferSize(m_Window, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-
-
-    for ( auto& obj : m_objects) {
-
-        auto *transformComponent = obj->getComponent<Transform>();
-        auto *boxCollider = obj->getComponent<BoxCollider>();
-
-        if (transformComponent == nullptr){
-            std::cerr << "transform is null\n";
-        }
-        if(boxCollider == nullptr){
-            std::cerr << "boxCollider is null\n";
-        }
-
-        if (transformComponent && boxCollider) {
-            //   boxCollider->setPosition(transformComponent->getPosition());
-
-            glm::mat4 model = transformComponent->getModelMatrix();
-            shaderProgram->setMat4("model", model);
-        }
-
-        if (boxCollider){
-            obj->DebugDraw(*shaderProgram);
-        }
-        obj->Draw(*shaderProgram, transformComponent->getModelMatrix());
-    }
-
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glFlush();
-}
-
-void Renderer::initialize(){
-    //CUBE1
-    std::shared_ptr<Cube> cube1 = object->addObject<Cube>("Cube1");
-    cube1->addComponent<Transform>();
-     cube1->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-
-    Transform* cube1Transform = cube1->getComponent<Transform>();
-
-    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
-    cube1Transform->setPosition(glm::vec3(1.0f, 1.5f, -2.5f));
-
-    //CUBE2
-    std::shared_ptr<Cube> cube2 = object->addObject<Cube>("Cube2");
-    cube2->addComponent<Transform>();
-    //   cube2->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-
-    Transform* cube2Transform = cube2->getComponent<Transform>();
-
-    cube2->addComponent<BoxCollider>(cube2Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
-    cube2Transform->setPosition(glm::vec3(-1.0f, 1.5f, -2.5f));
-
-    addGameObject(cube1);
-    addGameObject(cube2);
 }
 
 void Renderer::DrawGrid(float gridSize, float gridStep) {
@@ -201,115 +111,51 @@ void Renderer::DrawGrid(float gridSize, float gridStep) {
     glDeleteBuffers(1, &gridVBO);
 }
 
-void Renderer::drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color) {
-    GLfloat vertices[] = {
-            start.x, start.y, start.z,
-            end.x, end.y, end.z
-    };
+void Renderer::drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color) {}
 
-    // Create and Bind Vertex Array Object (VAO)
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+Ray Renderer::generateRayFromMouse(const glm::vec2& ndc) {
+    glm::vec4 rayStart_NDC(ndc.x, ndc.y, -1.0f, 1.0f);
+    glm::vec4 rayEnd_NDC(ndc.x, ndc.y, 1.0f, 1.0f);
 
-    // Create Vertex Buffer Object (VBO) for Vertex Data
-    GLuint vertexBuffer;
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glm::mat4 currentProjection = m_Camera->getProjectionMatrix(display_w, display_h);
+    glm::mat4 currentView = m_Camera->getViewMatrix();
 
-    // Enable Vertex Attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-    glEnableVertexAttribArray(0);
+    glm::mat4 invProjMatrix = glm::inverse(currentProjection);
+    glm::mat4 invViewMatrix = glm::inverse(currentView);
 
-    // Set the color using the shader
-    shaderProgram->Use();
-    shaderProgram->setVec3("objectColor", color);
+    glm::vec4 rayStart_world = invViewMatrix * invProjMatrix * rayStart_NDC;
+    rayStart_world /= rayStart_world.w;
+    glm::vec4 rayEnd_world = invViewMatrix * invProjMatrix * rayEnd_NDC;
+    rayEnd_world /= rayEnd_world.w;
 
-    // Draw the Line
-    glDrawArrays(GL_LINES, 0, 2);
+    glm::vec3 rayDir_world(glm::normalize(rayEnd_world - rayStart_world));
 
+    return Ray(glm::vec3(rayStart_world), rayDir_world);
 }
 
-void Renderer::renderSceneView() {
-    glViewport(0, 0, display_w, display_h);
-    ImGui::Begin("Scene View");
+void Renderer::initialize(){
+    std::shared_ptr<Cube> cube1 = objects->addObject<Cube>("Cube1");
+    cube1->addComponent<Transform>();
+    Transform* cube1Transform = cube1->getComponent<Transform>();
+    cube1Transform->setPosition(glm::vec3(-2.5f, 1.5f, -2.5f));
+    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
 
-    // Only resize the fbo if the display size has actually changed
-    if (FBO_width != display_w || FBO_height != display_h) {
-        glDeleteFramebuffers(1, &FBO);
-        glDeleteTextures(1, &texture_id);
-        create_framebuffer();
-        FBO_width = display_w;
-        FBO_height = display_h;
-    }
+    //--------------------------------------------------------------------------------------
+    
+    std::shared_ptr<Cube> cube2 = objects->addObject<Cube>("Cube2");
 
-    if (!depthTestEnabled) {
-        glEnable(GL_DEPTH_TEST);
-        depthTestEnabled = true;
-    }
+    cube2->addComponent<Transform>();
+    cube2->setColor(glm::vec3(0.0f, 1.0f, 0.0f));
 
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    glClear( GL_DEPTH_BUFFER_BIT);
+    Transform* cube2Transform = cube2->getComponent<Transform>();
+    cube2Transform->setPosition(glm::vec3(2.5f, 1.5f, -2.5f));
+    cube2->addComponent<BoxCollider>(cube2Transform->getPosition(), glm::vec3(-1.0f), glm::vec3(1.0f));
 
-    DrawGrid(10.0f, 1.0f);
-    Render3DScene();
+  //  std::cerr << glm::to_string(collider2->getPosition()) << std::endl;
+  //  std::cerr << glm::to_string(cube2Transform->getPosition()) << std::endl;
 
-    if (glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-        ImVec2 windowPos = ImGui::GetWindowPos();
-        ImVec2 windowSize = ImGui::GetWindowSize();
-
-        double mouseX, mouseY;
-        glfwGetCursorPos(m_Window, &mouseX, &mouseY);
-
-        mouseX -= windowPos.x;
-        mouseY -= windowPos.y;
-
-        glm::vec2 ndc = {
-                (2.0f * mouseX) / windowSize.x - 1.0f,
-                1.0f - (2.0f * mouseY) / windowSize.y
-        };
-
-        Ray ray = generateRayFromMouse(ndc);
-
-        lines.push_back({glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f, 0.0f, 10.0f), glm::vec3(1.0f, 1.0f, 0.0f)});
-        bool objectSelected = false;
-
-        for (const auto &object: m_objects) {
-            Transform *transform = object->getComponent<Transform>();
-            BoxCollider *collider = object->getComponent<BoxCollider>();
-
-            if (collider && transform) {
-                glm::mat4 transformMatrix = transform->getModelMatrix();
-                if (collider->intersectsRay(ray, transformMatrix)) {
-                    objectSelected = true;
-                    if (objectSelected == true) {
-                        std::cout << "Object selected: " << object->getName() << std::endl;
-                    }
-                    break;
-                }
-            }
-        }
-
-        if (!objectSelected) {
-            std::cerr << "obj not selected!\n";
-        } else {
-            //      lines.clear();
-            //      lines.push_back({ray.getDirection(), ray.getOrigin(), glm::vec3(1.0f, 0.0f, 0.0f)});
-        }
-    }
-
-    for (const Line& line : lines) {
-        drawLine(line.start, line.end, line.color);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, display_w, display_h); // Restore viewport
-
-    ImVec2 windowSize = ImGui::GetWindowSize();
-    ImGui::Image((void*)(intptr_t)texture_id, windowSize, ImVec2(0, 1), ImVec2(1, 0));
-
-    ImGui::End();
+    m_objects.push_back(cube1);
+    m_objects.push_back(cube2);
 }
 
 void Renderer::create_framebuffer() {
@@ -353,32 +199,143 @@ void Renderer::create_framebuffer() {
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
-Ray Renderer::generateRayFromMouse(const glm::vec2& ndc) {
-    glm::vec4 rayStart_NDC(ndc.x, ndc.y, -1.0f, 1.0f);
-    glm::vec4 rayEnd_NDC(ndc.x, ndc.y, 1.0f, 1.0f);
+void Renderer::Render3DScene() {
+    glViewport(0, 0, static_cast<int>(display_w), static_cast<int>(display_h));
 
-    glm::mat4 currentProjection = m_Camera->getProjectionMatrix(display_w, display_h);
-    glm::mat4 currentView = m_Camera->getViewMatrix();
+    glm::mat4 view = m_Camera->getViewMatrix();
+    glm::mat4 projection = m_Camera->getProjectionMatrix(display_w, display_h);
 
-    glm::mat4 invProjMatrix = glm::inverse(currentProjection);
-    glm::mat4 invViewMatrix = glm::inverse(currentView);
+    glfwGetFramebufferSize(m_Window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
 
-    glm::vec4 rayStart_world = invViewMatrix * invProjMatrix * rayStart_NDC;
-    rayStart_world /= rayStart_world.w;
-    glm::vec4 rayEnd_world = invViewMatrix * invProjMatrix * rayEnd_NDC;
-    rayEnd_world /= rayEnd_world.w;
+    shaderProgram->Use();
+    shaderProgram->setMat4("view", view);
+    shaderProgram->setMat4("projection", projection);
 
-    glm::vec3 rayDir_world(glm::normalize(rayEnd_world - rayStart_world));
+    glm::vec3 objectColor = glm::vec3(0.2f,0.2f,0.2f);
+    shaderProgram->setVec3("objectColorUniform", objectColor);
 
-    return Ray(glm::vec3(rayStart_world), rayDir_world);
+    for (const auto& obj : m_objects) {
+
+        auto *transformComponent = obj->getComponent<Transform>();
+        auto *boxCollider = obj->getComponent<BoxCollider>();
+
+        if (transformComponent == nullptr){
+            std::cerr << "transform is null\n";
+        }
+        if(boxCollider == nullptr){
+            std::cerr << "boxCollider is null\n";
+        }
+
+        if (transformComponent)
+        {
+            glm::mat4 model = transformComponent->getModelMatrix();
+            shaderProgram->setMat4("model", model);
+        }
+
+        if (boxCollider){
+            wireframe->Use();
+            wireframe->setMat4("m_View", view);
+            wireframe->setMat4("m_Projection", projection);
+            wireframe->setMat4("m_Model", transformComponent->getModelMatrix());
+
+            obj->DebugDraw(*wireframe);
+        }
+
+        obj->Draw(*shaderProgram);
+    }
+
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glFlush();
 }
+
+void Renderer::renderSceneView() {
+    glViewport(0, 0, display_w, display_h);
+    ImGui::Begin("Scene View");
+
+    // Only resize the fbo if the display size has actually changed
+    if (FBO_width != display_w || FBO_height != display_h) {
+        glDeleteFramebuffers(1, &FBO);
+        glDeleteTextures(1, &texture_id);
+        create_framebuffer();
+        FBO_width = display_w;
+        FBO_height = display_h;
+    }
+
+    glEnable(GL_DEPTH_TEST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    DrawGrid(10.0f, 1.0f);
+    Render3DScene();
+
+    std::shared_ptr<Gizmo> gizmo = std::make_shared<Gizmo>();
+
+    if (glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+
+        double mouseX, mouseY;
+        glfwGetCursorPos(m_Window, &mouseX, &mouseY);
+
+        mouseX -= windowPos.x;
+        mouseY -= windowPos.y;
+
+        glm::vec2 ndc = {
+                (2.0f * mouseX) / windowSize.x - 1.0f,
+                1.0f - (2.0f * mouseY) / windowSize.y
+        };
+
+        Ray ray = generateRayFromMouse(ndc);
+
+        lines.push_back({glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f, 0.0f, 10.0f), glm::vec3(1.0f, 1.0f, 0.0f)});
+        bool objectSelected = false;
+
+        for (const auto &object: m_objects) {
+            Transform *transform = object->getComponent<Transform>();
+            BoxCollider *collider = object->getComponent<BoxCollider>();
+
+            if (collider && transform) {
+                glm::mat4 transformMatrix = transform->getModelMatrix();
+                if (collider->intersectsRay(ray, transformMatrix)) {
+                    objectSelected = true;
+                    std::cout << "Object selected: " << object->getName() << std::endl;
+
+                    if (gizmo != nullptr) {
+                        gizmo->draw(*shaderProgram, transformMatrix);
+                    }
+                    else{
+                        std::cerr << "gizmo is null\n";
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (!objectSelected) {
+            std::cerr << "obj not selected!\n";
+        }
+    }
+
+    for (const Line& line : lines) {
+        drawLine(line.start, line.end, line.color);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, display_w, display_h); // Restore viewport
+
+    ImVec2 windowSize = ImGui::GetWindowSize();
+    ImGui::Image((void*)(intptr_t)texture_id, windowSize, ImVec2(0, 1), ImVec2(1, 0));
+
+    ImGui::End();
+}
+
 
 //Main Loop
 void Renderer::render(){
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -420,7 +377,7 @@ void Renderer::render(){
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glUseProgram(last_program);
-    
+
     glfwSwapBuffers(m_Window);
 
     if (glfwGetKey(m_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -492,26 +449,16 @@ void Renderer::initializeImGui(GLFWwindow* window) {
     ImVec4 blackColor = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
     ImVec4 black2Color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
 
-    ImVec4 redColorHovered = ImVec4(1.0f, 0.5f, 0.5f, 1.0f);
-    ImVec4 redColorActive = ImVec4(0.8f, 0.2f, 0.2f, 1.0f);
-    //  style.Colors[ImGuiCol_Border] = redColor;
     style.Colors[ImGuiCol_Text] = greyColor;
-    // style.Colors[ImGuiCol_TextDisabled] = greyColor;
-
     style.Colors[ImGuiCol_FrameBg] = grey2Color;
-    //   style.Colors[ImGuiCol_FrameBgHovered] = redColor;
-//    style.Colors[ImGuiCol_FrameBgActive] = redColor;
     style.Colors[ImGuiCol_HeaderActive] = grey2Color;
     style.Colors[ImGuiCol_HeaderHovered] = black2Color;
     style.Colors[ImGuiCol_TabActive] = grey2Color;
     style.Colors[ImGuiCol_TabUnfocused] = redColor;
-
     style.Colors[ImGuiCol_TabUnfocusedActive] = grey2Color;
     style.Colors[ImGuiCol_TabHovered] = grey2Color;
     style.Colors[ImGuiCol_Tab] = redColor;
-//  style.Colors[ImGuiCol_TitleBg] = redColor;
     style.Colors[ImGuiCol_TitleBgActive] = blackColor;
-//  style.Colors[ImGuiCol_TitleBgCollapsed] = redColorActive;
 
 
 }

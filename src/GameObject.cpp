@@ -5,10 +5,8 @@
 #include "GameObject.h"
 #include "components/colliders/BoxCollider.h"
 
-void GameObject::DebugDraw(Shader &shader) {
+void GameObject::DebugDraw(const Shader& wireframe) {
     BoxCollider* collider = getComponent<BoxCollider>();
-
-    glm::vec3 boxColliderColor = glm::vec3(0.0f, 1.0f, 0.0f);
 
     if (collider) {
         // Fetch required data
@@ -50,7 +48,11 @@ void GameObject::DebugDraw(Shader &shader) {
         // std::cerr << "Debug: " << getName() << " has a BoxCollider component." << std::endl;
 
         glBindVertexArray(VAO);
-        shader.setVec3("objectColor", boxColliderColor);
+
+        //TODO: implement the color of the wireframe
+        glm::vec3 wireframeColor = glm::vec3(0.0f, 0.0f, 1.0f);
+        wireframe.setVec3("m_wireframeColor", wireframeColor);
+
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
         glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);

@@ -58,13 +58,14 @@ public:
     void renderSceneView();
     void create_framebuffer();
     void initialize();
-    void DrawGrid(float gridSize, float gridStep);
     void Render3DScene();
+    void DrawGrid(float gridSize, float gridStep);
     Ray generateRayFromMouse(const glm::vec2& ndc);
     void drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color);
+
 private:
     std::vector<std::shared_ptr<GameObject>> m_objects;
-    GameObject* object;
+    GameObject* objects;
     Renderer* myRenderer;
     Transform gridTransform;
     GLFWwindow* m_Window;
@@ -73,7 +74,10 @@ private:
 
     Camera* m_Camera;
     Scene* globalScene;
-    std::shared_ptr<Shader> shaderProgram;
+
+    Shader* shaderProgram;
+    Shader* wireframe;
+
     HierarchyManager hierarchyManager;
     InspectorManager inspectorManager;
     ProjectExplorer projectExplorer;
@@ -95,6 +99,12 @@ private:
     GLuint texture_id;
     bool depthTestEnabled = false;
 
+    struct Line {
+        glm::vec3 start;
+        glm::vec3 end;
+        glm::vec3 color;
+    };
+    std::vector<Line> lines;
 
 };
 

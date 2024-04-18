@@ -219,14 +219,6 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj: 
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
-build CMakeFiles/LupusFire_core.dir/src/editor/windows/SceneLoader.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/editor/windows/SceneLoader.cpp || cmake_object_order_depends_target_LupusFire_core
-  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
-  DEP_FILE = CMakeFiles\LupusFire_core.dir\src\editor\windows\SceneLoader.cpp.obj.d
-  FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
-  OBJECT_DIR = CMakeFiles\LupusFire_core.dir
-  OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
-
 build CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj: CXX_COMPILER__LupusFire_core_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/src/Shader.cpp || cmake_object_order_depends_target_LupusFire_core
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\Shader.cpp.obj.d
@@ -259,7 +251,7 @@ build CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj: CXX_COMPILER__LupusFire_co
 #############################################
 # Link the executable LupusFire_core.exe
 
-build LupusFire_core.exe: CXX_EXECUTABLE_LINKER__LupusFire_core_Debug CMakeFiles/LupusFire_core.dir/main.cpp.obj CMakeFiles/LupusFire_core.dir/libs/glad/src/glad.c.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Scene.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/HierarchyManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/InspectorManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/SceneLoader.cpp.obj CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj CMakeFiles/LupusFire_core.dir/src/GameObject.cpp.obj CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj | C$:/Users/Simeon/Documents/LupusFire$ Core/libs/GLFW/lib/libglfw3.a libImGui.a || libImGui.a
+build LupusFire_core.exe: CXX_EXECUTABLE_LINKER__LupusFire_core_Debug CMakeFiles/LupusFire_core.dir/main.cpp.obj CMakeFiles/LupusFire_core.dir/libs/glad/src/glad.c.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Scene.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/HierarchyManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/InspectorManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj CMakeFiles/LupusFire_core.dir/src/GameObject.cpp.obj CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj | C$:/Users/Simeon/Documents/LupusFire$ Core/libs/GLFW/lib/libglfw3.a libImGui.a || libImGui.a
   FLAGS = -g
   LINK_LIBRARIES = "C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/lib/libglfw3.a"  libImGui.a  -lopengl32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir

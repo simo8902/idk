@@ -15,7 +15,6 @@
 #include "imgui.h"
 #include "InspectorManager.h"
 #include "../../components/colliders/BoxCollider.h"
-#include "../../components/Gizmo.h"
 #include "GLFW/glfw3.h"
 
 class Scene {
@@ -63,10 +62,6 @@ private:
     Shader* m_shader;
     Camera* m_camera;
     std::shared_ptr<GameObject> m_selectedObject;
-
-    std::shared_ptr<Gizmo> m_gizmo;
-
-
 
     float fov;
 

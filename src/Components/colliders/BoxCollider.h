@@ -12,12 +12,33 @@
 
 class BoxCollider : public Collider {
 public:
+    // Calculate in world space
     BoxCollider(const glm::vec3& position, const glm::vec3& min, const glm::vec3& max)
-            : m_position(position), m_worldMin(position + min), m_worldMax(position + max) {} // Calculate in world space
+            : m_position(position), m_worldMin(min), m_worldMax(max)  {
+        updateModelMatrix();
+    }
 
     const glm::vec3& getPosition() const { return m_position; }
     const glm::vec3& getMin() const { return m_worldMin; }
     const glm::vec3& getMax() const { return m_worldMax; }
+    const glm::vec3& getOffset() const { return m_offset; }
+
+    void setPosition(const glm::vec3& pos) {
+        m_position = pos;
+    }
+    void updateModelMatrix() {
+        m_modelMatrix = glm::translate(glm::mat4(1.0f), m_position);
+    }
+
+    const glm::mat4& getModelMatrix() const {
+        return m_modelMatrix;
+    }
+
+    glm::vec3 m_worldMin;
+    glm::vec3 m_worldMax;
+    glm::vec3 m_position;
+    glm::vec3 m_offset;
+    glm::mat4 m_modelMatrix;
 
     bool intersectsRay(const Ray& ray, const glm::mat4& transformMatrix) {
         // std::cerr << "Input Ray Direction Length: " << glm::length(ray.getDirection()) << std::endl;
@@ -80,12 +101,6 @@ public:
         return true;
     }
 
-
-    glm::vec3 m_worldMin; // World space min bound
-    glm::vec3 m_worldMax; // World space max bound
-
-private:
-    glm::vec3 m_position;
 };
 
 #endif //LUPUSFIRE_CORE_BOXCOLLIDER_H

@@ -18,13 +18,11 @@ set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
         src/editor/windows/InspectorManager.h
         src/editor/windows/ProjectExplorer.cpp
         src/editor/windows/ProjectExplorer.h
-        src/editor/windows/SceneLoader.h
         src/components/colliders/Collider.h
         src/components/colliders/Ray.h
         src/components/colliders/BoxCollider.h
-        src/components/Gizmo.h
-        src/editor/windows/SceneLoader.cpp
-        src/editor/windows/RenderingManagement.h)
+        src/editor/windows/RenderingManagement.h
+        src/components/rendering/Gizmo.h)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)
