@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install cloc
         run: sudo apt-get install cloc
