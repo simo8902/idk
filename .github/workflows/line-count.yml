@@ -18,4 +18,5 @@ jobs:
 
       - name: Update badge
         run: |
-            ./bin/cloc.exe --exclude-dir=node_modules .
+          ./bin/cloc.exe --exclude-dir=node_modules .
+          ./bin/cloc.exe --exclude-dir=node_modules . > lines_of_code.txt
