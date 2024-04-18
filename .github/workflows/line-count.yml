@@ -12,11 +12,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Count lines of code
-        run: |
-          cloc --exclude-dir=node_modules .
+      - name: Install cloc
+        run: sudo apt-get install cloc
 
-      - name: Update badge
-        run: |
-          ./bin/cloc.exe --exclude-dir=node_modules .
-          ./bin/cloc.exe --exclude-dir=node_modules . > lines_of_code.txt
+      - name: Count lines of code
+        run: cloc --exclude-dir=node_modules . > lines_of_code.txt
