@@ -15,23 +15,16 @@ jobs:
           token: ${{ secrets.MY_PAT }}
 
       - name: Install cloc
-        run: |
-          sudo add-apt-repository universe
-          sudo apt-get update
-          sudo apt-get install cloc
+        run: sudo apt-get install cloc
 
-
-      - name: Run cloc and print output
+      - name: Count lines of code
         id: cloc
-        run: |
-          cloc_output=$(cloc --exclude-dir=node_modules .)
-          echo "::set-output name=lines_of_code::$(echo "$cloc_output" | tail -n 1 | awk '{print $5}')"
+        run: echo "::set-output name=lines_of_code::$(cloc --exclude-dir=node_modules . | awk '/SUM/{print $NF}')"
 
       - name: Update badge
         run: |
           LINES_OF_CODE=${{ steps.cloc.outputs.lines_of_code }}
-          BADGE_URL="https://img.shields.io/badge/Lines%20of%20Code-$LINES_OF_CODE-green"
-          sed -i "s|https://img.shields.io/badge/Lines%20of%20Code-.*-green|$BADGE_URL|g" README.md
+          sed -i "s|Lines%20of%20Code-.*-green|Lines%20of%20Code-$LINES_OF_CODE-green|g" README.md
 
       - name: Commit changes
         run: |
