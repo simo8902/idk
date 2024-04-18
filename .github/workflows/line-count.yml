@@ -30,5 +30,4 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -am "Update lines of code badge"
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -am "Update lines of code badge" && git push)
