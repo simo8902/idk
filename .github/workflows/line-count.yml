@@ -16,4 +16,16 @@ jobs:
         run: sudo apt-get install cloc
 
       - name: Count lines of code
-        run: cloc --exclude-dir=node_modules . > lines_of_code.txt
+        run: |
+        echo "LINES_OF_CODE=$(cloc --exclude-dir=node_modules . | tail -n 1 | awk '{print $5}')" >> $GITHUB_ENV
+
+      - name: Update badge
+        run: |
+        sed -i "s/<lines_of_code>/${{ env.LINES_OF_CODE }}/g" README.md
+
+      - name: Commit changes
+        run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -am "Update lines of code badge"
+        git push
