@@ -19,7 +19,7 @@ jobs:
 
       - name: Count lines of code
         id: cloc
-        run: echo "::set-output name=lines_of_code::$(cloc --exclude-dir=libs --exclude-dir=cmake-build-debug --include-ext=c,h,cpp,hpp,glsl . | awk '/SUM/{print $NF}')"
+        run: echo "::set-output name=lines_of_code::$(cloc src shaders | awk '/SUM/{print $NF}')"
 
       - name: Update badge
         run: |
