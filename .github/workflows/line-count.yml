@@ -30,7 +30,8 @@ jobs:
       - name: Update badge
         run: |
           LINES_OF_CODE=${{ steps.cloc.outputs.lines_of_code }}
-          sed -i "s|Lines%20of%20Code-<lines_of_code>-green|Lines%20of%20Code-$LINES_OF_CODE-green|g" README.md
+          BADGE_URL="https://img.shields.io/badge/Lines%20of%20Code-$LINES_OF_CODE-green"
+          sed -i "s|https://img.shields.io/badge/Lines%20of%20Code-.*-green|$BADGE_URL|g" README.md
 
       - name: Commit changes
         run: |
