@@ -20,9 +20,12 @@ jobs:
       - name: Print lines of code
         run: echo $LINES_OF_CODE
 
-      - name: Count lines of code
+      - name: Run cloc and print output
+        run: |
+          cloc_output=$(cloc --exclude-dir=node_modules .)
+          echo "$cloc_output"
+          echo "::set-output name=lines_of_code::$(echo "$cloc_output" | tail -n 1 | awk '{print $5}')"
         id: cloc
-        run: echo "::set-output name=lines_of_code::$(cloc --exclude-dir=node_modules . | tail -n 1 | awk '{print $5}')"
 
       - name: Update badge
         run: |
