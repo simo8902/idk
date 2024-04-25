@@ -8,7 +8,8 @@
 
 
 void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& selectedObject) {
-    ImGui::Begin("Inspector");
+     ImGui::Begin("Inspector");
+
     if (selectedObject) {
         ImGui::Text("Name: %s", selectedObject->getName().c_str());
 
@@ -49,20 +50,32 @@ void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& select
             ImGui::Text("Max");
             ImGui::SameLine(100);
             ImGui::InputFloat3("##Max", glm::value_ptr(boxCollider->m_worldMax), "%.2f");
-
-            /*
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Position");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##BoxPos", glm::value_ptr(boxCollider->m_position), "%.2f");
-            // std::cout << "ImGui modified position: " << glm::to_string(boxCollider->m_position) << std::endl;
-        */
         }
-
-    } else {
-        ImGui::Text("No object selected");
     }
+    ImGui::End();
+ }
 
 
+void InspectorManager::renderInspector(const std::shared_ptr<Camera>& camera) {
+    ImGui::Begin("Inspector");
+
+    if (camera){
+        ImGui::Text("Name: %s", camera->getName().c_str());
+
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Position");
+        ImGui::SameLine(100);
+        ImGui::InputFloat3("##CameraPos", glm::value_ptr(camera->m_position), "%.2f");
+
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Forward");
+        ImGui::SameLine(100);
+        ImGui::InputFloat3("##CameraForward", glm::value_ptr(camera->m_forwardVec), "%.2f");
+
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Up");
+        ImGui::SameLine(100);
+        ImGui::InputFloat3("##CameraUp", glm::value_ptr(camera->m_upVec), "%.2f");
+    }
     ImGui::End();
 }

@@ -81,16 +81,18 @@ void Cube::Draw(const Shader& shader) {
    // std::cout << "Drawing Cube: " << this->getName() << std::endl;
     shader.Use();
 
-    /*
-  auto* material = getComponent<Material>();
-  if (material) {
-      glm::vec3 color = material->getColor();
-      shader.setVec3("objectColor", color);
-  }else{
-      std::cerr << "Test";
-  }*/
-
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 }
+
+
+
+/*
+auto* material = getComponent<Material>();
+if (material) {
+  glm::vec3 color = material->getColor();
+  shader.setVec3("objectColor", color);
+}else{
+  std::cerr << "Test";
+}*/

@@ -12,6 +12,8 @@
 #include "HierarchyManager.h"
 #include "InspectorManager.h"
 #include "ProjectExplorer.h"
+#include "../../components/Transform.h"
+#include "../../components/colliders/Ray.h"
 
 class HierarchyManager;
 
@@ -20,21 +22,26 @@ public:
     Renderer();
     ~Renderer();
 
-    void initialization(int width, int height, const char *title, float fov, float aspectRatio, float nearPlane,
-                        float farPlane) {
-        glm::vec3 position = glm::vec3(0.0f, 1.0f, -10.0f);
-        glm::vec3 target = glm::vec3(0.0f, 0.0f, -1.0f);
-        glm::vec3 upDirection = glm::vec3(0.0f, 1.0f, 0.0f);
+    void initialization() {
+        glm::vec3 position = glm::vec3(0.0f, 3.0f, -7.0f);
+        glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+        float yaw = -90.0f;
+        float pitch = 0.0f;
+        float moveSpeed = 2.0f;
+        float mouseSensitivity = 2.0f;
+        float fov = 70.0f;
+        float nearPlane = 0.01f;
+        float farPlane = 1000.0f;
+        const std::string name = "Main Camera";
+        m_Camera = std::make_shared<Camera>(name, position, forward, up, yaw, pitch, moveSpeed, mouseSensitivity, fov, nearPlane, farPlane);
+        m_Camera->printCameraParams();
 
-        m_Camera = new Camera(position, target, upDirection, fov, aspectRatio, nearPlane, farPlane);
+        m_Camera->processKeyboard(CameraMovement::FORWARD, 0.1f);
 
-        this->m_width = width;
-        this->m_height = height;
-        this->m_title = title;
-        this->m_fov = fov;
-        this->m_aspectRatio = aspectRatio;
-        this->m_nearPlane = nearPlane;
-        this->m_farPlane = farPlane;
+        //TODO:
+        m_Camera->processMouseMovement(0.5f, 0.3f);
+
     }
 
     void render();
@@ -43,36 +50,43 @@ public:
     bool initializeGLFW();
     bool initializeOpenGL();
     void initializeImGui(GLFWwindow* window);
-    static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     bool ShouldClose();
 
+    /*
     void addGameObject(std::shared_ptr<GameObject> object) {
         std::cout << "Adding GameObject: " << object->getName() << std::endl;
         m_objects.push_back(std::move(object));
-    }
+    }*/
 
     const std::vector<std::shared_ptr<GameObject>> &getGameObjects() const {
         return m_objects;
     }
 
     void renderSceneView();
-    void create_framebuffer();
+    void createSceneFramebuffer(int sceneWidth, int sceneHeight);
     void initialize();
     void Render3DScene();
     void DrawGrid(float gridSize, float gridStep);
-    Ray generateRayFromMouse(const glm::vec2& ndc);
-    void drawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color);
+    Ray getRayFromScreenPoint(glm::vec2 ndc);
+    void renderSceneViewport(int viewportWidth, int viewportHeight, GLuint framebuffer);
+    void renderImGuizmo();
+
+    std::shared_ptr<Camera> getCamera() const {
+        return m_Camera;
+    }
+
+    void renderImGuiLayout();
+    std::shared_ptr<GameObject> selectedObject = nullptr;
 
 private:
     std::vector<std::shared_ptr<GameObject>> m_objects;
     GameObject* objects;
+
     Renderer* myRenderer;
     Transform gridTransform;
     GLFWwindow* m_Window;
-    int display_w = 1280;
-    int display_h = 720;
 
-    Camera* m_Camera;
+    std::shared_ptr<Camera> m_Camera;
     Scene* globalScene;
 
     Shader* shaderProgram;
@@ -82,30 +96,11 @@ private:
     InspectorManager inspectorManager;
     ProjectExplorer projectExplorer;
 
-    int m_width;
-    int m_height;
-    const char *m_title;
-    float m_fov;
-    float m_aspectRatio;
-    float m_nearPlane;
-    float m_farPlane;
-
     int FBO_width;
     int FBO_height;
     GLuint FBO;
     GLuint RBO;
-    GLuint VAO;
-    GLuint VBO;
     GLuint texture_id;
-    bool depthTestEnabled = false;
-
-    struct Line {
-        glm::vec3 start;
-        glm::vec3 end;
-        glm::vec3 color;
-    };
-    std::vector<Line> lines;
-
 };
 
 

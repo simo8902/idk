@@ -7,6 +7,8 @@
 
 #include "glm.hpp"
 #include <iostream>
+#include "gtx/string_cast.hpp"
+
 
 class Ray {
 public:
@@ -21,8 +23,10 @@ public:
         return m_direction;
     }
 
+
     glm::vec3 m_origin;
     glm::vec3 m_direction;
+
 private:
 
 };

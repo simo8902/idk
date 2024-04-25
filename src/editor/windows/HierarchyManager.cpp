@@ -6,23 +6,32 @@
 #include "HierarchyManager.h"
 #include "Renderer.h"
 
-std::shared_ptr<GameObject> HierarchyManager::selectedObject = nullptr;
+std::shared_ptr<Camera> HierarchyManager::selectedCamera = nullptr;
 
 void HierarchyManager::renderHierarchy(Renderer* renderer) {
-   if(renderer == nullptr)
+    ImGui::Begin("Hierarchy");
+    if(renderer == nullptr)
        std::cerr << "Renderer is null\n";
 
     if (renderer) {
-        ImGui::Begin("Hierarchy");
 
         for (auto object : renderer->getGameObjects()) {
             if (ImGui::Selectable(object->getName().c_str())) {
-                selectedObject = object;
+                renderer->selectedObject = object;
+                selectedCamera = nullptr;
             }
         }
 
-        ImGui::End();
+        std::shared_ptr<Camera> camera = renderer->getCamera();
+        if (camera != nullptr) {
+            if (ImGui::Selectable(camera->getName().c_str())) {
+                selectedCamera = camera;
+                renderer->selectedObject = nullptr;
+            }
+        }
+
     } else {
         ImGui::Text("No renderer available");
     }
+    ImGui::End();
 }

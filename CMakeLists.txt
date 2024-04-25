@@ -21,8 +21,10 @@ set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
         src/components/colliders/Collider.h
         src/components/colliders/Ray.h
         src/components/colliders/BoxCollider.h
-        src/editor/windows/RenderingManagement.h
-        src/components/rendering/Gizmo.h)
+        src/editor/windows/RenderingManagement.h)
+
+# ImGuizmo
+set(IMGUIzmo_PATH ${CMAKE_SOURCE_DIR}/libs/ImGuizmo)
 
 # IMGUI
 set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/libs/imgui)
@@ -41,12 +43,15 @@ file(GLOB IMGUI_SOURCES
         ${IMGUI_PATH}/backends/imgui_impl_glfw.h
         ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp
         ${IMGUI_PATH}/backends/imgui_impl_opengl3.h
+        ${IMGUIzmo_PATH}/*.cpp
+        ${IMGUIzmo_PATH}/*.h
 )
 
 add_library(glad ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
 add_library(ImGui ${IMGUI_SOURCES})
 
 include_directories(${IMGUI_PATH})
+include_directories(${IMGUIzmo_PATH})
 include_directories(${GLFW_INCLUDE_DIR})
 include_directories(${GLM_INCLUDE_DIR})
 include_directories(${GLAD_INCLUDE_DIR})
@@ -62,4 +67,4 @@ add_executable(LupusFire_core main.cpp ${GLAD_SOURCE}
     src/Cube.h
     src/Camera.h)
 
-target_link_libraries(LupusFire_core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32)
+target_link_libraries(LupusFire_core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32 imm32)

@@ -26,6 +26,7 @@ public:
         return newObject;
     }
 
+
     // Component Management
     template <typename T>
     T* addComponent() {
@@ -67,25 +68,11 @@ public:
         return color;
     }
 
-    void select() {
-        color = glm::vec3(1.0f, 1.0f, 0.0f);
-    }
-
-    void deselect() {
-        color = glm::vec3(1.0f, 0.0f, 0.0f);
-    }
     glm::vec3 color;
-    void setOriginalColor(glm::vec3 m_color) {
-        this->originalColor = m_color;
-    }
-
-    glm::vec3 originalColor;
 private:
     std::string m_name;
     std::vector<std::unique_ptr<Component>> m_components;
     unsigned int VAO, VBO, EBO;
-
-
 };
 
 #endif //LUPUSFIRE_CORE_GAMEOBJECT_H

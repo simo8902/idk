@@ -50,7 +50,7 @@ void GameObject::DebugDraw(const Shader& wireframe) {
         glBindVertexArray(VAO);
 
         //TODO: implement the color of the wireframe
-        glm::vec3 wireframeColor = glm::vec3(0.0f, 0.0f, 1.0f);
+        glm::vec3 wireframeColor = glm::vec3(0.0f, 1.0f, 0.0f);
         wireframe.setVec3("m_wireframeColor", wireframeColor);
 
 

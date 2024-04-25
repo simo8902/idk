@@ -7,10 +7,14 @@
 
 #include "imgui.h"
 #include "../../GameObject.h"
+#include "../../Camera.h"
+
+class Renderer;
 
 class InspectorManager {
 public:
     void renderInspector(const std::shared_ptr<GameObject>& selectedObject);
+    void renderInspector(const std::shared_ptr<Camera>& camera);
 
 };
 

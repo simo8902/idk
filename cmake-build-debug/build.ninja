@@ -53,7 +53,7 @@ build CMakeFiles/glad.dir/libs/glad/src/glad.c.obj: C_COMPILER__glad_unscanned_D
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\glad.dir\libs\glad\src\glad.c.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\glad.dir
   OBJECT_FILE_DIR = CMakeFiles\glad.dir\libs\glad\src
 
@@ -82,11 +82,51 @@ build libglad.a: C_STATIC_LIBRARY_LINKER__glad_Debug CMakeFiles/glad.dir/libs/gl
 
 build cmake_object_order_depends_target_ImGui: phony || CMakeFiles/ImGui.dir
 
+build CMakeFiles/ImGui.dir/libs/ImGuizmo/GraphEditor.cpp.obj: CXX_COMPILER__ImGui_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/libs/ImGuizmo/GraphEditor.cpp || cmake_object_order_depends_target_ImGui
+  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
+  DEP_FILE = CMakeFiles\ImGui.dir\libs\ImGuizmo\GraphEditor.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  OBJECT_DIR = CMakeFiles\ImGui.dir
+  OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\ImGuizmo
+
+build CMakeFiles/ImGui.dir/libs/ImGuizmo/ImCurveEdit.cpp.obj: CXX_COMPILER__ImGui_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/libs/ImGuizmo/ImCurveEdit.cpp || cmake_object_order_depends_target_ImGui
+  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
+  DEP_FILE = CMakeFiles\ImGui.dir\libs\ImGuizmo\ImCurveEdit.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  OBJECT_DIR = CMakeFiles\ImGui.dir
+  OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\ImGuizmo
+
+build CMakeFiles/ImGui.dir/libs/ImGuizmo/ImGradient.cpp.obj: CXX_COMPILER__ImGui_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/libs/ImGuizmo/ImGradient.cpp || cmake_object_order_depends_target_ImGui
+  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
+  DEP_FILE = CMakeFiles\ImGui.dir\libs\ImGuizmo\ImGradient.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  OBJECT_DIR = CMakeFiles\ImGui.dir
+  OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\ImGuizmo
+
+build CMakeFiles/ImGui.dir/libs/ImGuizmo/ImGuizmo.cpp.obj: CXX_COMPILER__ImGui_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/libs/ImGuizmo/ImGuizmo.cpp || cmake_object_order_depends_target_ImGui
+  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
+  DEP_FILE = CMakeFiles\ImGui.dir\libs\ImGuizmo\ImGuizmo.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  OBJECT_DIR = CMakeFiles\ImGui.dir
+  OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\ImGuizmo
+
+build CMakeFiles/ImGui.dir/libs/ImGuizmo/ImSequencer.cpp.obj: CXX_COMPILER__ImGui_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/libs/ImGuizmo/ImSequencer.cpp || cmake_object_order_depends_target_ImGui
+  DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
+  DEP_FILE = CMakeFiles\ImGui.dir\libs\ImGuizmo\ImSequencer.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  OBJECT_DIR = CMakeFiles\ImGui.dir
+  OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\ImGuizmo
+
 build CMakeFiles/ImGui.dir/libs/imgui/backends/imgui_impl_glfw.cpp.obj: CXX_COMPILER__ImGui_unscanned_Debug C$:/Users/Simeon/Documents/LupusFire$ Core/libs/imgui/backends/imgui_impl_glfw.cpp || cmake_object_order_depends_target_ImGui
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\ImGui.dir\libs\imgui\backends\imgui_impl_glfw.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\ImGui.dir
   OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\imgui\backends
 
@@ -94,7 +134,7 @@ build CMakeFiles/ImGui.dir/libs/imgui/backends/imgui_impl_opengl3.cpp.obj: CXX_C
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\ImGui.dir\libs\imgui\backends\imgui_impl_opengl3.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\ImGui.dir
   OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\imgui\backends
 
@@ -102,7 +142,7 @@ build CMakeFiles/ImGui.dir/libs/imgui/imgui.cpp.obj: CXX_COMPILER__ImGui_unscann
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\ImGui.dir\libs\imgui\imgui.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\ImGui.dir
   OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\imgui
 
@@ -110,7 +150,7 @@ build CMakeFiles/ImGui.dir/libs/imgui/imgui_demo.cpp.obj: CXX_COMPILER__ImGui_un
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\ImGui.dir\libs\imgui\imgui_demo.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\ImGui.dir
   OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\imgui
 
@@ -118,7 +158,7 @@ build CMakeFiles/ImGui.dir/libs/imgui/imgui_draw.cpp.obj: CXX_COMPILER__ImGui_un
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\ImGui.dir\libs\imgui\imgui_draw.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\ImGui.dir
   OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\imgui
 
@@ -126,7 +166,7 @@ build CMakeFiles/ImGui.dir/libs/imgui/imgui_tables.cpp.obj: CXX_COMPILER__ImGui_
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\ImGui.dir\libs\imgui\imgui_tables.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\ImGui.dir
   OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\imgui
 
@@ -134,7 +174,7 @@ build CMakeFiles/ImGui.dir/libs/imgui/imgui_widgets.cpp.obj: CXX_COMPILER__ImGui
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\ImGui.dir\libs\imgui\imgui_widgets.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\ImGui.dir
   OBJECT_FILE_DIR = CMakeFiles\ImGui.dir\libs\imgui
 
@@ -146,7 +186,7 @@ build CMakeFiles/ImGui.dir/libs/imgui/imgui_widgets.cpp.obj: CXX_COMPILER__ImGui
 #############################################
 # Link the static library libImGui.a
 
-build libImGui.a: CXX_STATIC_LIBRARY_LINKER__ImGui_Debug CMakeFiles/ImGui.dir/libs/imgui/backends/imgui_impl_glfw.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/backends/imgui_impl_opengl3.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_demo.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_draw.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_tables.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_widgets.cpp.obj
+build libImGui.a: CXX_STATIC_LIBRARY_LINKER__ImGui_Debug CMakeFiles/ImGui.dir/libs/ImGuizmo/GraphEditor.cpp.obj CMakeFiles/ImGui.dir/libs/ImGuizmo/ImCurveEdit.cpp.obj CMakeFiles/ImGui.dir/libs/ImGuizmo/ImGradient.cpp.obj CMakeFiles/ImGui.dir/libs/ImGuizmo/ImGuizmo.cpp.obj CMakeFiles/ImGui.dir/libs/ImGuizmo/ImSequencer.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/backends/imgui_impl_glfw.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/backends/imgui_impl_opengl3.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_demo.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_draw.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_tables.cpp.obj CMakeFiles/ImGui.dir/libs/imgui/imgui_widgets.cpp.obj
   LANGUAGE_COMPILE_FLAGS = -g
   OBJECT_DIR = CMakeFiles\ImGui.dir
   POST_BUILD = cd .
@@ -167,7 +207,7 @@ build CMakeFiles/LupusFire_core.dir/main.cpp.obj: CXX_COMPILER__LupusFire_core_u
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\main.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir
 
@@ -175,7 +215,7 @@ build CMakeFiles/LupusFire_core.dir/libs/glad/src/glad.c.obj: C_COMPILER__LupusF
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\libs\glad\src\glad.c.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\libs\glad\src
 
@@ -183,7 +223,7 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/Scene.cpp.obj: CXX_COMPIL
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\editor\windows\Scene.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
@@ -191,7 +231,7 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj: CXX_COM
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\editor\windows\Renderer.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
@@ -199,7 +239,7 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/HierarchyManager.cpp.obj:
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\editor\windows\HierarchyManager.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
@@ -207,7 +247,7 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/InspectorManager.cpp.obj:
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\editor\windows\InspectorManager.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
@@ -215,7 +255,7 @@ build CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj: 
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\editor\windows\ProjectExplorer.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src\editor\windows
 
@@ -223,7 +263,7 @@ build CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj: CXX_COMPILER__LupusFire_
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\Shader.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src
 
@@ -231,7 +271,7 @@ build CMakeFiles/LupusFire_core.dir/src/GameObject.cpp.obj: CXX_COMPILER__LupusF
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\GameObject.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src
 
@@ -239,7 +279,7 @@ build CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj: CXX_COMPILER__LupusFire_co
   DEFINES = -DSOURCE_DIR="\"C:/Users/Simeon/Documents/LupusFire Core\""
   DEP_FILE = CMakeFiles\LupusFire_core.dir\src\Cube.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
+  INCLUDES = -I"C:/Users/Simeon/Documents/LupusFire Core/libs/imgui" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/ImGuizmo" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glm/include" -I"C:/Users/Simeon/Documents/LupusFire Core/libs/glad/include"
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   OBJECT_FILE_DIR = CMakeFiles\LupusFire_core.dir\src
 
@@ -253,7 +293,7 @@ build CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj: CXX_COMPILER__LupusFire_co
 
 build LupusFire_core.exe: CXX_EXECUTABLE_LINKER__LupusFire_core_Debug CMakeFiles/LupusFire_core.dir/main.cpp.obj CMakeFiles/LupusFire_core.dir/libs/glad/src/glad.c.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Scene.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/Renderer.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/HierarchyManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/InspectorManager.cpp.obj CMakeFiles/LupusFire_core.dir/src/editor/windows/ProjectExplorer.cpp.obj CMakeFiles/LupusFire_core.dir/src/Shader.cpp.obj CMakeFiles/LupusFire_core.dir/src/GameObject.cpp.obj CMakeFiles/LupusFire_core.dir/src/Cube.cpp.obj | C$:/Users/Simeon/Documents/LupusFire$ Core/libs/GLFW/lib/libglfw3.a libImGui.a || libImGui.a
   FLAGS = -g
-  LINK_LIBRARIES = "C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/lib/libglfw3.a"  libImGui.a  -lopengl32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_LIBRARIES = "C:/Users/Simeon/Documents/LupusFire Core/libs/GLFW/lib/libglfw3.a"  libImGui.a  -lopengl32  -limm32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\LupusFire_core.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -266,7 +306,7 @@ build LupusFire_core.exe: CXX_EXECUTABLE_LINKER__LupusFire_core_Debug CMakeFiles
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\Simeon\Documents\LupusFire Core\cmake-build-debug" && "C:\Program Files\JetBrains\CLion 2023.3.4\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\Simeon\Documents\LupusFire Core\cmake-build-debug" && "C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -277,7 +317,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\Simeon\Documents\LupusFire Core\cmake-build-debug" && "C:\Program Files\JetBrains\CLion 2023.3.4\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\Simeon\Documents\LupusFire Core" -B"C:\Users\Simeon\Documents\LupusFire Core\cmake-build-debug""
+  COMMAND = C:\Windows\system32\cmd.exe /C "cd /D "C:\Users\Simeon\Documents\LupusFire Core\cmake-build-debug" && "C:\Program Files\JetBrains\CLion 2024.1\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\Simeon\Documents\LupusFire Core" -B"C:\Users\Simeon\Documents\LupusFire Core\cmake-build-debug""
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -310,14 +350,14 @@ build all: phony libglad.a libImGui.a LupusFire_core.exe
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeRCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/WindowsPaths.cmake C$:/Users/Simeon/Documents/LupusFire$ Core/CMakeLists.txt CMakeCache.txt CMakeFiles/3.28.1/CMakeCCompiler.cmake CMakeFiles/3.28.1/CMakeCXXCompiler.cmake CMakeFiles/3.28.1/CMakeRCCompiler.cmake CMakeFiles/3.28.1/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeRCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/WindowsPaths.cmake C$:/Users/Simeon/Documents/LupusFire$ Core/CMakeLists.txt CMakeCache.txt CMakeFiles/3.28.1/CMakeCCompiler.cmake CMakeFiles/3.28.1/CMakeCXXCompiler.cmake CMakeFiles/3.28.1/CMakeRCCompiler.cmake CMakeFiles/3.28.1/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeRCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows.cmake C$:/Program$ Files/JetBrains/CLion$ 2023.3.4/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/WindowsPaths.cmake C$:/Users/Simeon/Documents/LupusFire$ Core/CMakeLists.txt CMakeCache.txt CMakeFiles/3.28.1/CMakeCCompiler.cmake CMakeFiles/3.28.1/CMakeCXXCompiler.cmake CMakeFiles/3.28.1/CMakeRCCompiler.cmake CMakeFiles/3.28.1/CMakeSystem.cmake: phony
+build C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCXXInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeGenericSystem.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeRCInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-C.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX-ABI.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU-CXX.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-GNU.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-Initialize.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-windres.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows.cmake C$:/Program$ Files/JetBrains/CLion$ 2024.1/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/WindowsPaths.cmake C$:/Users/Simeon/Documents/LupusFire$ Core/CMakeLists.txt CMakeCache.txt CMakeFiles/3.28.1/CMakeCCompiler.cmake CMakeFiles/3.28.1/CMakeCXXCompiler.cmake CMakeFiles/3.28.1/CMakeRCCompiler.cmake CMakeFiles/3.28.1/CMakeSystem.cmake: phony
 
 
 #############################################
