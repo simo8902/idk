@@ -13,6 +13,10 @@ class Transform : public Component {
 public:
     Transform() : modelMatrix(glm::mat4(1.0f)), position(glm::vec3(0.0f)), rotation(glm::vec3(0.0f)), m_scale(glm::vec3(1.0f)) {}
 
+    std::unique_ptr<Component> clone() const override {
+        return std::make_unique<Transform>(*this);
+    }
+
     void setPosition(const glm::vec3& pos) { position = pos;}
     void setRotation(const glm::vec3& rot) { rotation = rot; }
     void setScale(const glm::vec3& scale) { m_scale = scale; }

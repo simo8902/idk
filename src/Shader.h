@@ -5,8 +5,6 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "glad/glad.h"
-
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
 
@@ -19,9 +17,7 @@ public:
     unsigned int shaderProgram;
 
     Shader(const char *vertexShaderPath, const char *fragmentShaderPath);
-    void Use() const {
-        glUseProgram(shaderProgram);
-    }
+    void Use() const;
     void setMat4(const std::string &name, const glm::mat4 &matrix) const;
     void setVec3(const std::string& name, const glm::vec3& value) const;
 

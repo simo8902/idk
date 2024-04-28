@@ -11,6 +11,8 @@
 class Component {
 public:
     virtual ~Component(){};
+    virtual std::unique_ptr<Component> clone() const = 0;
+
 };
 
 #endif //LUPUSFIRE_CORE_COMPONENT_H

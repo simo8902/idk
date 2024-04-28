@@ -19,6 +19,10 @@ public:
 
     void Draw(const Shader& shader) override;
 
+    virtual std::shared_ptr<GameObject> clone() const override {
+        return std::make_shared<Cube>(*this);
+    }
+
 private:
     std::vector<float> vertices;
     std::vector<unsigned int> indices;

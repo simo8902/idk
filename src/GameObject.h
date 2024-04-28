@@ -19,6 +19,26 @@ public:
         std::cout << "GameObject created: " << this->getName() << std::endl;
     }
 
+    virtual ~GameObject(){}
+    virtual std::shared_ptr<GameObject> clone() const = 0;
+
+    virtual void Draw(const Shader& shader) = 0;
+
+    // Copy constructor
+    GameObject(const GameObject& other)
+            : m_name(other.m_name) {
+     //   std::cout << "GameObject copied: " << this->getName() << std::endl;
+
+
+        for (const auto& component : other.m_components) {
+            m_components.push_back(component);  // std::shared_ptr can be copied
+        }
+    }
+
+    const std::vector<std::shared_ptr<Component>>& getComponents() const {
+        return m_components;
+    }
+
     // Object Management
     template <typename T>
     std::shared_ptr<T> addObject(const std::string& name){
@@ -44,34 +64,27 @@ public:
 
     template <typename T>
     T* getComponent() {
-        for (std::unique_ptr<Component> & component : m_components) {
+        for (std::shared_ptr<Component> & component : m_components) {
             if (T* comp = dynamic_cast<T*>(component.get())) {
                 return comp;
             }
         }
-        std::cerr << "Debug: No component of type " << typeid(T).name() << " found in object " << getName() << std::endl;
-
         return nullptr;
     }
 
 
-    const std::string& getName() const { return m_name; }
+    virtual std::string getName() const {
+        return m_name;
+    }
 
-    virtual void Draw(const Shader& shader) = 0;
+
     void DebugDraw(const Shader& wireframe);
 
-    void setColor(glm::vec3 m_color) {
-        this->color = m_color;
-    }
-
-    glm::vec3 getColor() const {
-        return color;
-    }
-
     glm::vec3 color;
-private:
     std::string m_name;
-    std::vector<std::unique_ptr<Component>> m_components;
+
+private:
+    std::vector<std::shared_ptr<Component>> m_components;
     unsigned int VAO, VBO, EBO;
 };
 

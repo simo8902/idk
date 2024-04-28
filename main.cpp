@@ -1,12 +1,13 @@
-#include "src/editor/windows/Renderer.h"
+#include "src/Initialization.h"
 
 int main() {
-    Renderer* renderer = new Renderer();
+    std::shared_ptr<Initialization> init = std::make_shared<Initialization>();
+    init->runMainLoop();
 
-    //MAIN LOOP
-    while (!renderer->ShouldClose()) {
-        renderer->render();
-    }
+    Renderer renderer(init->getShaderProgram(),
+                init->getWireFrameProgram(),
+                init->getMainCamera(),
+                init->getWindow());
 
     return 0;
 }

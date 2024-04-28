@@ -15,6 +15,7 @@ void HierarchyManager::renderHierarchy(Renderer* renderer) {
 
     if (renderer) {
 
+        /*
         for (auto object : renderer->getGameObjects()) {
             if (ImGui::Selectable(object->getName().c_str())) {
                 renderer->selectedObject = object;
@@ -29,7 +30,7 @@ void HierarchyManager::renderHierarchy(Renderer* renderer) {
                 renderer->selectedObject = nullptr;
             }
         }
-
+*/
     } else {
         ImGui::Text("No renderer available");
     }

@@ -1,6 +1,8 @@
 //
 // Created by Simeon-PC on 3/28/2024.
 //
+
+#include "glad/glad.h"
 #include <fstream>
 #include "Shader.h"
 
@@ -55,5 +57,9 @@ void Shader::checkCompileStatus(unsigned int shader, const std::string &type) {
         glGetShaderInfoLog(shader, 512, NULL, infoLog);
         std::cerr << "ERROR: Shader compilation failed for type: " << type << "\n" << infoLog << std::endl;
     }
+}
+
+void Shader::Use() const {
+    glUseProgram(shaderProgram);
 }
 

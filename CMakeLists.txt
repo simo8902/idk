@@ -21,7 +21,11 @@ set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
         src/components/colliders/Collider.h
         src/components/colliders/Ray.h
         src/components/colliders/BoxCollider.h
-        src/editor/windows/RenderingManagement.h)
+        src/editor/windows/RenderingManagement.h
+        src/Initialization.h
+        src/Initialization.cpp
+        src/SubGameObject.h
+)
 
 # ImGuizmo
 set(IMGUIzmo_PATH ${CMAKE_SOURCE_DIR}/libs/ImGuizmo)

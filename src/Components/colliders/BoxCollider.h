@@ -22,6 +22,10 @@ public:
     const glm::vec3& getMin() const { return m_worldMin; }
     const glm::vec3& getMax() const { return m_worldMax; }
 
+    std::unique_ptr<Component> clone() const override {
+        return std::make_unique<BoxCollider>(*this);
+    }
+
     void setPosition(const glm::vec3& pos) {
         m_position = pos;
     }

@@ -3,73 +3,19 @@
 //
 
 #include "Renderer.h"
-#include "GLFW/glfw3.h"
 
-#include "ImGuizmo.h"
-#include "imgui.h"
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-#include "gtx/string_cast.hpp"
-#include "../../Cube.h"
-#include "../../components/colliders/BoxCollider.h"
+Renderer::Renderer(Shader* shaderProgram, Shader* wireframe, std::shared_ptr<Camera> camera, GLFWwindow* m_Window)
+    : shaderProgram(shaderProgram),
+        m_Window(m_Window),
+        wireframe(wireframe), m_Camera(camera){
+    objects = std::make_shared<SubGameObject>("test");
 
 
-Renderer::Renderer(){
-    initialization();
     myRenderer = this;
-
-    if (!initializeGLFW()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return;
-    }
-
-    m_Window = createGLFWWindow(1280, 720);
-    if (!m_Window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return;
-    }
-
-    if (!initializeOpenGL()) {
-        std::cerr << "Failed to initialize OpenGL context" << std::endl;
-        glfwDestroyWindow(m_Window);
-        glfwTerminate();
-        return;
-    }
-
-    glfwSetWindowUserPointer(m_Window, this);
-
-    shaderProgram = new Shader(SOURCE_DIR "/shaders/basicVertex.glsl", SOURCE_DIR "/shaders/basicFragment.glsl");
-    wireframe = new Shader(SOURCE_DIR "/shaders/wireframeVert.glsl", SOURCE_DIR "/shaders/wireframeFrag.glsl");
-
-    initializeImGui(m_Window);
-
-    try {
-        globalScene = new Scene();
-        globalScene->setScene(*globalScene);
-        globalScene->setShader(*shaderProgram);
-    } catch (const std::bad_alloc &e) {
-        std::cerr << "Failed to allocate memory for scene: " << e.what() << '\n';
-        return;
-    }
-
-    globalScene->setCamera(*m_Camera);
-    initialize();
-
+    createObjects();
 }
 
-Renderer::~Renderer() {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(m_Window);
-    glfwTerminate();
-}
-
-bool Renderer::ShouldClose() {
-    return glfwWindowShouldClose(m_Window);
-}
+Renderer::~Renderer() {}
 
 void Renderer::DrawGrid(float gridSize, float gridStep) {
     struct Vertex {
@@ -93,7 +39,6 @@ void Renderer::DrawGrid(float gridSize, float gridStep) {
     glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
     glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(Vertex), gridVertices.data(), GL_STATIC_DRAW);
 
-
     shaderProgram->Use();
     shaderProgram->setVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
 
@@ -108,51 +53,9 @@ void Renderer::DrawGrid(float gridSize, float gridStep) {
 
     glDisableVertexAttribArray(0);
 
-    // Delete the VBO if you won't need the grid again
     glDeleteBuffers(1, &gridVBO);
 }
 
-Ray Renderer::getRayFromScreenPoint(glm::vec2 ndc) {
-    glm::vec4 rayStart_NDC(ndc.x, ndc.y, -1.0f, 1.0f);
-    glm::vec4 rayEnd_NDC(ndc.x, ndc.y, 0.0f, 1.0f);
-
-    glm::mat4 currentProjection = m_Camera->getProjectionMatrix();
-    glm::mat4 currentView = m_Camera->getViewMatrix();
-
-    glm::mat4 invProjMatrix = glm::inverse(currentProjection);
-    glm::mat4 invViewMatrix = glm::inverse(currentView);
-
-    glm::vec4 rayStart_world = invViewMatrix * invProjMatrix * rayStart_NDC;
-    rayStart_world /= rayStart_world.w;
-    glm::vec4 rayEnd_world = invViewMatrix * invProjMatrix * rayEnd_NDC;
-    rayEnd_world /= rayEnd_world.w;
-
-    glm::vec3 rayOrigin = m_Camera->getPosition();
-    glm::vec3 rayDirection = glm::normalize(glm::vec3(rayEnd_world) - glm::vec3(rayStart_world));
-
-    return Ray(rayOrigin, rayDirection);
-}
-
-void Renderer::initialize() {
-    //Cube1
-    std::shared_ptr<Cube> cube1 = objects->addObject<Cube>("Cube1");
-    cube1->addComponent<Transform>();
-
-    Transform *cube1Transform = cube1->getComponent<Transform>();
-    cube1Transform->setPosition(glm::vec3(-2.0f, 1.5f, -2.5f));
-    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-0.6f), glm::vec3(0.6f));
-
-    //Cube2
-    std::shared_ptr<Cube> cube2 = objects->addObject<Cube>("Cube2");
-    cube2->addComponent<Transform>();
-
-    Transform *cube2Transform = cube2->getComponent<Transform>();
-    cube2Transform->setPosition(glm::vec3(2.0f, 1.5f, -2.5f));
-    cube2->addComponent<BoxCollider>(cube2Transform->getPosition(), glm::vec3(-0.6f), glm::vec3(0.6f));
-
-    m_objects.push_back(cube1);
-    m_objects.push_back(cube2);
-}
 
 void Renderer::createSceneFramebuffer(int sceneWidth, int sceneHeight) {
     glGenFramebuffers(1, &FBO);
@@ -175,68 +78,35 @@ void Renderer::createSceneFramebuffer(int sceneWidth, int sceneHeight) {
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
-void Renderer::Render3DScene() {
-    glm::mat4 view = m_Camera->getViewMatrix();
-    glm::mat4 projection = m_Camera->getProjectionMatrix();
-
-    shaderProgram->Use();
-    shaderProgram->setMat4("view", view);
-    shaderProgram->setMat4("projection", projection);
-
-    glm::vec3 objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
-    shaderProgram->setVec3("objectColorUniform", objectColor);
-
-    for (const auto &obj: m_objects) {
-
-        auto *transformComponent = obj->getComponent<Transform>();
-        auto *boxCollider = obj->getComponent<BoxCollider>();
-
-        if (transformComponent == nullptr) {
-            std::cerr << "transform is null\n";
-        }
-        if (boxCollider == nullptr) {
-            std::cerr << "boxCollider is null\n";
-        }
-
-        if (transformComponent) {
-            glm::mat4 model = transformComponent->getModelMatrix();
-            shaderProgram->setMat4("model", model);
-        }
-
-        if (boxCollider && transformComponent) {
-            wireframe->Use();
-            wireframe->setMat4("m_View", view);
-            wireframe->setMat4("m_Projection", projection);
-
-            glm::mat4 wireModel = transformComponent->getModelMatrix();
-            wireframe->setMat4("m_Model", wireModel);
-
-            obj->DebugDraw(*wireframe);
-        }
-
-        obj->Draw(*shaderProgram);
-    }
-}
-
 void Renderer::renderSceneView() {
-    ImGui::Begin("Scene Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
+    ImGui::Begin("Scene Viewport", nullptr,
+                 ImGuiWindowFlags_NoResize| ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-    ImVec2 windowSize2 = ImGui::GetWindowSize();
+    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
-    if (FBO_width != windowSize2.x || FBO_height != windowSize2.y) {
-        FBO_width = windowSize2.x;
-        FBO_height = windowSize2.y;
+    if (FBO_width != viewportSize.x || FBO_height != viewportSize.y || FBO == 0 || texture_id == 0) {
+        FBO_width = viewportSize.x;
+        FBO_height = viewportSize.y;
 
-        glDeleteFramebuffers(1, &FBO);
-        glDeleteTextures(1, &texture_id);
-        glGenTextures(1, &texture_id);
-        createSceneFramebuffer(FBO_width, FBO_height);
+        if (FBO != 0) {
+            glDeleteFramebuffers(1, &FBO);
+            FBO = 0;
+        }
+
+        if (texture_id != 0) {
+            glDeleteTextures(1, &texture_id);
+            texture_id = 0;
+        }
+
+        createSceneFramebuffer(FBO_width, FBO_height); // Create the framebuffer with the size of the current window
     }
 
     renderSceneViewport(FBO_width, FBO_height, FBO);
 
-    glViewport(0, 0, (int)windowSize2.x, (int)windowSize2.y);
-    ImGui::Image((void *) (intptr_t) texture_id, windowSize2, ImVec2(0, 1), ImVec2(1, 0));
+    ImVec2 uv0(0, 1); // Top-left
+    ImVec2 uv1(1, 0); // Bottom-right
+
+    ImGui::Image((void *) (intptr_t) texture_id, viewportSize, uv0, uv1);
 
     ImGui::End();
 }
@@ -264,85 +134,22 @@ void Renderer::render() {
     }
 }
 
-GLFWwindow *Renderer::createGLFWWindow(int width, int height) {
-    GLFWwindow *window = glfwCreateWindow(width, height, "LupusFire_core", nullptr, nullptr);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return nullptr;
-    }
-    glfwMakeContextCurrent(window);
-    return window;
-}
-
-void errorCallback(int error, const char *description) {
-    std::cerr << "Error: " << error << " " << description << std::endl;
-}
-
-bool Renderer::initializeGLFW() {
-    glfwSetErrorCallback(errorCallback);
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return false;
-    }
-    return true;
-}
-
-bool Renderer::initializeOpenGL() {
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        std::cout << "Failed to initialize OpenGL context" << std::endl;
-        return false;
-    }
-    return true;
-}
-
-void Renderer::initializeImGui(GLFWwindow *window) {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void) io;
-    io.Fonts->Clear();
-
-    const char *fontPath = SOURCE_DIR "/CascadiaCode.ttf";
-    if (io.Fonts->AddFontFromFileTTF(fontPath, 17.0f)) {
-        io.Fonts->Build();
-    } else {
-        std::cerr << strerror(errno) << std::endl;
-    }
-    io.Fonts->Build();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 460");
-
-    ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowMenuButtonPosition = ImGuiDir_None;
-
-    ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    ImVec4 greyColor = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
-    ImVec4 grey2Color = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
-    ImVec4 blackColor = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-    ImVec4 black2Color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
-
-    style.Colors[ImGuiCol_Text] = greyColor;
-    style.Colors[ImGuiCol_FrameBg] = grey2Color;
-    style.Colors[ImGuiCol_HeaderActive] = grey2Color;
-    style.Colors[ImGuiCol_HeaderHovered] = black2Color;
-    style.Colors[ImGuiCol_TabActive] = grey2Color;
-    style.Colors[ImGuiCol_TabUnfocused] = redColor;
-    style.Colors[ImGuiCol_TabUnfocusedActive] = grey2Color;
-    style.Colors[ImGuiCol_TabHovered] = grey2Color;
-    style.Colors[ImGuiCol_Tab] = redColor;
-    style.Colors[ImGuiCol_TitleBgActive] = blackColor;
-
-
-}
-
 void Renderer::renderImGuiLayout() {
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Open", "Ctrl+O")) {  }
+            if (ImGui::MenuItem("Save", "Ctrl+S")) {  }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
     ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     hierarchyManager.renderHierarchy(myRenderer);
-    //TODO: Implement last selected object
 
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     inspectorManager.renderInspector(HierarchyManager::selectedCamera);
@@ -350,6 +157,95 @@ void Renderer::renderImGuiLayout() {
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     projectExplorer.renderProjectExplorer();
 
+    renderToolbar();
+}
+
+void Renderer::renderToolbar() {
+    ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoScrollbar |ImGuiWindowFlags_NoScrollWithMouse);
+
+    ImGui::SetCursorPosY( 5);
+    
+    if (ImGui::Button("A")) {
+        currentGizmoMode = ImGuizmo::TRANSLATE;
+    }
+    ImGui::SameLine();
+
+    if (ImGui::Button("B", ImVec2(20, 20))) {
+        currentGizmoMode = ImGuizmo::ROTATE;
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("C", ImVec2(20, 20))) {
+        currentGizmoMode = ImGuizmo::SCALE;
+    }
+
+    ImGui::End();
+}
+
+void Renderer::Render3DScene() {
+    glm::mat4 view = m_Camera->getViewMatrix();
+    glm::mat4 projection = m_Camera->getProjectionMatrix();
+
+    shaderProgram->Use();
+    shaderProgram->setMat4("view", view);
+    shaderProgram->setMat4("projection", projection);
+
+    glm::vec3 objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
+    shaderProgram->setVec3("objectColorUniform", objectColor);
+
+    for (const auto &obj: objects->getGameObjects()) {
+
+        auto *transformComponent = obj->getComponent<Transform>();
+        auto *boxCollider = obj->getComponent<BoxCollider>();
+
+        if (transformComponent == nullptr) {
+            std::cerr << "transform is null\n";
+        }
+        if (boxCollider == nullptr) {
+            std::cerr << "boxCollider is null\n";
+        }
+
+        if (transformComponent) {
+            glm::mat4 model = transformComponent->getModelMatrix();
+            shaderProgram->setMat4("model", model);
+        }
+        if (obj == selectedObjects && boxCollider && transformComponent) {
+            wireframe->Use();
+            wireframe->setMat4("m_View", view);
+            wireframe->setMat4("m_Projection", projection);
+
+            glm::mat4 wireModel = transformComponent->getModelMatrix();
+            wireframe->setMat4("m_Model", wireModel);
+
+            obj->DebugDraw(*wireframe);
+        }
+
+        obj->Draw(*shaderProgram);
+    }
+}
+
+
+
+void Renderer::createObjects() {
+    //Cube1
+    std::shared_ptr<Cube> cube1 = std::make_shared<Cube>("Cube1");
+    cube1->addComponent<Transform>();
+
+    Transform *cube1Transform = cube1->getComponent<Transform>();
+    cube1Transform->setPosition(glm::vec3(-2.0f, 1.5f, -2.5f));
+    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-0.6f), glm::vec3(0.6f));
+
+    //Cube2
+    std::shared_ptr<Cube> cube2 = std::make_shared<Cube>("Cube2");
+    cube2->addComponent<Transform>();
+
+    Transform *cube2Transform = cube2->getComponent<Transform>();
+    cube2Transform->setPosition(glm::vec3(2.0f, 1.5f, -2.5f));
+    cube2->addComponent<BoxCollider>(cube2Transform->getPosition(), glm::vec3(-0.6f), glm::vec3(0.6f));
+
+    objects->addObject(cube1);
+    objects->addObject(cube2);
 }
 
 void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint framebuffer) {
@@ -360,7 +256,6 @@ void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint
 
     DrawGrid(10.0f, 1.0f);
     Render3DScene();
-
 
     bool objectSelected = false;
     static bool wasPressed = false;
@@ -382,16 +277,16 @@ void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint
                 1.0f - (2.0f * mouseY) / windowSize.y
         };
 
-        Ray ray = getRayFromScreenPoint(ndc);
+        Ray ray = ray.getRayFromScreenPoint(ndc, m_Camera);
 
-        for (const auto &object: m_objects) {
+        for (const auto &object: objects->getGameObjects()) {
             Transform *transform = object->getComponent<Transform>();
             BoxCollider *collider = object->getComponent<BoxCollider>();
 
             if (collider && transform) {
                 glm::mat4 transformMatrix = transform->getModelMatrix();
                 if (collider->intersectsRay(ray, transformMatrix)) {
-                    selectedObject = object;
+                    selectedObjects = object;
 
                     std::cout << object->getName() << " was selected" << std::endl;
                     objectSelected = true;
@@ -402,20 +297,58 @@ void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint
 
         if (!objectSelected && mouseX >= 0 && mouseX <= windowSize.x && mouseY >= 0 && mouseY <= windowSize.y) {
             std::cerr << "obj not selected!\n";
-        }
+            selectedObjects = nullptr;
+            objectSelected = false;
 
+        }
+    }
+
+    if (glfwGetKey(m_Window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+        glfwGetKey(m_Window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+        if (glfwGetKey(m_Window, GLFW_KEY_C) == GLFW_PRESS) {
+            if (selectedObjects != nullptr) {
+                selectedSubObject = std::static_pointer_cast<SubGameObject>(selectedObjects);
+                if (selectedSubObject) {
+                    copiedObject = std::static_pointer_cast<SubGameObject>(selectedSubObject->copyObjects(*selectedObjects));
+                    std::cout << "cast successfull\n";
+                } else {
+                    std::cerr << "Failed to cast selectedObjects to SubGameObject\n";
+                }
+            }
+        }
+    }
+
+    if (glfwGetKey(m_Window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+        glfwGetKey(m_Window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+        if (glfwGetKey(m_Window, GLFW_KEY_V) == GLFW_PRESS) {
+            if (copiedObject) {
+                std::shared_ptr<SubGameObject> pastedObject = std::static_pointer_cast<SubGameObject>(copiedObject->clone());
+
+                copiedObject->addObject(pastedObject);
+                std::cout << "Pasted object: " << pastedObject->getName() << std::endl;
+            } else {
+                std::cerr << "No object has been copied yet\n";
+            }
+        }
     }
 
     wasPressed = isPressed;
 
+    /*
+    if (selectedObjects->getComponents().size() == copiedObject->getComponents().size()) {
+        std::cout << "Copy constructor works correctly." << std::endl;
+    } else {
+        std::cout << "Copy constructor does not work correctly." << std::endl;
+    }*/
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
 }
 
-
 void Renderer::renderImGuizmo(){
     ImGui::Begin("Scene Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
-    if (selectedObject) {
+    /*
+    if (selectedObjects) {
         glm::mat4 view = m_Camera->getViewMatrix();
         glm::mat4 projection = m_Camera->getProjectionMatrix();
 
@@ -426,14 +359,14 @@ void Renderer::renderImGuizmo(){
                           ImGui::GetWindowHeight());
 
 
-        glm::mat4 objectMatrix = selectedObject->getComponent<Transform>()->getModelMatrix();
+        glm::mat4 objectMatrix = selectedObjects->getComponent<Transform>()->getModelMatrix();
 
-        ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), ImGuizmo::TRANSLATE, ImGuizmo::LOCAL,
+        ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), currentGizmoMode, ImGuizmo::LOCAL,
                              glm::value_ptr(objectMatrix));
 
-        selectedObject->getComponent<Transform>()->setModelMatrix(objectMatrix);
+        selectedObjects->getComponent<Transform>()->setModelMatrix(objectMatrix);
 
-        inspectorManager.renderInspector(selectedObject);
-    }
+        inspectorManager.renderInspector(selectedObjects);
+    }*/
     ImGui::End();
 }

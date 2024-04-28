@@ -8,7 +8,6 @@
 #include "glm.hpp"
 #include "gtc/matrix_transform.hpp"
 
-
 enum class CameraMovement {
     FORWARD,
     BACKWARD,
@@ -80,6 +79,7 @@ public:
             m_position += glm::normalize(glm::cross(m_forwardVec, m_upVec)) * velocity;
     }
 
+    /*
     void processMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true) {
         xoffset *= m_mouseSensitivity;
         yoffset *= m_mouseSensitivity;
@@ -96,7 +96,7 @@ public:
         }
 
         updateVectors();
-    }
+    }*/
 
     void printCameraParams() const {
         std::cout << "Position: (" << m_position.x << ", " << m_position.y << ", " << m_position.z << ")" << std::endl;

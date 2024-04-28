@@ -4,6 +4,7 @@
 
 #include "GameObject.h"
 #include "components/colliders/BoxCollider.h"
+#include "glad/glad.h"
 
 void GameObject::DebugDraw(const Shader& wireframe) {
     BoxCollider* collider = getComponent<BoxCollider>();
@@ -49,10 +50,8 @@ void GameObject::DebugDraw(const Shader& wireframe) {
 
         glBindVertexArray(VAO);
 
-        //TODO: implement the color of the wireframe
         glm::vec3 wireframeColor = glm::vec3(0.0f, 1.0f, 0.0f);
         wireframe.setVec3("m_wireframeColor", wireframeColor);
-
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
         glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
