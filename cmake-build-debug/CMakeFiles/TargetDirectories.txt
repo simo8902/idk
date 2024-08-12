@@ -1,0 +1,5 @@
+C:/Users/Simeon/Documents/LupusFire Core/cmake-build-debug/CMakeFiles/glad.dir
+C:/Users/Simeon/Documents/LupusFire Core/cmake-build-debug/CMakeFiles/ImGui.dir
+C:/Users/Simeon/Documents/LupusFire Core/cmake-build-debug/CMakeFiles/LupusFire_core.dir
+C:/Users/Simeon/Documents/LupusFire Core/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Simeon/Documents/LupusFire Core/cmake-build-debug/CMakeFiles/rebuild_cache.dir
