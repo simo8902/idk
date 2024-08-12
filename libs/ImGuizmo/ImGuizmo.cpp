@@ -1411,8 +1411,13 @@ namespace ImGuizmo
                vec_t cornerWorldPos = (dirPlaneX * quadUV[j * 2] + dirPlaneY * quadUV[j * 2 + 1]) * gContext.mScreenFactor;
                screenQuadPts[j] = worldToPos(cornerWorldPos, gContext.mMVP);
             }
+<<<<<<< HEAD
          //   drawList->AddPolyline(screenQuadPts, 4, directionColor[i], true, 1.0f);
           //  drawList->AddConvexPolyFilled(screenQuadPts, 4, colors[i + 4]);
+=======
+            drawList->AddPolyline(screenQuadPts, 4, directionColor[i], true, 1.0f);
+            drawList->AddConvexPolyFilled(screenQuadPts, 4, colors[i + 4]);
+>>>>>>> aff175ea6ae47cf074278c03587efcafbb7d96ac
          }
       }
 

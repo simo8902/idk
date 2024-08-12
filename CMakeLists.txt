@@ -3,6 +3,7 @@ project(LupusFire_core)
 
 add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
+<<<<<<< HEAD
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/Engine/Core
         ${PROJECT_SOURCE_DIR}/src/Engine/Rendering
@@ -74,6 +75,31 @@ set(SOURCE_FILES
 # GLAD
 set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
 set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
+=======
+# GLAD
+set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
+set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
+        src/editor/windows/Scene.cpp
+        src/editor/windows/Scene.h
+        src/Components/Component.h
+        src/editor/windows/Renderer.cpp
+        src/editor/windows/Renderer.h
+        src/Components/Transform.h
+        src/editor/windows/HierarchyManager.cpp
+        src/editor/windows/HierarchyManager.h
+        src/editor/windows/InspectorManager.cpp
+        src/editor/windows/InspectorManager.h
+        src/editor/windows/ProjectExplorer.cpp
+        src/editor/windows/ProjectExplorer.h
+        src/components/colliders/Collider.h
+        src/components/colliders/Ray.h
+        src/components/colliders/BoxCollider.h
+        src/editor/windows/RenderingManagement.h
+        src/Initialization.h
+        src/Initialization.cpp
+        src/SubGameObject.h
+)
+>>>>>>> aff175ea6ae47cf074278c03587efcafbb7d96ac
 
 # ImGuizmo
 set(IMGUIzmo_PATH ${CMAKE_SOURCE_DIR}/libs/ImGuizmo)
@@ -110,6 +136,17 @@ include_directories(${GLAD_INCLUDE_DIR})
 
 set(CMAKE_CXX_STANDARD 17)
 
+<<<<<<< HEAD
 add_executable(LupusFire_core main.cpp ${GLAD_SOURCE} ${SOURCE_FILES} ${HEADER_FILES})
+=======
+add_executable(LupusFire_core main.cpp ${GLAD_SOURCE}
+    src/Shader.cpp
+    src/Shader.h
+    src/GameObject.cpp
+    src/GameObject.h
+    src/Cube.cpp
+    src/Cube.h
+    src/Camera.h)
+>>>>>>> aff175ea6ae47cf074278c03587efcafbb7d96ac
 
 target_link_libraries(LupusFire_core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32 imm32)
