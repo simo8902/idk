@@ -13,6 +13,7 @@
 #include ".h/CapsuleCollider.h"
 #include ".h/Sphere.h"
 #include "Scene.h"
+
 Renderer::Renderer(Scene* scene, const std::shared_ptr<Camera> & camera, GLFWwindow* m_Window)
     : scene(scene), m_Window(m_Window), m_Camera(camera)
     , FBO(), FBO_height(), FBO_width(), texture_id(), RBO()
