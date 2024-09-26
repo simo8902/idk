@@ -17,18 +17,23 @@ public:
     ~Shader() = default;
     unsigned int shaderProgram{};
 
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath);
+    Shader(const std::string& vertexPath, const std::string& fragmentPath);
     void Use() const;
     void setMat4(const std::string &name, const glm::mat4 &matrix) const;
     void setVec3(const std::string& name, const glm::vec3& value) const;
 
-    [[nodiscard]] GLuint GetProgramID() const {
+    GLuint GetProgramID() const {
         return shaderProgram;
+    }
+    void setInt(const std::string &name, int value) {
+        glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), value);
     }
 private:
     static std::string readFile(const char* filePath);
     static void checkCompileStatus(unsigned int shader, const std::string& type);
+    std::string vertexShaderFilename;
+    std::string fragmentShaderFilename;
 
 };
 
-#endif //SHADER_H
+#endif //NAV2SFM Core_SHADER_H

@@ -144,4 +144,4 @@ private:
     GLuint VAO, VBO, EBO;
 };
 
-#endif //LUPUSFIRE_CORE_BOXCOLLIDER_H
+#endif //NAV2SFM Core_BOX_COLLIDER_H

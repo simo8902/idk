@@ -225,4 +225,4 @@ private:
 
 
 };
-#endif //LUPUSFIRE_CORE_CAPSULECOLLIDER_H
+#endif //NAV2SFM Core_CAPSULE_COLLIDER_H

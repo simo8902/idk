@@ -13,4 +13,4 @@ public:
 };
 
 
-#endif //LUPUSFIRE_CORE_PROJECTEXPLORER_H
+#endif //NAV2SFM Core_PROJECT_DIR_H

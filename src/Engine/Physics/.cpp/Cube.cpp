@@ -87,7 +87,6 @@ void Cube::Draw(const Shader& shader) {
 }
 
 
-
 /*
 auto* material = getComponent<Material>();
 if (material) {

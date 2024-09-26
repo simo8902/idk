@@ -15,7 +15,9 @@ enum class CameraMovement {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+    UP,
+    DOWN
 };
 
 
@@ -44,7 +46,7 @@ public:
     }
 
     void updateViewMatrix() {
-        glm::vec3 target = m_position + m_forwardVec;
+        const glm::vec3 & target = m_position + m_forwardVec;
         m_viewMatrix = glm::lookAt(m_position, target, m_upVec);
     }
 
@@ -68,10 +70,6 @@ public:
         return name;
     }
 
-    glm::mat4 getViewMatrix() const {
-        return glm::lookAt(m_position, m_forwardVec, m_upVec);
-    }
-
     void processKeyboard(CameraMovement direction, float deltaTime) {
         float velocity = m_movementSpeed * deltaTime;
         if (direction == CameraMovement::FORWARD)
@@ -82,6 +80,11 @@ public:
             m_position -= glm::normalize(glm::cross(m_forwardVec, m_upVec)) * velocity;
         if (direction == CameraMovement::RIGHT)
             m_position += glm::normalize(glm::cross(m_forwardVec, m_upVec)) * velocity;
+
+        if (direction == CameraMovement::UP)
+            m_position.y += velocity;
+        if (direction == CameraMovement::DOWN)
+            m_position.y -= velocity;
 
         updateViewMatrix();
     }
@@ -174,14 +177,16 @@ private:
     float m_farPlane;
 
     void updateVectors() {
-        glm::vec3 front;
-        front.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-        front.y = sin(glm::radians(m_pitch));
-        front.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-        m_forwardVec = glm::normalize(front);
+        glm::vec3 forward;
+        forward.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+        forward.y = sin(glm::radians(m_pitch));
+        forward.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+        m_forwardVec = glm::normalize(forward);
 
-        right = glm::normalize(glm::cross(m_forwardVec, m_upVec));
+        // Recalculate the right and up vector
+        const glm::vec3 & right = glm::normalize(glm::cross(m_forwardVec, glm::vec3(0.0f, 1.0f, 0.0f)));
+        m_upVec = glm::normalize(glm::cross(right, m_forwardVec));
     }
 };
 
-#endif //LUPUSFIRE_CORE_CAMERA_H
+#endif //NAV2SFM Core_CAMERA_H

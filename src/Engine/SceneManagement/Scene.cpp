@@ -15,13 +15,15 @@
 #include ".h/Cylinder.h"
 
 std::vector<std::shared_ptr<GameObject>> Scene::objects;
+std::vector<std::shared_ptr<Light>> Scene::lights;
 
-Scene::Scene(Shader* shaderProgram, Shader* wireframe, const std::shared_ptr<Camera> & camera):
-    shaderProgram(shaderProgram), wireframe(wireframe), m_Camera(camera){}
+Scene::Scene(Shader* shaderProgram, Shader* wireframe,Shader* lighting, const std::shared_ptr<Camera> & camera):
+    shaderProgram(shaderProgram), wireframe(wireframe), lightingShader(lighting), m_Camera(camera) {
+}
 
 Scene::~Scene(){}
 
-void Scene::Render3DScene()const{
+void Scene::Render3DScene(const Renderer& renderer) const {
     const glm::mat4 & view = m_Camera->getViewMatrix();
     const glm::mat4 & projection = m_Camera->getProjectionMatrix();
 
@@ -29,8 +31,14 @@ void Scene::Render3DScene()const{
     shaderProgram->setMat4("view", view);
     shaderProgram->setMat4("projection", projection);
 
+    shaderProgram->setVec3("viewPos", m_Camera->getPosition());
+
     const auto & objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
     shaderProgram->setVec3("objectColorUniform", objectColor);
+
+    for (const auto& light : directionalLights) {
+        light->setUniforms(shaderProgram->GetProgramID());
+    }
 
     for (const auto& obj : objects) {
         const auto* transformComponent = obj->getComponent<Transform>();
@@ -70,7 +78,12 @@ void Scene::Render3DScene()const{
 
         obj->Draw(*shaderProgram);
     }
+
+    for(const auto & light : lights) {
+        std::cerr << light->getName() << std::endl;
+    }
 }
+
 
 void Scene::createObjects() {
     // Capsule1
@@ -101,8 +114,6 @@ void Scene::createObjects() {
     cylinder1Transform->setPosition(glm::vec3(2.20f, 1.65f, -2.50f));
     cylinder1->addComponent<CylinderCollider>(cylinder1Transform->getPosition(), cheight,baseRadius);
 
-
-
     // sphere
     const auto sphere1 = std::make_shared<Sphere>("Sphere1");
     sphere1->addComponent<Transform>();
@@ -111,13 +122,24 @@ void Scene::createObjects() {
     sphere1->addComponent<SphereCollider>(sphere1Transform->getPosition(), 1.2f, glm::vec3(0.0f, 0.0f, 0.0f));
 
     objects.push_back(cube1);
-    objects.push_back(capsule1);
+   // objects.push_back(capsule1);
     objects.push_back(cylinder1);
-    objects.push_back(sphere1);
+   // objects.push_back(sphere1);
 
     for (auto obj : objects) {
         // obj->printComponents();
     }
+}
+
+void Scene::createTemporalObject() {
+    // Cube1
+    const auto & cube1 = std::make_shared<Cube>("New Cube");
+    cube1->addComponent<Transform>();
+    Transform* cube1Transform = cube1->getComponent<Transform>();
+    cube1Transform->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+    cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-0.6f), glm::vec3(0.6f));
+
+    objects.push_back(cube1);
 }
 
 void Scene::DrawGrid(float gridSize, float gridStep) const {
@@ -159,4 +181,3 @@ void Scene::DrawGrid(float gridSize, float gridStep) const {
 
     glDeleteBuffers(1, &gridVBO);
 }
-

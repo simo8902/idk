@@ -17,4 +17,4 @@ public:
 };
 
 
-#endif //LUPUSFIRE_CORE_COLLIDER_H
+#endif //NAV2SFM Core_BASE_COLLIDER_H

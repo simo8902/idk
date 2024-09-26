@@ -40,4 +40,4 @@ private:
 
 };
 
-#endif //LUPUSFIRE_CORE_CAPSULE_H
+#endif //NAV2SFM Core_CAPSULE_H

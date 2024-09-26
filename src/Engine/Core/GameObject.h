@@ -13,6 +13,9 @@
 #include "Shader.h"
 #include "Component.h"
 #include <cxxabi.h>
+#include <unordered_map>
+#include <typeindex>
+#include <memory>
 
 
 class GameObject {
@@ -118,4 +121,4 @@ protected:
 };
 
 
-#endif //LUPUSFIRE_CORE_GAMEOBJECT_H
+#endif //NAV2SFM Core_GAMEOBJECT_H

@@ -55,4 +55,4 @@ private:
 
 };
 
-#endif //LUPUSFIRE_CORE_RAY_H
+#endif //NAV2SFM Core_RAY_H

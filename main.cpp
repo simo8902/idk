@@ -7,6 +7,7 @@ int main() {
 
     Renderer renderer(init->getScene(),
         init->getMainCamera(),
+        init->getLightManager(),
         init->getWindow()
     );
 }

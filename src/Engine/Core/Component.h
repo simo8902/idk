@@ -14,4 +14,4 @@ public:
 
 };
 
-#endif //LUPUSFIRE_CORE_COMPONENT_H
+#endif //NAV2SFM Core_COMPONENT

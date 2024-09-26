@@ -30,12 +30,16 @@ public:
     Shader* getWireframeShader() const;
     GLFWwindow* getWindow() const;
     const std::shared_ptr<Camera> & getMainCamera();
+    std::shared_ptr<LightManager> getLightManager() const;
 
     void cameraInit();
 private:
     Scene* scene;
     Shader* shaderProgram;
     Shader* wireframe;
+    Shader* lighting;
+    std::shared_ptr<LightManager> lightManager;
+
     GLFWwindow* m_Window;
     std::shared_ptr<Camera> m_MainCamera;
     std::shared_ptr<Camera> m_SecondCamera;
@@ -57,4 +61,4 @@ protected:
 
 };
 
-#endif //LUPUSFIRE_CORE_INITIALIZATION_H
+#endif //NAV2SFM Core_INIT_H

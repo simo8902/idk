@@ -145,4 +145,4 @@ protected:
 
 
 };
-#endif //SPHERECOLLIDER_H
+#endif //NAV2SFM Core_SPHERE_COLLIDER_H

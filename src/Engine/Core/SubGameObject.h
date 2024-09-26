@@ -56,4 +56,4 @@ private:
 
 };
 
-#endif //LUPUSFIRE_CORE_SUBGAMEOBJECT_H
+#endif //NAV2SFM Core_SUBGO_H

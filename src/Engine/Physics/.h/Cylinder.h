@@ -57,4 +57,4 @@ private:
 
 
 
-#endif //CYLINDER_H
+#endif //NAV2SFM Core_CYLINDER_H

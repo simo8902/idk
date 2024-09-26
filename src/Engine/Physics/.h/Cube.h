@@ -69,4 +69,4 @@ private:
 
 
 
-#endif //CUBE_H
+#endif //NAV2SFM Core_CUBE_H

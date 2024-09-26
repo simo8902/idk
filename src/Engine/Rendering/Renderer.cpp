@@ -2,8 +2,9 @@
 // Created by Simeon on 4/7/2024.
 //
 
-#include <algorithm>
 #include "Renderer.h"
+
+#include "CameraManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include ".h/BoxCollider.h"
@@ -14,9 +15,9 @@
 #include ".h/Sphere.h"
 #include "Scene.h"
 
-Renderer::Renderer(Scene* scene, const std::shared_ptr<Camera> & camera, GLFWwindow* m_Window)
-    : scene(scene), m_Window(m_Window), m_Camera(camera)
-    , FBO(), FBO_height(), FBO_width(), texture_id(), RBO()
+Renderer::Renderer(Scene* scene, const std::shared_ptr<Camera> & camera,const std::shared_ptr<LightManager> & lightManager, GLFWwindow* m_Window)
+    : scene(scene), lightManager(lightManager), m_Window(m_Window), m_Camera(camera)
+    , FBO_width(), FBO_height(), FBO(), RBO(), texture_id()
 {
     myRenderer = this;
     glfwSetWindowUserPointer(m_Window, this);
@@ -89,7 +90,6 @@ void Renderer::createSceneFramebuffer(int sceneWidth, int sceneHeight) {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    std::cerr << "init success\n";
 }
 void Renderer::setMainCamera(const std::shared_ptr<Camera> & camera) {
     m_Camera = camera;
@@ -190,7 +190,7 @@ void Renderer::initImGuiStyle() const{
 }
 
 void Renderer::processInput(GLFWwindow* window) {
-    float currentFrame = glfwGetTime();
+    const float & currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
@@ -203,7 +203,10 @@ void Renderer::processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         m_Camera->processKeyboard(CameraMovement::RIGHT, deltaTime);
 
-
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        m_Camera->processKeyboard(CameraMovement::UP, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        m_Camera->processKeyboard(CameraMovement::DOWN, deltaTime);
 }
 //Main Loop
 void Renderer::render() {
@@ -248,10 +251,13 @@ void Renderer::renderImGuiLayout() {
     renderSceneView();
 
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
-    hierarchyManager.renderHierarchy(myRenderer, scene);
+    hierarchyManager.renderHierarchy(myRenderer, scene, lightManager);
 
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     InspectorManager::renderInspector(HierarchyManager::selectedCamera);
+
+    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
+    InspectorManager::renderInspector(HierarchyManager::selectedLight);
 
     ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
     projectExplorer.renderProjectExplorer();
@@ -344,6 +350,21 @@ void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int actio
         }
     }
 }
+void Renderer::RenderContextMenu() const {
+    if (ImGui::IsMouseClicked(1) && ImGui::IsWindowHovered()) {
+        ImGui::OpenPopup("Context Menu");
+    }
+
+    if (ImGui::BeginPopup("Context Menu")) {
+        if (ImGui::MenuItem("Add Temportal Test Object"))
+        {
+            scene->createTemporalObject();
+        }
+
+        ImGui::EndPopup();
+    }
+
+}
 
 void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint framebuffer) {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -352,89 +373,149 @@ void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     scene->DrawGrid(10.0f, 1.0f);
-    scene->Render3DScene();
+    scene->Render3DScene(*this);
 
     const bool isPressed = glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     static bool wasPressed = false;
 
-if (isPressed && !wasPressed) {
-    const ImVec2 windowPos = ImGui::GetWindowPos();
-    const ImVec2 windowSize = ImGui::GetWindowSize();
+    if (isPressed && !wasPressed) {
+        const ImVec2 windowPos = ImGui::GetWindowPos();
+        const ImVec2 windowSize = ImGui::GetWindowSize();
 
-    double mouseX, mouseY;
-    glfwGetCursorPos(m_Window, &mouseX, &mouseY);
+        double mouseX, mouseY;
+        glfwGetCursorPos(m_Window, &mouseX, &mouseY);
 
-    const bool mouseInWindow = (mouseX >= windowPos.x && mouseX <= windowPos.x + windowSize.x &&
-                          mouseY >= windowPos.y && mouseY <= windowPos.y + windowSize.y);
+        const bool mouseInWindow = (mouseX >= windowPos.x && mouseX <= windowPos.x + windowSize.x &&
+                                    mouseY >= windowPos.y && mouseY <= windowPos.y + windowSize.y);
 
-    if (mouseInWindow) {
-        mouseX -= windowPos.x;
-        mouseY -= windowPos.y;
+        if (mouseInWindow) {
+            mouseX -= windowPos.x;
+            mouseY -= windowPos.y;
 
-        const glm::vec2 & ndc = {
-            (2.0f * mouseX) / windowSize.x - 1.0f,
-            1.0f - (2.0f * mouseY) / windowSize.y
-        };
+            const glm::vec2 ndc = {
+                (2.0f * mouseX) / windowSize.x - 1.0f,
+                1.0f - (2.0f * mouseY) / windowSize.y
+            };
 
-        const Ray & ray = Ray::getRayFromScreenPoint(ndc, m_Camera);
+            const Ray ray = Ray::getRayFromScreenPoint(ndc, m_Camera);
 
-        float closestDistance = std::numeric_limits<float>::max();
-        std::shared_ptr<GameObject> closestObject = nullptr;
+            float closestDistance = std::numeric_limits<float>::max();
+            std::shared_ptr<GameObject> closestObject = nullptr;
 
-        for (const auto& object : Scene::objects) {
-            const Transform* transform = object->getComponent<Transform>();
-            if (!transform) continue;
+            for (const auto &object: Scene::objects) {
+                const Transform *transform = object->getComponent<Transform>();
+                if (!transform) continue;
 
-            glm::mat4 transformMatrix = transform->getModelMatrix();
-            float intersectionDistance;
-            bool intersects = false;
+                glm::mat4 transformMatrix = transform->getModelMatrix();
+                float intersectionDistance;
+                bool intersects = false;
 
-            if (auto boxCollider = object->getComponent<BoxCollider>()) {
-                intersects = boxCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
-            } else if (auto capsuleCollider = object->getComponent<CapsuleCollider>()) {
-                intersects = capsuleCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
-            } else if (auto cylinderCollider = object->getComponent<CylinderCollider>()) {
-                intersects = cylinderCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
-            } else if (auto sphereCollider = object->getComponent<SphereCollider>()) {
-                intersects = sphereCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
+                if (auto boxCollider = object->getComponent<BoxCollider>()) {
+                    intersects = boxCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
+                } else if (auto capsuleCollider = object->getComponent<CapsuleCollider>()) {
+                    intersects = capsuleCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
+                } else if (auto cylinderCollider = object->getComponent<CylinderCollider>()) {
+                    intersects = cylinderCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
+                } else if (auto sphereCollider = object->getComponent<SphereCollider>()) {
+                    intersects = sphereCollider->intersectsRay(ray, transformMatrix, intersectionDistance);
+                }
+
+                if (intersects && intersectionDistance < closestDistance) {
+                    closestDistance = intersectionDistance;
+                    closestObject = object;
+                }
             }
 
+            const float lightClickRadius = 0.5f;
 
-            if (intersects && intersectionDistance < closestDistance) {
-                closestDistance = intersectionDistance;
-                closestObject = object;
+            const auto& lights = lightManager->getDirectionalLights();
+            for (const auto& light : lights) {
+                if (auto directionalLight = std::dynamic_pointer_cast<DirectionalLight>(light)) {
+
+                    glm::vec3 lightPosition = directionalLight->getPosition(light);
+                    std::cout << "Light position: " << glm::to_string(lightPosition) << std::endl;
+
+
+                    float distance = glm::length(lightPosition - ray.m_origin);
+
+                    std::cout << "Checking light: " << directionalLight->getName() << " at distance: " << distance << std::endl;
+
+
+                    if (distance <= lightClickRadius) {
+                        if (selectedObjects) {
+                            selectObject(nullptr);
+                            std::cout << "Deselected object: " << selectedObjects->getName() << std::endl;
+                        }
+
+                        selectLight(light);
+                        selectedLight = light;
+
+                        std::cout << "Selected directional light: " << selectedLight->getName() << std::endl;
+                        return;
+                    }
+                }
             }
-        }
 
-        if (closestObject) {
-            if (selectedObjects != closestObject) {
-                selectObject(closestObject);
-                std::cout << closestObject->getName() << " was selected" << std::endl;
+            if (closestObject) {
+                if (selectedObjects != closestObject) {
+                    if (selectedLight) {
+                        std::cout << "Deselected light: " << selectedLight->getName() << std::endl;
+                        selectLight(nullptr);
+                        selectedLight = nullptr;
+                    }
+                    selectObject(closestObject);
+                    std::cout << closestObject->getName() << " was selected" << std::endl;
+                }
+            } else {
+                if (selectedObjects) {
+                    selectObject(nullptr);
+                    selectedLight = nullptr;
+                    std::cout << "No object selected, deselecting previous object" << std::endl;
+                }
             }
         } else {
-            // Deselect if no object is hit and there was a previously selected object
+            if (selectedLight) {
+                std::cout << "Clicked outside window, deselecting light: " << selectedLight->getName() << std::endl;
+                selectLight(nullptr);
+                selectedLight = nullptr;
+            }
+
             if (selectedObjects) {
+                std::cout << "Clicked outside window, deselecting object: " << selectedObjects->getName() << std::endl;
                 selectObject(nullptr);
-                std::cout << "No object selected, deselecting previous object" << std::endl;
+                selectedObjects = nullptr;
             }
         }
-    } else {
-        // If clicked outside the window, deselect the current object
-        if (selectedObjects) {
-          //  selectObject(nullptr);
-            std::cout << "Clicked outside window, deselecting object" << std::endl;
-        }
     }
-}
 
-wasPressed = isPressed;
+    wasPressed = isPressed;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
 }
 
-void Renderer::renderImGuizmo() const {
+bool Renderer::intersectsWithLight(const Ray& ray, const Light& light, float& distance, float selectionRadius) {
+    glm::vec3 lightPosition = light.getPosition();
+    glm::vec3 toLight = lightPosition - ray.m_origin;
+
+    float tca = glm::dot(toLight, ray.m_direction);
+
+    if (tca < 0) return false;
+
+    glm::vec3 closestPointOnRay = ray.m_origin + ray.m_direction * tca;
+    distance = glm::length(closestPointOnRay - lightPosition);
+
+    return distance <= selectionRadius;
+}
+
+void Renderer::selectLight(const std::shared_ptr<Light>& light) {
+    HierarchyManager::selectedLight = light;
+    selectedLight = light;
+}
+
+void Renderer::renderImGuizmo() {
     ImGui::Begin("Scene Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+
     if (selectedObjects) {
         glm::mat4 view = m_Camera->getViewMatrix();
         glm::mat4 projection = m_Camera->getProjectionMatrix();
@@ -453,5 +534,43 @@ void Renderer::renderImGuizmo() const {
 
         InspectorManager::renderInspector(selectedObjects);
     }
+
+    if(selectedLight) {
+        if (noLightSelectedLogged) {
+            noLightSelectedLogged = false;
+        }
+
+        glm::mat4 view = m_Camera->getViewMatrix();
+        glm::mat4 projection = m_Camera->getProjectionMatrix();
+
+        ImGuizmo::BeginFrame();
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
+
+        auto transform = selectedLight->getComponent<Transform>();
+        if (transform) {
+            glm::mat4 objectMatrix = selectedLight->transform->getModelMatrix();
+            ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), currentGizmoMode, ImGuizmo::WORLD, glm::value_ptr(objectMatrix));
+
+            glm::vec3 translation, rotation, scale;
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(objectMatrix), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
+
+            selectedLight->getComponent<Transform>()->setModelMatrix(objectMatrix);
+            selectedLight->updateDirectionFromRotation();
+        }
+
+
+        InspectorManager::renderInspector(selectedLight);
+    }else {
+        if (!noLightSelectedLogged) {
+            std::cout << "No light selected!" << std::endl;
+            noLightSelectedLogged = true;
+        }
+
+    }
+
     ImGui::End();
 }

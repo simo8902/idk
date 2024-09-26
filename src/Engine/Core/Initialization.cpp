@@ -4,8 +4,10 @@
 
 #include "Initialization.h"
 
+#include "CameraManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+CameraManager cameraManager;
 
 Initialization::Initialization() {
     cameraInit();
@@ -39,8 +41,35 @@ Initialization::Initialization() {
 
     shaderProgram = new Shader(SOURCE_DIR "/shaders/basicVertex.glsl", SOURCE_DIR "/shaders/basicFragment.glsl");
     wireframe = new Shader(SOURCE_DIR "/shaders/wireframeVert.glsl", SOURCE_DIR "/shaders/wireframeFrag.glsl");
-    scene = new Scene(shaderProgram, wireframe, m_MainCamera);
-    m_Renderer = std::make_shared<Renderer>(scene,m_MainCamera, m_Window);
+    lighting = new Shader(SOURCE_DIR "/shaders/lightingVertex.glsl", SOURCE_DIR "/shaders/lightingFragment.glsl");
+
+    scene = new Scene(shaderProgram, wireframe,lighting,m_MainCamera);
+
+    lightManager = std::make_shared<LightManager>();
+
+    glm::vec3 lightDirection = glm::normalize(glm::vec3(-0.2f, -1.0f, -0.3f));
+    auto directionalLight = std::make_shared<DirectionalLight>(
+        "Main Light",
+        lightDirection,
+        glm::vec3(0.1f, 0.1f, 0.1f),  // Ambient
+        glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
+        glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
+    );
+
+    directionalLight->setPosition(glm::vec3(0.0f, 0.6f,-0.79f));
+
+    lightManager->addDirectionalLight(directionalLight);
+    scene->addDirectionalLight(directionalLight);
+
+    if (directionalLight) {
+        std::cout << "Directional light initialized successfully: " << directionalLight->getName() << std::endl;
+    } else {
+        std::cout << "Failed to initialize directional light." << std::endl;
+    }
+
+    cameraManager.addCamera(m_MainCamera);
+
+    m_Renderer = std::make_shared<Renderer>(scene,m_MainCamera, lightManager, m_Window);
 
     initializeImGui(m_Window);
 }
@@ -52,6 +81,10 @@ Initialization::~Initialization(){
 
     glfwDestroyWindow(m_Window);
     glfwTerminate();
+}
+
+std::shared_ptr<LightManager> Initialization::getLightManager() const {
+    return lightManager;
 }
 
 Shader * Initialization::getShader() const {

@@ -176,4 +176,4 @@ private:
         glBindVertexArray(0);
     }
 };
-#endif //CYLINDERCOLLIDER_H
+#endif //NAV2SFM Core_CYLLINDER_COLLIDER_H

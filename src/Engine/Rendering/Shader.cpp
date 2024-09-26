@@ -7,12 +7,16 @@
 #include "Shader.h"
 #include "gtc/type_ptr.hpp"
 
-Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath) {
-    std::string vertexCode = readFile(vertexShaderPath);
-    std::string fragmentCode = readFile(fragmentShaderPath);
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
+    : vertexShaderFilename(vertexPath), fragmentShaderFilename(fragmentPath) {
+
+    // Read shader code from file paths
+    std::string vertexCode = readFile(vertexPath.c_str());    // Correct path variable
+    std::string fragmentCode = readFile(fragmentPath.c_str()); // Correct path variable
 
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
+
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vShaderCode, nullptr);
@@ -30,12 +34,20 @@ Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath) {
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
+
+    // Clean up shaders after linking
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 }
 
 void Shader::setMat4(const std::string &name, const glm::mat4 &matrix) const {
     GLuint uniformLocation = glGetUniformLocation(shaderProgram, name.c_str());
     if (uniformLocation == -1) {
-        std::cerr << "Uniform '" << name << "' not found in shader." << std::endl;
+        std::cerr << "Uniform '" << name << "' not found in shader (Program ID: "
+                    << shaderProgram << ")." << std::endl;
+        std::cerr << "Vertex Shader: " << vertexShaderFilename << std::endl;
+        std::cerr << "Fragment Shader: " << fragmentShaderFilename << std::endl;
+
         return;
     }
     glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(matrix));
@@ -59,6 +71,7 @@ void Shader::checkCompileStatus(unsigned int shader, const std::string &type) {
         std::cerr << "ERROR: Shader compilation failed for type: " << type << "\n" << infoLog << std::endl;
     }
 }
+
 
 void Shader::Use() const {
     glUseProgram(shaderProgram);

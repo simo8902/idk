@@ -13,9 +13,11 @@
 #include "InspectorManager.h"
 #include "ProjectExplorer.h"
 #include "Scene.h"
+#include ".h/Ray.h"
+
 class Renderer {
 public:
-    Renderer(Scene* scene, const std::shared_ptr<Camera> & camera, GLFWwindow* m_Window);
+    Renderer(Scene* scene, const std::shared_ptr<Camera>& camera, const std::shared_ptr<LightManager> & lightManager, GLFWwindow* window);
     ~Renderer();
 
     void scrollCallback(float yoffset) const;
@@ -30,15 +32,25 @@ public:
     void createSceneFramebuffer(int sceneWidth, int sceneHeight);
 
     void renderSceneViewport(int viewportWidth, int viewportHeight, GLuint framebuffer);
-    void renderImGuizmo() const;
+    void renderImGuizmo();
+    void RenderContextMenu() const;
+    GLuint getFramebufferID() const { return FBO; }
+    GLuint getTextureID() const { return texture_id; }
 
-   [[nodiscard]] std::shared_ptr<Camera>  getCamera() const {
+
+   std::shared_ptr<Camera>  getCamera() const {
         return m_Camera;
+    }
+    void selectLight(const std::shared_ptr<Light>& light);
+    bool intersectsWithLight(const Ray& ray, const Light& light, float& distance, float selectionRadius);
+
+    std::shared_ptr<LightManager>  getLight() const {
+        return lightManager;
     }
     void selectObject(const std::shared_ptr<GameObject>& object) {
         selectedObjects = object;
     }
-
+    std::shared_ptr<Light> selectedLight;
     static void ShowMemoryUsageWindow();
 
     std::shared_ptr<GameObject> selectedObjects = nullptr;
@@ -49,7 +61,12 @@ public:
     Scene* scene;
 
 private:
+    bool noLightSelectedLogged = false;
+    bool noObjectSelectedLogged = false;
+
+    const float selectionRadius = 0.5f;
     Renderer* myRenderer;
+    std::shared_ptr<LightManager> lightManager;
     GLFWwindow* m_Window;
     std::shared_ptr<Camera> m_Camera;
 
@@ -92,4 +109,4 @@ private:
 };
 
 
-#endif //LUPUSFIRE_CORE_RENDERER_H
+#endif //NAV2SFM Core_RENDERER_H

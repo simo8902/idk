@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-project(LupusFire_core)
+project(NAV2SFM_Core)
 
 add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
@@ -9,6 +9,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/Engine/Physics
         ${PROJECT_SOURCE_DIR}/src/Engine/SceneManagement
         ${PROJECT_SOURCE_DIR}/src/Engine/Utilities
+        ${PROJECT_SOURCE_DIR}/src/Engine/Lighting
 )
 
 set(HEADER_FILES
@@ -43,6 +44,10 @@ set(HEADER_FILES
         # Utilities
         ${PROJECT_SOURCE_DIR}/src/Engine/Utilities/Transform.h
         ${PROJECT_SOURCE_DIR}/src/Engine/Utilities/ProjectExplorer.h
+
+        # Light
+        ${PROJECT_SOURCE_DIR}/src/Engine/Lighting/DirectionalLight.h
+
 )
 
 set(SOURCE_FILES
@@ -77,7 +82,11 @@ set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
 
 # GLAD
 set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
-set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
+set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
+        src/Engine/Lighting/DirectionalLight.h
+        src/Engine/Rendering/Light.h
+        src/Engine/SceneManagement/LightManager.h
+        src/Engine/SceneManagement/CameraManager.h)
 
 # ImGuizmo
 set(IMGUIzmo_PATH ${CMAKE_SOURCE_DIR}/libs/ImGuizmo)
@@ -114,6 +123,6 @@ include_directories(${GLAD_INCLUDE_DIR})
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(LupusFire_core main.cpp ${GLAD_SOURCE} ${SOURCE_FILES} ${HEADER_FILES})
+add_executable(NAV2SFM_Core main.cpp ${GLAD_SOURCE} ${SOURCE_FILES} ${HEADER_FILES})
 
-target_link_libraries(LupusFire_core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32 imm32)
+target_link_libraries(NAV2SFM_Core PRIVATE ${GLFW_LIBRARIES} ImGui opengl32 imm32)

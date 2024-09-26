@@ -40,4 +40,4 @@ private:
 };
 
 
-#endif //SPHERE_H
+#endif //NAV2SFM Core_SPHERE_H

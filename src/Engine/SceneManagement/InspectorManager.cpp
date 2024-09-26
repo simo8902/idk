@@ -4,12 +4,18 @@
 
 #include "InspectorManager.h"
 
+#include "HierarchyManager.h"
 #include "imgui.h"
+#include "Light.h"
+#include "LightManager.h"
 #include ".h/BoxCollider.h"
 #include "Transform.h"
 #include ".h/CapsuleCollider.h"
 #include ".h/CylinderCollider.h"
 #include ".h/SphereCollider.h"
+#include "DirectionalLight.h"
+
+class DirectionalLight;
 
 void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& selectedObject) {
     ImGui::Begin("Inspector");
@@ -108,27 +114,103 @@ void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& select
     ImGui::End();
  }
 
-
 void InspectorManager::renderInspector(const std::shared_ptr<Camera>& camera) {
     ImGui::Begin("Inspector");
 
-    if (camera){
+    if (camera) {
         ImGui::Text("Name: %s", camera->getName().c_str());
 
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Position");
         ImGui::SameLine(100);
-        ImGui::InputFloat3("##CameraPos", glm::value_ptr(camera->m_position), "%.2f");
+
+        // Create a temporary copy of the position to edit
+        glm::vec3 tempPosition = camera->m_position;
+        if (ImGui::InputFloat3("##CameraPos", glm::value_ptr(tempPosition), "%.2f")) {
+            // Only update the camera if the position has changed
+            camera->m_position = tempPosition;
+            camera->updateViewMatrix(); // Update the view matrix after changing position
+        }
 
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Forward");
         ImGui::SameLine(100);
-        ImGui::InputFloat3("##CameraForward", glm::value_ptr(camera->m_forwardVec), "%.2f");
+
+        // Similarly, update the forward vector
+        glm::vec3 tempForward = camera->m_forwardVec;
+        if (ImGui::InputFloat3("##CameraForward", glm::value_ptr(tempForward), "%.2f")) {
+            camera->m_forwardVec = glm::normalize(tempForward);
+            camera->updateViewMatrix(); // Update view matrix after changing forward vector
+        }
 
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Up");
         ImGui::SameLine(100);
-        ImGui::InputFloat3("##CameraUp", glm::value_ptr(camera->m_upVec), "%.2f");
+
+        // Similarly, update the up vector
+        glm::vec3 tempUp = camera->m_upVec;
+        if (ImGui::InputFloat3("##CameraUp", glm::value_ptr(tempUp), "%.2f")) {
+            camera->m_upVec = glm::normalize(tempUp);
+            camera->updateViewMatrix(); // Update view matrix after changing up vector
+        }
     }
+    ImGui::End();
+}
+
+void InspectorManager::renderInspector(const std::shared_ptr<Light>& light) {
+    ImGui::Begin("Inspector");
+
+
+    if (light) {
+    auto directionalLight = std::dynamic_pointer_cast<DirectionalLight>(light);
+    if (directionalLight) {
+        ImGui::Text("Selected Light: %s", directionalLight->name.c_str());
+
+        if (directionalLight->hasTransform()) {
+            glm::vec3 position = directionalLight->transform->getPosition();
+            glm::vec3 rotation = glm::degrees(glm::eulerAngles(directionalLight->transform->getRotation()));
+
+            if (ImGui::InputFloat3("Position", glm::value_ptr(position))) {
+                directionalLight->transform->setPosition(position);
+            }
+
+            if (ImGui::InputFloat3("Rotation", glm::value_ptr(rotation))) {
+                glm::vec3 rotationRadians = glm::radians(rotation);
+                directionalLight->transform->setRotation(rotationRadians);
+            }
+
+            glm::vec3 direction = directionalLight->direction;
+            ImGui::Text("Direction: %.2f, %.2f, %.2f", direction.x, direction.y, direction.z);
+        } else {
+            ImGui::Text("Transform component is missing.");
+        }
+
+        // Light properties (ambient, diffuse, specular)
+        glm::vec3 ambient = directionalLight->ambient;
+        glm::vec3 diffuse = directionalLight->diffuse;
+        glm::vec3 specular = directionalLight->specular;
+
+        // Input fields for light properties
+        if (ImGui::InputFloat3("Ambient", glm::value_ptr(ambient))) {
+            directionalLight->setAmbient(ambient);
+        }
+
+        if (ImGui::InputFloat3("Diffuse", glm::value_ptr(diffuse))) {
+            directionalLight->setDiffuse(diffuse);
+        }
+
+        if (ImGui::InputFloat3("Specular", glm::value_ptr(specular))) {
+            directionalLight->setSpecular(specular);
+        }
+    } else {
+        ImGui::Text("Selected light is not a directional light.");
+    }
+} else {
+    ImGui::Text("No light selected.");
+}
+
+
+
+
     ImGui::End();
 }
