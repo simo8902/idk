@@ -7,6 +7,10 @@
 #include "CameraManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 CameraManager cameraManager;
 
 Initialization::Initialization() {
@@ -41,14 +45,25 @@ Initialization::Initialization() {
 
     shaderProgram = new Shader(SOURCE_DIR "/shaders/basicVertex.glsl", SOURCE_DIR "/shaders/basicFragment.glsl");
     wireframe = new Shader(SOURCE_DIR "/shaders/wireframeVert.glsl", SOURCE_DIR "/shaders/wireframeFrag.glsl");
-    lighting = new Shader(SOURCE_DIR "/shaders/lightingVertex.glsl", SOURCE_DIR "/shaders/lightingFragment.glsl");
+    skyShaderProgram = new Shader(SOURCE_DIR "/shaders/vertexsky.glsl", SOURCE_DIR "/shaders/fragmentsky.glsl");
 
-    scene = new Scene(shaderProgram, wireframe,lighting,m_MainCamera);
+    std::vector<std::string> faces {
+        SOURCE_DIR "/src/data/skybox/skybox1/pink_left_2.png",
+        SOURCE_DIR "/src/data/skybox/skybox1/pink_right_3.png",
+        SOURCE_DIR "/src/data/skybox/skybox1/pink_top_4.png",
+        SOURCE_DIR "/src/data/skybox/skybox1/pink_bottom_5.png",
+        SOURCE_DIR "/src/data/skybox/skybox1/pink_front_0.png",
+        SOURCE_DIR "/src/data/skybox/skybox1/pink_back_1.png"
+    };
+
+    skyboxTexture = loadCubemap(faces);
+
+    scene = new Scene(shaderProgram, wireframe,skyShaderProgram, m_MainCamera, skyboxTexture);
 
     lightManager = std::make_shared<LightManager>();
 
-    glm::vec3 lightDirection = glm::normalize(glm::vec3(-0.2f, -1.0f, -0.3f));
-    auto directionalLight = std::make_shared<DirectionalLight>(
+    glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+    const auto & directionalLight = std::make_shared<DirectionalLight>(
         "Main Light",
         lightDirection,
         glm::vec3(0.1f, 0.1f, 0.1f),  // Ambient
@@ -56,7 +71,8 @@ Initialization::Initialization() {
         glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
     );
 
-    directionalLight->setPosition(glm::vec3(0.0f, 0.6f,-0.79f));
+    directionalLight->setDirection(glm::vec3(0.0f, 50.0f, -30.0f));
+    directionalLight->updateDirectionFromRotation();
 
     lightManager->addDirectionalLight(directionalLight);
     scene->addDirectionalLight(directionalLight);
@@ -68,6 +84,7 @@ Initialization::Initialization() {
     }
 
     cameraManager.addCamera(m_MainCamera);
+
 
     m_Renderer = std::make_shared<Renderer>(scene,m_MainCamera, lightManager, m_Window);
 
@@ -81,6 +98,41 @@ Initialization::~Initialization(){
 
     glfwDestroyWindow(m_Window);
     glfwTerminate();
+}
+
+GLuint Initialization::loadCubemap(std::vector<std::string> faces) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (GLuint i = 0; i < faces.size(); i++) {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            GLenum format = GL_RGB;
+            if (nrChannels == 4)
+                format = GL_RGBA;
+
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        } else {
+            std::cerr << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+            glDeleteTextures(1, &textureID);
+            return 0;
+        }
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    return textureID;
 }
 
 std::shared_ptr<LightManager> Initialization::getLightManager() const {
@@ -115,7 +167,7 @@ void Initialization::cameraInit() {
     float moveSpeed = 3.0f;
     float mouseSensitivity = 0.3f;
     float fov = 70.0f;
-    float nearPlane = 0.01f;
+    float nearPlane = 0.1f;
     float farPlane = 1000.0f;
     const std::string name = "Main Camera";
     m_MainCamera = std::make_shared<Camera>(name, position, forward, up, yaw, pitch, moveSpeed, mouseSensitivity, fov, nearPlane, farPlane);

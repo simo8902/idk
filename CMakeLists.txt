@@ -16,7 +16,6 @@ set(HEADER_FILES
         # Core
         ${PROJECT_SOURCE_DIR}/src/Engine/Core/Initialization.h
         ${PROJECT_SOURCE_DIR}/src/Engine/Core/GameObject.h
-        ${PROJECT_SOURCE_DIR}/src/Engine/Core/SubGameObject.h
         ${PROJECT_SOURCE_DIR}/src/Engine/Core/Component.h
 
         # Rendering
@@ -80,14 +79,6 @@ set(SOURCE_FILES
 set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
 set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c)
 
-# GLAD
-set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glad/include)
-set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/libs/glad/src/glad.c
-        src/Engine/Lighting/DirectionalLight.h
-        src/Engine/Rendering/Light.h
-        src/Engine/SceneManagement/LightManager.h
-        src/Engine/SceneManagement/CameraManager.h)
-
 # ImGuizmo
 set(IMGUIzmo_PATH ${CMAKE_SOURCE_DIR}/libs/ImGuizmo)
 
@@ -100,6 +91,9 @@ set(GLM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/glm/include)
 #GLFW
 set(GLFW_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libs/GLFW/include)
 set(GLFW_LIBRARIES ${CMAKE_SOURCE_DIR}/libs/GLFW/lib/libglfw3.a)
+
+# STB_IMAGE
+set(STB_IMAGE_DIR ${CMAKE_SOURCE_DIR}/libs/stb_image)
 
 file(GLOB IMGUI_SOURCES
         ${IMGUI_PATH}/*.cpp
@@ -120,6 +114,7 @@ include_directories(${IMGUIzmo_PATH})
 include_directories(${GLFW_INCLUDE_DIR})
 include_directories(${GLM_INCLUDE_DIR})
 include_directories(${GLAD_INCLUDE_DIR})
+include_directories(${STB_IMAGE_DIR})
 
 set(CMAKE_CXX_STANDARD 17)
 

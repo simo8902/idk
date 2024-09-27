@@ -2,26 +2,26 @@
 // Created by Simeon on 4/5/2024.
 //
 
-#ifndef LUPUSFIRE_CORE_SCENE_H
-#define LUPUSFIRE_CORE_SCENE_H
+#ifndef NAV2SFM_Core_SCENE_H
+#define NAV2SFM_Core_SCENE_H
 
 #include "Camera.h"
 #include "GameObject.h"
 #include "Renderer.h"
 #include "Transform.h"
 #include "../../Engine/Lighting/DirectionalLight.h"
+#include ".h/Sphere.h"
 
 class Scene {
 public:
-    Scene(Shader* shaderProgram, Shader* wireframe,Shader* lighting, const std::shared_ptr<Camera> & camera);
+    Scene(Shader* shaderProgram, Shader* wireframe, Shader* sky, const std::shared_ptr<Camera> & camera, GLuint skyboxTexture);
     ~Scene();
-
 
     static std::vector<std::shared_ptr<GameObject>> objects;
     static std::vector<std::shared_ptr<Light>> lights;
 
-    void Render3DScene(const Renderer& renderer) const;
-    static void createObjects();
+    void Render3DScene() const;
+    void createObjects();
 
     void setCamera(const std::shared_ptr<Camera> & cam) {
         m_Camera = cam;
@@ -36,10 +36,19 @@ public:
         directionalLights.push_back(light);
     }
 
+    GLuint skyVAO, skyVBO;
+
+    void setupSky();
+    void renderSky() const;
 private:
+
+    GLuint skyboxTextureID;
+    GLuint skyboxVAO, skyboxVBO;
+    GLuint skyboxTexture;
+
     Shader* shaderProgram;
     Shader* wireframe;
-    Shader* lightingShader;
+    Shader* skyShader;
 
     Transform gridTransform;
     std::vector<std::shared_ptr<DirectionalLight>> directionalLights;
@@ -48,4 +57,4 @@ private:
 
 };
 
-#endif //NAV2SFM Core_SCENE_H
+#endif //NAV2SFM_Core_SCENE_H

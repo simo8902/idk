@@ -67,7 +67,7 @@ Renderer::Renderer(Scene* scene, const std::shared_ptr<Camera> & camera,const st
 
     glfwSetKeyCallback(m_Window, key_callback);
 
-    Scene::createObjects();
+//   scene->createObjects();
 }
 
 void Renderer::createSceneFramebuffer(int sceneWidth, int sceneHeight) {
@@ -372,8 +372,8 @@ void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    scene->Render3DScene();
     scene->DrawGrid(10.0f, 1.0f);
-    scene->Render3DScene(*this);
 
     const bool isPressed = glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     static bool wasPressed = false;

@@ -35,9 +35,10 @@ public:
     void setDiffuse(const glm::vec3& diff) { diffuse = diff; }
     void setSpecular(const glm::vec3& spec) { specular = spec; }
 
-    void setPosition(const glm::vec3& pos) {
-        direction = pos;
+    const glm::vec3 & getDir() {
+        return direction;
     }
+
     glm::vec3 getPosition(const std::shared_ptr<Light>& lightObject) const {
         const auto transform = lightObject->getComponent<Transform>();
         if (transform)
@@ -47,7 +48,7 @@ public:
     }
 
     void updateDirectionFromRotation() override {
-        const auto transform = getComponent<Transform>();
+        const auto & transform = getComponent<Transform>();
         if (transform) {
             glm::mat4 rotationMatrix = transform->getRotationMatrix();
 

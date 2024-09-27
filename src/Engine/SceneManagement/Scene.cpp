@@ -17,24 +17,124 @@
 std::vector<std::shared_ptr<GameObject>> Scene::objects;
 std::vector<std::shared_ptr<Light>> Scene::lights;
 
-Scene::Scene(Shader* shaderProgram, Shader* wireframe,Shader* lighting, const std::shared_ptr<Camera> & camera):
-    shaderProgram(shaderProgram), wireframe(wireframe), lightingShader(lighting), m_Camera(camera) {
+Scene::Scene(Shader* shaderProgram, Shader* wireframe,Shader* sky,
+    const std::shared_ptr<Camera> & camera, GLuint skyboxTexture):
+    shaderProgram(shaderProgram), wireframe(wireframe) ,skyShader(sky),
+    m_Camera(camera), skyboxTexture(skyboxTexture) {
+    createObjects();
+    setupSky();
+
 }
 
 Scene::~Scene(){}
 
-void Scene::Render3DScene(const Renderer& renderer) const {
-    const glm::mat4 & view = m_Camera->getViewMatrix();
-    const glm::mat4 & projection = m_Camera->getProjectionMatrix();
+void Scene::setupSky() {
+    float skyboxVertices[] = {
+        // positions
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+
+    glGenVertexArrays(1, &skyVAO);
+    glGenBuffers(1, &skyVBO);
+
+    glBindVertexArray(skyVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void Scene::renderSky() const {
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
+
+    skyShader->Use();
+
+    // Remove translation from the view matrix
+    glm::mat4 view = glm::mat4(glm::mat3(m_Camera->getViewMatrix()));
+    glm::mat4 projection = m_Camera->getProjectionMatrix();
+
+    skyShader->setMat4("view", view);
+    skyShader->setMat4("projection", projection);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+    skyShader->setInt("skybox", 0);
+
+    glBindVertexArray(skyVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
+
+}
+
+void Scene::Render3DScene() const {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    const glm::mat4& view = m_Camera->getViewMatrix();
+    const glm::mat4& projection = m_Camera->getProjectionMatrix();
+
+    renderSky();
 
     shaderProgram->Use();
     shaderProgram->setMat4("view", view);
     shaderProgram->setMat4("projection", projection);
 
-    shaderProgram->setVec3("viewPos", m_Camera->getPosition());
+    if (skyboxTexture == 0) {
+        std::cerr << "Skybox texture failed to load." << std::endl;
+    }
 
-    const auto & objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
+    const auto& objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
     shaderProgram->setVec3("objectColorUniform", objectColor);
+
+    glm::vec3 globalAmbientColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glUniform3fv(glGetUniformLocation(shaderProgram->GetProgramID(), "globalAmbientColor"), 1, glm::value_ptr(globalAmbientColor));
 
     for (const auto& light : directionalLights) {
         light->setUniforms(shaderProgram->GetProgramID());
@@ -121,10 +221,17 @@ void Scene::createObjects() {
     sphere1Transform->setPosition(glm::vec3(-2.20f, 1.65f, -2.50f));
     sphere1->addComponent<SphereCollider>(sphere1Transform->getPosition(), 1.2f, glm::vec3(0.0f, 0.0f, 0.0f));
 
+    /*
+    skySphere = std::make_shared<Sphere>("SkySphere");
+    skySphere->addComponent<Transform>();
+    Transform* skySphereTransform = skySphere->getComponent<Transform>();
+    skySphereTransform->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));*/
+
+   // objects.push_back(skySphere);
     objects.push_back(cube1);
-   // objects.push_back(capsule1);
+    objects.push_back(capsule1);
     objects.push_back(cylinder1);
-   // objects.push_back(sphere1);
+    objects.push_back(sphere1);
 
     for (auto obj : objects) {
         // obj->printComponents();

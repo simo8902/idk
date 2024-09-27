@@ -4,8 +4,10 @@ out vec4 FragColor;
 in vec3 FragPos;
 in vec3 Normal;
 
-uniform vec3 viewPos; // Camera position
-uniform vec3 objectColorUniform; // Object color
+uniform vec3 viewPos;
+uniform vec3 objectColorUniform;
+
+uniform vec3 globalAmbientColor;
 
 struct DirectionalLight {
       vec3 direction;
@@ -17,26 +19,27 @@ struct DirectionalLight {
 uniform DirectionalLight dirLight;
 
 void main() {
-      // Normalize the normal
       vec3 norm = normalize(Normal);
 
-      // Calculate the light direction
       vec3 lightDir = normalize(-dirLight.direction);
 
-      // Ambient
-      vec3 ambient = dirLight.ambient * objectColorUniform; // Scale by object color
+      // ************ Global Ambient Lighting ************ //
+      vec3 globalAmbient = globalAmbientColor * objectColorUniform;
 
-      // Diffuse
+      // ************ Directional Light Calculations ************ //
+
+      vec3 ambient = dirLight.ambient * objectColorUniform;
+
       float diff = max(dot(norm, lightDir), 0.0);
-      vec3 diffuse = dirLight.diffuse * diff * objectColorUniform; // Scale by object color
+      vec3 diffuse = dirLight.diffuse * diff * objectColorUniform;
 
-      // Specular
       vec3 viewDir = normalize(viewPos - FragPos);
       vec3 reflectDir = reflect(-lightDir, norm);
       float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
       vec3 specular = dirLight.specular * spec;
 
-      // Combine results
-      vec3 result = ambient + diffuse + specular;
+      // ************ Combine Global and User-Defined Lighting ************ //
+      vec3 result = globalAmbient + ambient + diffuse + specular;
+
       FragColor = vec4(result, 1.0);
 }

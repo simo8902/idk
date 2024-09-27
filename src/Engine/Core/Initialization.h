@@ -33,11 +33,18 @@ public:
     std::shared_ptr<LightManager> getLightManager() const;
 
     void cameraInit();
+
+    Initialization(Initialization const&) = delete;
+    void operator=(Initialization const&) = delete;
+    GLuint loadCubemap(std::vector<std::string> faces);
+
 private:
     Scene* scene;
     Shader* shaderProgram;
     Shader* wireframe;
-    Shader* lighting;
+    Shader* skyShaderProgram;
+    GLuint skyboxTexture;
+
     std::shared_ptr<LightManager> lightManager;
 
     GLFWwindow* m_Window;
@@ -46,9 +53,6 @@ private:
     std::shared_ptr<Camera> m_ActiveCamera;
 
     std::shared_ptr<Renderer> m_Renderer;
-
-    Initialization(Initialization const&) = delete;
-    void operator=(Initialization const&) = delete;
 
 protected:
     void switchToMainCamera() {
