@@ -31,55 +31,58 @@ public:
 
     virtual void Draw(const Shader& shader) = 0;
 
-    /*
-    // Copy constructor
-    GameObject(const GameObject& other)
-            : m_name(other.m_name) {
-     //   std::cout << "GameObject copied: " << this->getName() << std::endl;
-
-
-        for (const auto& component : other.m_components) {
-            m_components.push_back(component);  // std::shared_ptr can be copied
-        }
-    }*/
-
     const std::vector<std::shared_ptr<Component>>& getComponents() const {
         return m_components;
     }
 
     // Object Management
     template <typename T>
-    std::shared_ptr<T> addObject(const std::string& name){
+    std::shared_ptr<T> addObject(const std::string& name) {
         std::shared_ptr<T> newObject = std::make_shared<T>(name);
         return newObject;
     }
 
-
     // Component Management
     template <typename T>
-    T* addComponent() {
+    std::shared_ptr<T> addComponent() {
         static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
 
-        T* newComponent = new T();
-        m_components.emplace_back(std::unique_ptr<Component>(newComponent));
+        auto newComponent = std::make_shared<T>();
+        m_components.emplace_back(newComponent);
         return newComponent;
     }
-
 
     template <typename T, typename... Args>
-    T* addComponent(Args&&... args) {
+    std::shared_ptr<T> addComponent(Args&&... args) {
         static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
 
-        T* newComponent = new T(std::forward<Args>(args)...);
-        m_components.emplace_back(std::unique_ptr<Component>(newComponent));
+        auto newComponent = std::make_shared<T>(std::forward<Args>(args)...);
+        m_components.emplace_back(newComponent);
         return newComponent;
     }
 
-
+    // Non-const
     template <typename T>
-    T* getComponent() {
-        for (std::shared_ptr<Component> & component : m_components) {
-            if (T* comp = dynamic_cast<T*>(component.get())) {
+    std::shared_ptr<T> getComponent() {
+        static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
+
+        for (const auto& component : m_components) {
+            auto comp = std::dynamic_pointer_cast<T>(component);
+            if (comp) {
+                return comp;
+            }
+        }
+        return nullptr;
+    }
+
+    // Const
+    template <typename T>
+    std::shared_ptr<const T> getComponent() const {
+        static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
+
+        for (const auto& component : m_components) {
+            auto comp = std::dynamic_pointer_cast<const T>(component);
+            if (comp) {
                 return comp;
             }
         }
@@ -105,6 +108,10 @@ public:
 
     virtual void setName(const std::string& newName) {
         m_name = newName;
+    }
+
+    virtual void onMeshCleared() {
+        std::cerr << "[DEBUG] Mesh cleared from GameObject: " << m_name << "\n";
     }
 
     static size_t GetMemoryUsage() {

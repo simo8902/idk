@@ -2,75 +2,69 @@
 // Created by Simeon on 4/8/2024.
 //
 
-#include "Scene.h"
 #include "HierarchyManager.h"
 #include "Renderer.h"
+#include "Scene.h"
+#include "LightManager.h"
+#include "SelectionManager.h"
+#include "GameObject.h"
+#include "Camera.h"
+#include "Light.h"
+#include "DirectionalLight.h"
+#include <imgui.h>
+#include <iostream>
 
-std::shared_ptr<Camera> HierarchyManager::selectedCamera = nullptr;
-std::shared_ptr<Light> HierarchyManager::selectedLight = nullptr;
+void HierarchyManager::setRenderer(Renderer* renderer) {
+    this->renderer = renderer;
+}
 
-void HierarchyManager::renderHierarchy(Renderer* renderer, Scene* scene,std::shared_ptr<LightManager> lightManager) {
+void HierarchyManager::setScene(Scene* scene) {
+    this->scene = scene;
+}
+
+void HierarchyManager::setLightManager(const std::shared_ptr<LightManager>& lightManager) {
+    this->lightManager = lightManager;
+}
+
+void HierarchyManager::renderHierarchy() {
     ImGui::Begin("Hierarchy");
 
     if (renderer == nullptr) {
         std::cerr << "Renderer is null\n";
+    } else if (scene == nullptr) {
+        std::cerr << "Scene is null\n";
     } else {
-        /*
-        std::vector<std::shared_ptr<GameObject>> objects = renderer;
+        // Render context menu if needed
+       // renderer->RenderContextMenu();
 
-        for (const auto& object : objects) {
-            if (std::dynamic_pointer_cast<SubGameObject>(object)) {
-                // Retrieve child objects for SubGameObjects
-                std::vector<std::shared_ptr<GameObject>> children = std::dynamic_pointer_cast<SubGameObject>(object)->getGameObjects();
-
-                // Iterate over the child objects here.
-                for (const auto& child : children) {
-                    if (ImGui::Selectable(child->getName().c_str())) {
-                        renderer->selectedObjects = object;
-                    }
-                }
-            } else {
-                // Not a SubGameObject, display directly
-                if (ImGui::Selectable(object->getName().c_str())) {
-                    renderer->selectedObjects = object;
-                }
-            }
-        }
-        */
-
-        renderer->RenderContextMenu();
-
+        // Iterate over GameObjects in the scene
         for (const auto& object : scene->objects) {
-            if (ImGui::Selectable(object->getName().c_str())) {
-                renderer->selectedObjects = object;
-                selectedCamera = nullptr;
-                renderer->selectedLight = nullptr;
+            bool isSelected = SelectionManager::getInstance().selectedGameObject == object;
+            if (ImGui::Selectable(object->getName().c_str(), isSelected)) {
+                SelectionManager::getInstance().selectGameObject(object);
             }
         }
 
-        std::shared_ptr<Camera> camera = renderer->getCamera();
+        // Render the camera
+        const std::shared_ptr<Camera> & camera = renderer->getCamera();
         if (camera != nullptr) {
-            if (ImGui::Selectable(camera->getName().c_str())) {
-                selectedCamera = camera;
-                renderer->selectedObjects = nullptr;
-                renderer->selectedLight = nullptr;
+            bool isSelected = SelectionManager::getInstance().selectedCamera == camera;
+            if (ImGui::Selectable(camera->getName().c_str(), isSelected)) {
+                SelectionManager::getInstance().selectCamera(camera);
             }
         }
 
-
-
-        std::shared_ptr<LightManager> lightManager = renderer->getLight();
+        // Render the lights
         if (lightManager) {
-            const auto& lights = lightManager->getDirectionalLights(); // Use the appropriate method to get directional lights
+            const auto& lights = lightManager->getDirectionalLights();
 
             for (size_t i = 0; i < lights.size(); ++i) {
                 std::shared_ptr<DirectionalLight> light = lights[i];
 
                 if (light) {
-                    if (ImGui::Selectable(light->getName().c_str())) {
-                        renderer->selectedLight = light; // Select the light in the renderer
-                        selectedCamera = nullptr; // Reset selected camera
-                        renderer->selectedObjects = nullptr; // Reset selected objects
+                    bool isSelected = SelectionManager::getInstance().selectedLight == light;
+                    if (ImGui::Selectable(light->getName().c_str(), isSelected)) {
+                        SelectionManager::getInstance().selectLight(light);
                     }
                 } else {
                     std::cerr << "DirectionalLight at index " << i << " is null\n";
@@ -79,23 +73,14 @@ void HierarchyManager::renderHierarchy(Renderer* renderer, Scene* scene,std::sha
         } else {
             std::cerr << "LightManager is null\n";
         }
-
-
-/*
-        for (size_t i = 0; i < lightManager->lights.size(); ++i) {
-            auto& light = lightManager->lights[i];
-
-            ImGui::PushID(i);
-
-            char buffer[128];
-            strncpy(buffer, light->name.c_str(), sizeof(buffer));
-            if (ImGui::InputText("Light Name", buffer, sizeof(buffer))) {
-                light->name = std::string(buffer);
-            }
-
-            ImGui::PopID();
-        }*/
-
     }
+
+    // Handle deselection when clicking outside any selectable items
+    if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
+        if (!ImGui::IsAnyItemHovered()) {
+            SelectionManager::getInstance().clearSelection();
+        }
+    }
+
     ImGui::End();
 }

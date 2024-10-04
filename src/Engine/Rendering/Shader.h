@@ -8,31 +8,34 @@
 #include "glm.hpp"
 #include "glad/glad.h"
 
-#include <iostream>
 #include <memory>
+#include <unordered_map>
+#include <string>
 
 class Shader {
 public:
-    Shader() = default;
-    ~Shader() = default;
-    unsigned int shaderProgram{};
+    explicit Shader(const std::string& filePath);
 
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
+
     void Use() const;
+
     void setMat4(const std::string &name, const glm::mat4 &matrix) const;
     void setVec3(const std::string& name, const glm::vec3& value) const;
+    void setInt(const std::string &name, int value) const;
 
-    GLuint GetProgramID() const {
-        return shaderProgram;
-    }
-    void setInt(const std::string &name, int value) {
-        glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), value);
-    }
+    GLuint GetProgramID() const { return shaderProgram; }
+
 private:
+    GLuint shaderProgram;
+
+    std::unordered_map<std::string, std::string> ParseShader(const std::string& filePath);
+
     static std::string readFile(const char* filePath);
-    static void checkCompileStatus(unsigned int shader, const std::string& type);
-    std::string vertexShaderFilename;
-    std::string fragmentShaderFilename;
+
+    void CompileShaders(const std::string& vertexSource, const std::string& fragmentSource);
+
+    void CheckCompileErrors(GLuint shader, const std::string& type);
 
 };
 

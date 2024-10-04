@@ -4,213 +4,471 @@
 
 #include "InspectorManager.h"
 
-#include "HierarchyManager.h"
-#include "imgui.h"
-#include "Light.h"
-#include "LightManager.h"
-#include ".h/BoxCollider.h"
-#include "Transform.h"
-#include ".h/CapsuleCollider.h"
-#include ".h/CylinderCollider.h"
-#include ".h/SphereCollider.h"
+#include <unordered_set>
+
+#include "AssetManager.h"
 #include "DirectionalLight.h"
+#include "MeshFilter.h"
+#include "MeshRenderer.h"
+#include ".h/Collider.h"
+#include "DragAndDropPayload.h"
 
-class DirectionalLight;
-
-void InspectorManager::renderInspector(const std::shared_ptr<GameObject>& selectedObject) {
+void InspectorManager::renderInspector() {
     ImGui::Begin("Inspector");
-    const auto transform = selectedObject->getComponent<Transform>();
-    const auto boxCollider = selectedObject->getComponent<BoxCollider>();
-    const auto cylinderCol = selectedObject->getComponent<CylinderCollider>();
-    const auto capsuleCollider = selectedObject->getComponent<CapsuleCollider>();
-    const auto sphereCol = selectedObject->getComponent<SphereCollider>();
 
-    if (selectedObject) {
-        ImGui::Text("Name: %s", selectedObject->getName().c_str());
+    auto& selectionManager = SelectionManager::getInstance();
 
-        if (transform) {
-            ImGui::Text("Transform:");
+    if (selectionManager.selectedGameObject) {
+        renderGameObjectInspector(selectionManager.selectedGameObject);
+    } else if (selectionManager.selectedLight) {
+        renderLightInspector(selectionManager.selectedLight);
+    } else if (selectionManager.selectedCamera) {
+        renderCameraInspector(selectionManager.selectedCamera);
+    } else if (selectionManager.selectedMesh) {
+        renderMeshInspector(selectionManager.selectedMesh);
+    } else if (selectionManager.selectedMaterial) {
+        renderMaterialInspector(selectionManager.selectedMaterial);
+    } else {
+        ImGui::Text("No object selected.");
+    }
 
-            //Position
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Position");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##TransformPos", glm::value_ptr(transform->position), "%.2f");
+    ImGui::End();
+}
+void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObject>& gameObject) {
+   if (!gameObject) return;
 
-            //Rotation
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Rotation");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Rotation", glm::value_ptr(transform->rotation), "%.2f");
+    static char nameBuffer[256];
+    strcpy(nameBuffer, gameObject->getName().c_str());
+    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+        gameObject->setName(std::string(nameBuffer));
+    }
 
-            //Scale
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Scale");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Scale", glm::value_ptr(transform->m_scale), "%.2f");
+    auto transform = gameObject->getComponent<Transform>();
+    if (transform) {
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+            glm::vec3 position = transform->getPosition();
+            if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+                transform->setPosition(position);
+            }
+
+            glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->getRotation()));
+            if (ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f)) {
+                glm::vec3 radians = glm::radians(rotation);
+                transform->setRotation(glm::quat(radians));
+            }
+
+            glm::vec3 scale = transform->getScale();
+            if (ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1f)) {
+                transform->setScale(scale);
+            }
+        }
+    }
+
+    const auto& components = gameObject->getComponents();
+    std::unordered_set<std::string> displayedComponents;
+
+    for (const auto& component : components) {
+        if (std::dynamic_pointer_cast<Transform>(component)) {
+            continue;
+        } else if (auto meshFilter = std::dynamic_pointer_cast<MeshFilter>(component)) {
+            if (displayedComponents.find("MeshFilter") == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader("Mesh Filter", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    if (meshFilter->mesh) {
+                        ImGui::Text("Mesh: %s", meshFilter->mesh->getName().c_str());
+                    } else {
+                        ImGui::Text("No mesh assigned.");
+                    }
+                }
+                displayedComponents.insert("MeshFilter");
+            }
+        }
+        else if (auto meshRenderer = std::dynamic_pointer_cast<MeshRenderer>(component)) {
+            if (displayedComponents.find("MeshRenderer") == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    if (meshRenderer->getMaterial()) {
+                        ImGui::Text("Material: %s", meshRenderer->getMaterial()->getName().c_str());
+                    } else {
+                        ImGui::Text("No material assigned.");
+                    }
+
+                    // Drag and Drop Target (for receiving materials)
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_MATERIAL)) {
+                            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<Material>));
+                            auto material = *static_cast<std::shared_ptr<Material>*>(payload->Data);
+                            meshRenderer->setMaterial(material);
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+                displayedComponents.insert("MeshRenderer");
+            }
+        } else if (auto collider = std::dynamic_pointer_cast<Collider>(component)) {
+            if (displayedComponents.find("Collider") == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader("Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::Text("Collider Type: %s", typeid(*collider).name());
+                }
+                displayedComponents.insert("Collider");
+            }
+        } else {
+            std::string componentName = typeid(*component).name();
+            if (displayedComponents.find(componentName) == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader(componentName.c_str())) {
+                    ImGui::Text("Component details go here.");
+                }
+                displayedComponents.insert(componentName);
+            }
+        }
+    }
+}
+
+void InspectorManager::renderLightInspector(const std::shared_ptr<Light>& light) {
+    if (!light) return;
+
+    // Allow renaming the light
+    static char nameBuffer[256];
+    strcpy(nameBuffer, light->getName().c_str());
+    /*
+    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+        light->setName(std::string(nameBuffer));
+    }*/
+
+    // Display and edit the Transform component if present
+    auto transform = light->getComponent<Transform>();
+    if (transform) {
+        renderTransformComponent(transform);
+    }
+
+    // Display light-specific properties
+    if (auto dirLight = std::dynamic_pointer_cast<DirectionalLight>(light)) {
+        if (ImGui::CollapsingHeader("Directional Light Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+            glm::vec3 direction = dirLight->getDirection();
+            if (ImGui::DragFloat3("Direction", glm::value_ptr(direction), 0.1f)) {
+                dirLight->setDirection(glm::normalize(direction));
+            }
+
+            glm::vec3 ambient = dirLight->getAmbient();
+            if (ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient))) {
+                dirLight->setAmbient(ambient);
+            }
+
+            glm::vec3 diffuse = dirLight->getDiffuse();
+            if (ImGui::ColorEdit3("Diffuse", glm::value_ptr(diffuse))) {
+                dirLight->setDiffuse(diffuse);
+            }
+
+            glm::vec3 specular = dirLight->getSpecular();
+            if (ImGui::ColorEdit3("Specular", glm::value_ptr(specular))) {
+                dirLight->setSpecular(specular);
+            }
+        }
+    }
+
+    /*else if (auto pointLight = std::dynamic_pointer_cast<PointLight>(light)) {
+        if (ImGui::CollapsingHeader("Point Light Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+            glm::vec3 position = pointLight->getPosition();
+            if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+                pointLight->setPosition(position);
+            }
+
+            glm::vec3 ambient = pointLight->getAmbient();
+            if (ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient))) {
+                pointLight->setAmbient(ambient);
+            }
+
+            glm::vec3 diffuse = pointLight->getDiffuse();
+            if (ImGui::ColorEdit3("Diffuse", glm::value_ptr(diffuse))) {
+                pointLight->setDiffuse(diffuse);
+            }
+
+            glm::vec3 specular = pointLight->getSpecular();
+            if (ImGui::ColorEdit3("Specular", glm::value_ptr(specular))) {
+                pointLight->setSpecular(specular);
+            }
+
+            float constant = pointLight->getConstant();
+            if (ImGui::DragFloat("Constant", &constant, 0.01f, 0.0f, 1.0f)) {
+                pointLight->setConstant(constant);
+            }
+
+            float linear = pointLight->getLinear();
+            if (ImGui::DragFloat("Linear", &linear, 0.001f, 0.0f, 1.0f)) {
+                pointLight->setLinear(linear);
+            }
+
+            float quadratic = pointLight->getQuadratic();
+            if (ImGui::DragFloat("Quadratic", &quadratic, 0.0001f, 0.0f, 1.0f)) {
+                pointLight->setQuadratic(quadratic);
+            }
+        }
+    } else if (auto spotLight = std::dynamic_pointer_cast<SpotLight>(light)) {
+        if (ImGui::CollapsingHeader("Spot Light Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+            glm::vec3 position = spotLight->getPosition();
+            if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+                spotLight->setPosition(position);
+            }
+
+            glm::vec3 direction = spotLight->getDirection();
+            if (ImGui::DragFloat3("Direction", glm::value_ptr(direction), 0.1f)) {
+                spotLight->setDirection(glm::normalize(direction));
+            }
+
+            glm::vec3 ambient = spotLight->getAmbient();
+            if (ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient))) {
+                spotLight->setAmbient(ambient);
+            }
+
+            glm::vec3 diffuse = spotLight->getDiffuse();
+            if (ImGui::ColorEdit3("Diffuse", glm::value_ptr(diffuse))) {
+                spotLight->setDiffuse(diffuse);
+            }
+
+            glm::vec3 specular = spotLight->getSpecular();
+            if (ImGui::ColorEdit3("Specular", glm::value_ptr(specular))) {
+                spotLight->setSpecular(specular);
+            }
+
+            float cutoff = glm::degrees(spotLight->getCutOff());
+            if (ImGui::DragFloat("Cut Off", &cutoff, 0.1f, 0.0f, 90.0f)) {
+                spotLight->setCutOff(glm::radians(cutoff));
+            }
+
+            float outerCutoff = glm::degrees(spotLight->getOuterCutOff());
+            if (ImGui::DragFloat("Outer Cut Off", &outerCutoff, 0.1f, 0.0f, 90.0f)) {
+                spotLight->setOuterCutOff(glm::radians(outerCutoff));
+            }
+
+            float constant = spotLight->getConstant();
+            if (ImGui::DragFloat("Constant", &constant, 0.01f, 0.0f, 1.0f)) {
+                spotLight->setConstant(constant);
+            }
+
+            float linear = spotLight->getLinear();
+            if (ImGui::DragFloat("Linear", &linear, 0.001f, 0.0f, 1.0f)) {
+                spotLight->setLinear(linear);
+            }
+
+            float quadratic = spotLight->getQuadratic();
+            if (ImGui::DragFloat("Quadratic", &quadratic, 0.0001f, 0.0f, 1.0f)) {
+                spotLight->setQuadratic(quadratic);
+            }
+        }*/
+     else {
+        ImGui::Text("Unknown light type.");
+    }
+}
+
+void InspectorManager::renderCameraInspector(const std::shared_ptr<Camera>& camera) {
+    if (!camera) return;
+
+    // Allow renaming the camera
+    static char nameBuffer[256];
+    strcpy(nameBuffer, camera->getName().c_str());
+    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+        camera->setName(std::string(nameBuffer));
+    }
+
+    // Display and edit camera properties
+    if (ImGui::CollapsingHeader("Camera Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+        float fov = camera->getFOV();
+        if (ImGui::DragFloat("Field of View", &fov, 0.1f, 1.0f, 179.0f)) {
+            camera->setFOV(fov);
         }
 
-        if (boxCollider) {
-            ImGui::Text("BoxCollider:");
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Min");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Min", glm::value_ptr(boxCollider->m_worldMin), "%.2f");
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Max");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Max", glm::value_ptr(boxCollider->m_worldMax), "%.2f");
+        float nearPlane = camera->getNearPlane();
+        float farPlane = camera->getFarPlane();
+        if (ImGui::DragFloatRange2("Clipping Planes", &nearPlane, &farPlane, 0.1f, 0.01f, 1000.0f)) {
+            camera->setNearPlane(nearPlane);
+            camera->setFarPlane(farPlane);
         }
 
-        if (cylinderCol) {
-            ImGui::Text("CylinderCollider:");
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Radius");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Radius", &cylinderCol->radius, "%.2f");
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Height");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Height", &cylinderCol->height, "%.2f");
+        // Display and edit position
+        glm::vec3 position = camera->getPosition();
+        if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+            camera->setPosition(position);
         }
 
-        if (capsuleCollider) {
-            ImGui::Text("CapsuleCollider:");
+        // Display and edit rotation (Yaw and Pitch)
+        float yaw = camera->getYaw();
+        float pitch = camera->getPitch();
 
-            /*
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Pos");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Pos", glm::value_ptr(capsuleCollider->m_position), "%.2f");
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Scale");
-            ImGui::SameLine(100);
-            ImGui::InputFloat("##Scale", &capsuleCollider->wireframeScale, 0.01f, 0.1f, "%.2f");*/
+        if (ImGui::DragFloat("Yaw", &yaw, 0.1f, -360.0f, 360.0f)) {
+            camera->setYaw(yaw);
         }
+        if (ImGui::DragFloat("Pitch", &pitch, 0.1f, -89.0f, 89.0f)) {
+            camera->setPitch(pitch);
+        }
+    }
+}
 
-        if (sphereCol) {
-            ImGui::Text("SphereCollider:");
+void InspectorManager::renderMeshInspector(const std::shared_ptr<Mesh>& mesh) {
+    if (!mesh) return;
 
+    ImGui::Text("Mesh: %s", mesh->getName().c_str());
 
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Pos");
-            ImGui::SameLine(100);
-            ImGui::InputFloat3("##Pos", glm::value_ptr(sphereCol->m_position), "%.2f");
+    // Display mesh properties
+    ImGui::Text("Vertex Count: %zu", mesh->getVertices().size());
+    ImGui::Text("Index Count: %zu", mesh->getIndices().size());
 
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Scale");
-            ImGui::SameLine(100);
-            ImGui::InputFloat("##Scale", &sphereCol->m_radius, 0.01f, 0.1f, "%.2f");
+    // Optionally, display other mesh information
+}
+
+void InspectorManager::renderMaterialInspector(const std::shared_ptr<Material>& material) {
+      if (!material) {
+        std::cout << "InspectorManager: No material selected." << std::endl;
+        return;
+    }
+
+    std::cout << "InspectorManager: Rendering inspector for material: " << material->getName() << std::endl;
+
+    ImGui::Begin("Inspector");
+
+    // Display Material Name
+    ImGui::Text("Material: %s", material->getName().c_str());
+    ImGui::Separator();
+
+    // Shader Assignment Section
+    ImGui::Text("Assigned Shader:");
+    if (auto shader = material->getShader()) {
+        std::string shaderName;
+        const auto& shaders = AssetManager::getInstance().getShaders();
+        for (const auto& [name, shaderPtr] : shaders) {
+            if (shaderPtr->GetProgramID() == shader->GetProgramID()) {
+                shaderName = name;
+                break;
+            }
+        }
+        if (!shaderName.empty()) {
+            ImGui::Text("Shader: %s", shaderName.c_str());
+        }
+        else {
+            ImGui::Text("Shader Program ID: %u", shader->GetProgramID());
         }
     }
     else {
-        std::cerr << "selected object is null\n";
+        ImGui::Text("No shader assigned.");
     }
-    ImGui::End();
- }
 
-void InspectorManager::renderInspector(const std::shared_ptr<Camera>& camera) {
-    ImGui::Begin("Inspector");
+    // Drop Target Area for Shader Assignment
+    ImGui::Separator();
+    ImGui::Text("Drag and drop a shader here to assign.");
 
-    if (camera) {
-        ImGui::Text("Name: %s", camera->getName().c_str());
+    // Define a drop area (e.g., a button)
+    if (ImGui::Button("Drop Shader Here", ImVec2(-1, 50))) {
+        // Optional: Handle button click if needed
+    }
 
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Position");
-        ImGui::SameLine(100);
+    // Handle Drop
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_SHADER)) {
+            if (payload->Data && payload->DataSize > 0) {
+                const char* shaderNameCStr = static_cast<const char*>(payload->Data);
+                std::string shaderNameStr(shaderNameCStr, payload->DataSize - 1); // Exclude null terminator
 
-        // Create a temporary copy of the position to edit
-        glm::vec3 tempPosition = camera->m_position;
-        if (ImGui::InputFloat3("##CameraPos", glm::value_ptr(tempPosition), "%.2f")) {
-            // Only update the camera if the position has changed
-            camera->m_position = tempPosition;
-            camera->updateViewMatrix(); // Update the view matrix after changing position
+                std::cout << "InspectorManager: Received shader name: " << shaderNameStr << std::endl;
+
+                // Retrieve the Shader instance from AssetManager
+                try {
+                    auto shader = AssetManager::getInstance().getShader(shaderNameStr);
+                    if (shader) {
+                        // Assign shader to material
+                        material->assignShader(shader);
+                        std::cout << "InspectorManager: Assigned shader " << shaderNameStr << " to material " << material->getName() << std::endl;
+                    }
+                    else {
+                        std::cerr << "InspectorManager Error: Shader " << shaderNameStr << " not found in AssetManager." << std::endl;
+                        // Optionally, display a popup error message
+                        ImGui::OpenPopup("Shader Not Found");
+                    }
+                }
+                catch (const std::runtime_error& e) {
+                    std::cerr << "InspectorManager Error: " << e.what() << std::endl;
+                    // Optionally, display a popup error message
+                    ImGui::OpenPopup("Shader Error");
+                }
+            }
+            else {
+                std::cerr << "InspectorManager Error: Received invalid shader payload." << std::endl;
+                // Optionally, display a popup error message
+                ImGui::OpenPopup("Invalid Payload");
+            }
         }
 
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Forward");
-        ImGui::SameLine(100);
+        ImGui::EndDragDropTarget();
+    }
 
-        // Similarly, update the forward vector
-        glm::vec3 tempForward = camera->m_forwardVec;
-        if (ImGui::InputFloat3("##CameraForward", glm::value_ptr(tempForward), "%.2f")) {
-            camera->m_forwardVec = glm::normalize(tempForward);
-            camera->updateViewMatrix(); // Update view matrix after changing forward vector
+    // Display Assigned Shader Information
+    ImGui::Separator();
+    if (auto shader = material->getShader()) {
+        std::string shaderName;
+        const auto& shaders = AssetManager::getInstance().getShaders();
+        for (const auto& [name, shaderPtr] : shaders) {
+            if (shaderPtr->GetProgramID() == shader->GetProgramID()) {
+                shaderName = name;
+                break;
+            }
         }
-
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Up");
-        ImGui::SameLine(100);
-
-        // Similarly, update the up vector
-        glm::vec3 tempUp = camera->m_upVec;
-        if (ImGui::InputFloat3("##CameraUp", glm::value_ptr(tempUp), "%.2f")) {
-            camera->m_upVec = glm::normalize(tempUp);
-            camera->updateViewMatrix(); // Update view matrix after changing up vector
+        if (!shaderName.empty()) {
+            ImGui::Text("Assigned Shader: %s (Program ID: %u)", shaderName.c_str(), shader->GetProgramID());
+        }
+        else {
+            ImGui::Text("Assigned Shader Program ID: %u", shader->GetProgramID());
         }
     }
+    else {
+        ImGui::Text("No shader assigned to this material.");
+        ImGui::Separator();
+        // Provide instructions or options to assign a shader
+        ImGui::Text("Drag and drop a shader from the Project Explorer to assign.");
+    }
+
+    // Handle Popups for Errors
+    if (ImGui::BeginPopup("Shader Not Found")) {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error: Shader not found.");
+        if (ImGui::Button("OK")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopup("Shader Error")) {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error assigning shader to material.");
+        if (ImGui::Button("OK")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopup("Invalid Payload")) {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid shader payload received.");
+        if (ImGui::Button("OK")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
     ImGui::End();
 }
 
-void InspectorManager::renderInspector(const std::shared_ptr<Light>& light) {
-    ImGui::Begin("Inspector");
 
+void InspectorManager::renderTransformComponent(const std::shared_ptr<Transform>& transform) {
+    if (!transform) return;
 
-    if (light) {
-    auto directionalLight = std::dynamic_pointer_cast<DirectionalLight>(light);
-    if (directionalLight) {
-        ImGui::Text("Selected Light: %s", directionalLight->name.c_str());
-
-        if (directionalLight->hasTransform()) {
-            glm::vec3 position = directionalLight->transform->getPosition();
-            glm::vec3 rotation = glm::degrees(glm::eulerAngles(directionalLight->transform->getRotation()));
-
-            if (ImGui::InputFloat3("Position", glm::value_ptr(position))) {
-                directionalLight->transform->setPosition(position);
-            }
-
-            if (ImGui::InputFloat3("Rotation", glm::value_ptr(rotation))) {
-                glm::vec3 rotationRadians = glm::radians(rotation);
-                directionalLight->transform->setRotation(rotationRadians);
-            }
-
-            glm::vec3 direction = directionalLight->direction;
-            ImGui::Text("Direction: %.2f, %.2f, %.2f", direction.x, direction.y, direction.z);
-        } else {
-            ImGui::Text("Transform component is missing.");
+    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+        glm::vec3 position = transform->getPosition();
+        if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+            transform->setPosition(position);
         }
 
-        // Light properties (ambient, diffuse, specular)
-        glm::vec3 ambient = directionalLight->ambient;
-        glm::vec3 diffuse = directionalLight->diffuse;
-        glm::vec3 specular = directionalLight->specular;
-
-        // Input fields for light properties
-        if (ImGui::InputFloat3("Ambient", glm::value_ptr(ambient))) {
-            directionalLight->setAmbient(ambient);
+        glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->getRotation()));
+        if (ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f)) {
+            glm::vec3 radians = glm::radians(rotation);
+            transform->setRotation(glm::quat(radians));
         }
 
-        if (ImGui::InputFloat3("Diffuse", glm::value_ptr(diffuse))) {
-            directionalLight->setDiffuse(diffuse);
+        glm::vec3 scale = transform->getScale();
+        if (ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1f)) {
+            transform->setScale(scale);
         }
-
-        if (ImGui::InputFloat3("Specular", glm::value_ptr(specular))) {
-            directionalLight->setSpecular(specular);
-        }
-    } else {
-        ImGui::Text("Selected light is not a directional light.");
     }
-} else {
-    ImGui::Text("No light selected.");
-}
-
-
-
-
-    ImGui::End();
 }

@@ -12,9 +12,9 @@
 class Transform : public Component {
 public:
     Transform()
-            : modelMatrix(glm::mat4(1.0f)), position(glm::vec3(0.0f)),
-              rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
-              m_scale(glm::vec3(1.0f)) {}
+        : modelMatrix(glm::mat4(1.0f)), position(),
+          rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)), m_scale(glm::vec3(1.0f)) {
+    }
 
     std::unique_ptr<Component> clone() const override {
         return std::make_unique<Transform>(*this);
@@ -27,10 +27,6 @@ public:
     glm::vec3 getPosition() const { return position; }
     glm::quat getRotation() const { return rotation; }
     glm::vec3 getScale() const { return m_scale; }
-
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::quat rotation;
-    glm::vec3 m_scale = glm::vec3(1.0f);
 
     glm::vec3 getForward() const {
         return glm::normalize(rotation * glm::vec3(0.0f, 0.0f, -1.0f));
@@ -66,6 +62,10 @@ public:
     }
 
     glm::mat4 modelMatrix;
+    glm::vec3 position;
+    glm::quat rotation;
+    glm::vec3 m_scale;
+
 };
 
 

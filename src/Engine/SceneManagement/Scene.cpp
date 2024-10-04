@@ -3,6 +3,8 @@
 //
 
 #include "Scene.h"
+
+#include "AssetManager.h"
 #include "Transform.h"
 #include ".h/Collider.h"
 #include ".h/CapsuleCollider.h"
@@ -17,10 +19,10 @@
 std::vector<std::shared_ptr<GameObject>> Scene::objects;
 std::vector<std::shared_ptr<Light>> Scene::lights;
 
-Scene::Scene(Shader* shaderProgram, Shader* wireframe,Shader* sky,
-    const std::shared_ptr<Camera> & camera, GLuint skyboxTexture):
-    shaderProgram(shaderProgram), wireframe(wireframe) ,skyShader(sky),
-    m_Camera(camera), skyboxTexture(skyboxTexture) {
+Scene::Scene(const std::shared_ptr<Shader> & shaderProgram,const std::shared_ptr<Shader> & wireframe, const std::shared_ptr<Shader> & sky,
+    const std::shared_ptr<Camera> & camera, const GLuint & skyboxTexture):
+    skyboxTexture(skyboxTexture), shaderProgram(shaderProgram) ,wireframe(wireframe),
+    skyShader(sky), m_Camera(camera) {
     createObjects();
     setupSky();
 
@@ -130,7 +132,7 @@ void Scene::Render3DScene() const {
         std::cerr << "Skybox texture failed to load." << std::endl;
     }
 
-    const auto& objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
+    const glm::vec3 objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
     shaderProgram->setVec3("objectColorUniform", objectColor);
 
     glm::vec3 globalAmbientColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -141,9 +143,9 @@ void Scene::Render3DScene() const {
     }
 
     for (const auto& obj : objects) {
-        const auto* transformComponent = obj->getComponent<Transform>();
+        std::shared_ptr<const Transform> transformComponent = obj->getComponent<Transform>();
 
-        if (transformComponent == nullptr) {
+        if (!transformComponent) {
             std::cerr << "Transform component is null\n";
             continue;
         }
@@ -151,7 +153,25 @@ void Scene::Render3DScene() const {
         glm::mat4 model = transformComponent->getModelMatrix();
         shaderProgram->setMat4("model", model);
 
-        if (auto* collider = obj->getComponent<Collider>()) {
+        std::shared_ptr<const MeshFilter> meshFilter = obj->getComponent<MeshFilter>();
+
+        if (meshFilter) {
+            static bool hasOutput = false;
+
+            if (!meshFilter->mesh) {
+                if (!hasOutput) {
+                    logger.Log("[DEBUG] No mesh to render for object: " + obj->getName());
+                    hasOutput = true;
+                }
+                continue;
+            } else {
+                hasOutput = false;
+            }
+        }
+
+        std::shared_ptr<Collider> collider = obj->getComponent<Collider>();
+
+        if (collider) {
             wireframe->Use();
             wireframe->setMat4("m_View", view);
             wireframe->setMat4("m_Projection", projection);
@@ -159,16 +179,16 @@ void Scene::Render3DScene() const {
             glm::mat4 wireModel = transformComponent->getModelMatrix();
             wireframe->setMat4("m_Model", wireModel);
 
-            if (auto* boxCollider = dynamic_cast<BoxCollider*>(collider)) {
+            if (auto boxCollider = std::dynamic_pointer_cast<BoxCollider>(collider)) {
                 boxCollider->Draw(*wireframe);
             }
-            else if (auto* capsuleCollider = dynamic_cast<CapsuleCollider*>(collider)) {
+            else if (auto capsuleCollider = std::dynamic_pointer_cast<CapsuleCollider>(collider)) {
                 capsuleCollider->Draw(*wireframe);
             }
-            else if (auto* cylinderCollider = dynamic_cast<CylinderCollider*>(collider)) {
+            else if (auto cylinderCollider = std::dynamic_pointer_cast<CylinderCollider>(collider)) {
                 cylinderCollider->Draw(*wireframe);
             }
-            else if(auto* sphereCollider = dynamic_cast<SphereCollider*>(collider)) {
+            else if (auto sphereCollider = std::dynamic_pointer_cast<SphereCollider>(collider)) {
                 sphereCollider->Draw(*wireframe);
             }
             else {
@@ -179,7 +199,7 @@ void Scene::Render3DScene() const {
         obj->Draw(*shaderProgram);
     }
 
-    for(const auto & light : lights) {
+    for (const auto& light : lights) {
         std::cerr << light->getName() << std::endl;
     }
 }
@@ -190,17 +210,27 @@ void Scene::createObjects() {
     const auto capsule1 = std::make_shared<Capsule>("Capsule1");
     capsule1->addComponent<Transform>();
 
-    Transform* capsule1Transform = capsule1->getComponent<Transform>();
+    std::shared_ptr<Transform> capsule1Transform = capsule1->getComponent<Transform>();
     float radius = 1.0f;
     float height = 2.0f;
     capsule1->addComponent<CapsuleCollider>(capsule1Transform->getPosition(), radius, height);
 
     // Cube1
     const auto cube1 = std::make_shared<Cube>("Cube1");
+
+    // Add Transform
     cube1->addComponent<Transform>();
-    Transform* cube1Transform = cube1->getComponent<Transform>();
+    std::shared_ptr<Transform> cube1Transform = cube1->getComponent<Transform>();
     cube1Transform->setPosition(glm::vec3(4.2f, 1.5f, -2.5f));
     cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-0.6f), glm::vec3(0.6f));
+
+    auto meshFilter = cube1->addComponent<MeshFilter>(cube1);
+    meshFilter->setMesh(std::make_shared<Mesh>(Mesh::CreateCube(), "Cube"));
+
+    auto material = std::make_shared<Material>("BasicMaterial", shaderProgram);
+    AssetManager::getInstance().addMaterial("BasicMaterial", material);
+
+    cube1->addComponent<MeshRenderer>(meshFilter, material);
 
     // Cylinder
     float baseRadius = 0.5f;
@@ -210,14 +240,14 @@ void Scene::createObjects() {
 
     const auto cylinder1 = std::make_shared<Cylinder>("Cylinder1", baseRadius, topRadius, cheight, sectors);
     cylinder1->addComponent<Transform>();
-    Transform* cylinder1Transform = cylinder1->getComponent<Transform>();
+    std::shared_ptr<Transform> cylinder1Transform = cylinder1->getComponent<Transform>();
     cylinder1Transform->setPosition(glm::vec3(2.20f, 1.65f, -2.50f));
     cylinder1->addComponent<CylinderCollider>(cylinder1Transform->getPosition(), cheight,baseRadius);
 
     // sphere
     const auto sphere1 = std::make_shared<Sphere>("Sphere1");
     sphere1->addComponent<Transform>();
-    Transform* sphere1Transform = sphere1->getComponent<Transform>();
+    std::shared_ptr<Transform> sphere1Transform = sphere1->getComponent<Transform>();
     sphere1Transform->setPosition(glm::vec3(-2.20f, 1.65f, -2.50f));
     sphere1->addComponent<SphereCollider>(sphere1Transform->getPosition(), 1.2f, glm::vec3(0.0f, 0.0f, 0.0f));
 
@@ -242,7 +272,7 @@ void Scene::createTemporalObject() {
     // Cube1
     const auto & cube1 = std::make_shared<Cube>("New Cube");
     cube1->addComponent<Transform>();
-    Transform* cube1Transform = cube1->getComponent<Transform>();
+    std::shared_ptr<Transform> cube1Transform = cube1->getComponent<Transform>();
     cube1Transform->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
     cube1->addComponent<BoxCollider>(cube1Transform->getPosition(), glm::vec3(-0.6f), glm::vec3(0.6f));
 

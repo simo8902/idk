@@ -3,10 +3,10 @@
 //
 
 #include "Initialization.h"
-
 #include "CameraManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include <LightManager.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -43,10 +43,6 @@ Initialization::Initialization() {
 
     glfwSetWindowUserPointer(m_Window, this);
 
-    shaderProgram = new Shader(SOURCE_DIR "/shaders/basicVertex.glsl", SOURCE_DIR "/shaders/basicFragment.glsl");
-    wireframe = new Shader(SOURCE_DIR "/shaders/wireframeVert.glsl", SOURCE_DIR "/shaders/wireframeFrag.glsl");
-    skyShaderProgram = new Shader(SOURCE_DIR "/shaders/vertexsky.glsl", SOURCE_DIR "/shaders/fragmentsky.glsl");
-
     std::vector<std::string> faces {
         SOURCE_DIR "/src/data/skybox/skybox1/pink_left_2.png",
         SOURCE_DIR "/src/data/skybox/skybox1/pink_right_3.png",
@@ -57,6 +53,10 @@ Initialization::Initialization() {
     };
 
     skyboxTexture = loadCubemap(faces);
+
+    std::shared_ptr<Shader> shaderProgram = std::make_shared<Shader>(SOURCE_DIR "/shaders/basicVertex.glsl", SOURCE_DIR "/shaders/basicFragment.glsl");
+    std::shared_ptr<Shader> wireframe = std::make_shared<Shader>(SOURCE_DIR "/shaders/wireframeVert.glsl", SOURCE_DIR "/shaders/wireframeFrag.glsl");
+    std::shared_ptr<Shader> skyShaderProgram = std::make_shared<Shader>(SOURCE_DIR "/shaders/vertexsky.glsl", SOURCE_DIR "/shaders/fragmentsky.glsl");
 
     scene = new Scene(shaderProgram, wireframe,skyShaderProgram, m_MainCamera, skyboxTexture);
 
@@ -89,6 +89,7 @@ Initialization::Initialization() {
     m_Renderer = std::make_shared<Renderer>(scene,m_MainCamera, lightManager, m_Window);
 
     initializeImGui(m_Window);
+    initImGuiStyle();
 }
 
 Initialization::~Initialization(){
@@ -99,6 +100,7 @@ Initialization::~Initialization(){
     glfwDestroyWindow(m_Window);
     glfwTerminate();
 }
+
 
 GLuint Initialization::loadCubemap(std::vector<std::string> faces) {
     GLuint textureID;
@@ -171,18 +173,6 @@ void Initialization::cameraInit() {
     float farPlane = 1000.0f;
     const std::string name = "Main Camera";
     m_MainCamera = std::make_shared<Camera>(name, position, forward, up, yaw, pitch, moveSpeed, mouseSensitivity, fov, nearPlane, farPlane);
-   // m_Camera->printCameraParams();
-
-  //  m_MainCamera->processKeyboard(CameraMovement::FORWARD, 0.1f);
-
-    //TODO:
-  //  m_MainCamera->processMouseMovement(0.5f, 0.3f);
-
-    glm::vec3 position2 = glm::vec3(5.0f, 5.0f, 5.0f);
-    glm::vec3 forward2 = glm::vec3(0.0f, -1.0f, -1.0f);
-    const std::string name2 = "Second Camera";
-
-    m_SecondCamera = std::make_shared<Camera>(name2, position2, forward2, up, yaw, pitch, moveSpeed, mouseSensitivity, fov, nearPlane, farPlane);
 
     m_ActiveCamera = m_MainCamera;
 }
@@ -192,24 +182,73 @@ void Initialization::errorCallback(int error, const char *description) {
     std::cerr << "Error: " << error << " " << description << std::endl;
 }
 
+void Initialization::initImGuiStyle(){
+    ImGuiStyle &style = ImGui::GetStyle();
+
+    style.WindowPadding = ImVec2(0, 0);
+
+    // Customize Colors
+    ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    ImVec4 greyColor = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+    ImVec4 grey2Color = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+    ImVec4 blackColor = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+    ImVec4 black2Color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+
+    style.Colors[ImGuiCol_Text] = greyColor;
+    style.Colors[ImGuiCol_FrameBg] = grey2Color;
+    style.Colors[ImGuiCol_HeaderActive] = grey2Color;
+    style.Colors[ImGuiCol_HeaderHovered] = black2Color;
+    style.Colors[ImGuiCol_TabActive] = grey2Color;
+    style.Colors[ImGuiCol_TabUnfocused] = redColor;
+    style.Colors[ImGuiCol_TabUnfocusedActive] = grey2Color;
+    style.Colors[ImGuiCol_TabHovered] = grey2Color;
+    style.Colors[ImGuiCol_Tab] = redColor;
+    style.Colors[ImGuiCol_TitleBgActive] = blackColor;
+
+    style.WindowMenuButtonPosition = ImGuiDir_None;
+
+    style.Colors[ImGuiCol_Button] = style.Colors[ImGuiCol_WindowBg];
+}
+
 void Initialization::initializeImGui(GLFWwindow *window){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void) io;
 
-    io.IniFilename =  SOURCE_DIR "/src/imgui.ini";
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+
+    io.IniFilename = SOURCE_DIR "/src/imgui.ini";
 
     io.Fonts->Clear();
 
-    const char *fontPath = SOURCE_DIR "/CascadiaCode.ttf";
+    const char* fontPath = SOURCE_DIR "/CascadiaCode.ttf";
     if (io.Fonts->AddFontFromFileTTF(fontPath, 17.0f)) {
-        io.Fonts->Build();
     } else {
-        std::cerr << strerror(errno) << std::endl;
+        std::cerr << "Failed to load font: " << strerror(errno) << std::endl;
+        return;
     }
+
+    static const ImWchar icons_ranges[] = { 0xf000, 0xf3ff, 0 };
+    ImFontConfig config;
+    config.MergeMode = true;
+    config.PixelSnapH = true;
+    const char* fontAwesomePath = SOURCE_DIR "/src/data/fonts/Font Awesome 6 Free-Solid-900.otf";
+    if (io.Fonts->AddFontFromFileTTF(fontAwesomePath, 16.0f, &config, icons_ranges)) {
+    } else {
+        std::cerr << "Failed to load Font Awesome: " << strerror(errno) << std::endl;
+        return;
+    }
+
     io.Fonts->Build();
+
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
+
+    initImGuiStyle();
+
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
 }
@@ -236,7 +275,7 @@ bool Initialization::initializeGLFW()
 }
 
 bool Initialization::initializeOpenGL(){
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
         return false;
     }

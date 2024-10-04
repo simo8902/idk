@@ -159,9 +159,66 @@ public:
         return m_pitch = newPitch;
     }
 
+    float getFOV() const {
+        return m_fov;
+    }
+
+    void setFOV(float fov) {
+        m_fov = fov;
+        updateProjectionMatrix();
+    }
+
+    // Getter and Setter for Near Plane
+    float getNearPlane() const {
+        return m_nearPlane;
+    }
+
+    void setNearPlane(float nearPlane) {
+        m_nearPlane = nearPlane;
+        updateProjectionMatrix();
+    }
+
+    // Getter and Setter for Far Plane
+    float getFarPlane() const {
+        return m_farPlane;
+    }
+
+    void setFarPlane(float farPlane) {
+        m_farPlane = farPlane;
+        updateProjectionMatrix();
+    }
+
+
+    void setName(const std::string& newName) {
+        name = newName;
+    }
+
+
+    void setPosition(const glm::vec3& position) {
+        m_position = position;
+        updateViewMatrix();
+    }
+
+
+    // Getter for Forward Vector
+    glm::vec3 getForwardVector() const {
+        return m_forwardVec;
+    }
+
+    // Getter and Setter for Up Vector
+    glm::vec3 getUpVector() const {
+        return m_upVec;
+    }
+
+    void setUpVector(const glm::vec3& upVec) {
+        m_upVec = upVec;
+        updateViewMatrix();
+    }
+
     glm::vec3 m_position;
     glm::vec3 m_forwardVec;
     glm::vec3 m_upVec;
+
 
 private:
     std::string name;

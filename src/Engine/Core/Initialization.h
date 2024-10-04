@@ -22,7 +22,7 @@ public:
     static bool initializeOpenGL();
     static GLFWwindow* createGLFWWindow(int width, int height);
     static void errorCallback(int error, const char *description) ;
-    static void initializeImGui(GLFWwindow *window);
+    void initializeImGui(GLFWwindow *window);
 
     Shader* getShader() const;
     Scene* getScene() const;
@@ -37,7 +37,7 @@ public:
     Initialization(Initialization const&) = delete;
     void operator=(Initialization const&) = delete;
     GLuint loadCubemap(std::vector<std::string> faces);
-
+    void initImGuiStyle();
 private:
     Scene* scene;
     Shader* shaderProgram;

@@ -7,14 +7,14 @@
 
 #include "Camera.h"
 #include "GameObject.h"
-#include "Renderer.h"
 #include "Transform.h"
 #include "../../Engine/Lighting/DirectionalLight.h"
 #include ".h/Sphere.h"
 
 class Scene {
 public:
-    Scene(Shader* shaderProgram, Shader* wireframe, Shader* sky, const std::shared_ptr<Camera> & camera, GLuint skyboxTexture);
+    Scene(const std::shared_ptr<Shader> & shaderProgram,const std::shared_ptr<Shader> & wireframe, const std::shared_ptr<Shader> & sky,
+        const std::shared_ptr<Camera> & camera,const GLuint & skyboxTexture);
     ~Scene();
 
     static std::vector<std::shared_ptr<GameObject>> objects;
@@ -27,7 +27,7 @@ public:
         m_Camera = cam;
     }
     static void createTemporalObject();
-    void setShader(Shader* shader) {
+    void setShader(std::shared_ptr<Shader> shader) {
         shaderProgram = shader;
     }
     void DrawGrid(float gridSize, float gridStep) const;
@@ -46,9 +46,9 @@ private:
     GLuint skyboxVAO, skyboxVBO;
     GLuint skyboxTexture;
 
-    Shader* shaderProgram;
-    Shader* wireframe;
-    Shader* skyShader;
+    std::shared_ptr<Shader> shaderProgram;
+    std::shared_ptr<Shader> wireframe;
+    std::shared_ptr<Shader> skyShader;
 
     Transform gridTransform;
     std::vector<std::shared_ptr<DirectionalLight>> directionalLights;

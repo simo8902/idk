@@ -5,19 +5,28 @@
 #ifndef LUPUSFIRE_CORE_HIERARCHYMANAGER_H
 #define LUPUSFIRE_CORE_HIERARCHYMANAGER_H
 
-#include "InspectorManager.h"
-#include "LightManager.h"
+#include <memory>
+#include <vector>
 
 class Renderer;
 class Scene;
+class LightManager;
 
 class HierarchyManager {
 public:
-    static std::shared_ptr<Camera> selectedCamera;
-    static std::shared_ptr<Light> selectedLight;
+    HierarchyManager() = default;
 
-    void renderHierarchy(Renderer* renderer, Scene* scene, std::shared_ptr<LightManager> lightManager);
- };
+    void renderHierarchy();
+
+    // Setters for dependencies
+    void setRenderer(Renderer* renderer);
+    void setScene(Scene* scene);
+    void setLightManager(const std::shared_ptr<LightManager>& lightManager);
+
+private:
+    Renderer* renderer = nullptr;
+    Scene* scene = nullptr;
+    std::shared_ptr<LightManager> lightManager; };
 
 
 #endif //NAV2SFM Core_HIERARCHY_MANAGER_H

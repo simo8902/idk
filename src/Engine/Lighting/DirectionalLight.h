@@ -35,18 +35,14 @@ public:
     void setDiffuse(const glm::vec3& diff) { diffuse = diff; }
     void setSpecular(const glm::vec3& spec) { specular = spec; }
 
-    const glm::vec3 & getDir() {
-        return direction;
+    const glm::vec3& getDirection() const { return direction; }
+    const glm::vec3& getAmbient() const { return ambient; }
+    const glm::vec3& getDiffuse() const { return diffuse; }
+    const glm::vec3& getSpecular() const { return specular; }
+
+    glm::vec3 getPosition() const override {
+        return Light::getPosition();
     }
-
-    glm::vec3 getPosition(const std::shared_ptr<Light>& lightObject) const {
-        const auto transform = lightObject->getComponent<Transform>();
-        if (transform)
-            return transform->getPosition();
-
-        return glm::vec3(0.0f);
-    }
-
     void updateDirectionFromRotation() override {
         const auto & transform = getComponent<Transform>();
         if (transform) {

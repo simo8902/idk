@@ -10,6 +10,7 @@
 #include "Shader.h"
 #include "GameObject.h"
 #include "BoxCollider.h"
+#include "MeshRenderer.h"
 
 class Cube : public GameObject {
 public:
@@ -37,10 +38,14 @@ public:
         return *this;
     }
 
+    void onMeshCleared() override  {
+        std::cerr << "[DEBUG] Mesh cleared for Cube: " << getName() << std::endl;
+    }
+
     void Draw(const Shader& shader) override;
 
     std::shared_ptr<GameObject> clone() const override {
-        std::shared_ptr<Cube> newCube = std::make_shared<Cube>(*this); // Shallow copy
+        auto newCube = std::make_shared<Cube>(*this); // Shallow copy
 
         newCube->m_name = this->m_name;
         std::cout << "Copied name: " << newCube->m_name << "\n";
@@ -51,19 +56,14 @@ public:
             newCube->m_components.push_back(component->clone());
         }
 
-        newCube->vertices = this->vertices;
-        newCube->indices = this->indices;
         return newCube;
     }
 
 private:
-    std::vector<float> vertices;
-    std::vector<unsigned int> indices;
-    GLuint VAO, VBO;
 
     std::unique_ptr<BoxCollider> m_collider;
+    std::unique_ptr<Mesh> mesh;
 
-    void SetupMesh();
 };
 
 
