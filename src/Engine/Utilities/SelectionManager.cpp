@@ -1,8 +1,9 @@
-//
-// Created by Simeon on 10/1/2024.
-//
-
 #include "SelectionManager.h"
+
+SelectionManager& SelectionManager::getInstance() {
+    static SelectionManager instance;
+    return instance;
+}
 
 void SelectionManager::selectMesh(const std::shared_ptr<Mesh>& mesh) {
     selectedMesh = mesh;
@@ -10,6 +11,7 @@ void SelectionManager::selectMesh(const std::shared_ptr<Mesh>& mesh) {
     selectedGameObject.reset();
     selectedLight.reset();
     selectedCamera.reset();
+    selectedShader.reset();
 }
 
 void SelectionManager::selectMaterial(const std::shared_ptr<Material>& material) {
@@ -18,6 +20,7 @@ void SelectionManager::selectMaterial(const std::shared_ptr<Material>& material)
     selectedGameObject.reset();
     selectedLight.reset();
     selectedCamera.reset();
+    selectedShader.reset();
 }
 
 void SelectionManager::selectGameObject(const std::shared_ptr<GameObject>& object) {
@@ -26,6 +29,7 @@ void SelectionManager::selectGameObject(const std::shared_ptr<GameObject>& objec
     selectedMaterial.reset();
     selectedLight.reset();
     selectedCamera.reset();
+    selectedShader.reset();
 }
 
 void SelectionManager::selectLight(const std::shared_ptr<Light>& light) {
@@ -34,6 +38,7 @@ void SelectionManager::selectLight(const std::shared_ptr<Light>& light) {
     selectedMaterial.reset();
     selectedGameObject.reset();
     selectedCamera.reset();
+    selectedShader.reset();
 }
 
 void SelectionManager::selectCamera(const std::shared_ptr<Camera>& camera) {
@@ -42,6 +47,11 @@ void SelectionManager::selectCamera(const std::shared_ptr<Camera>& camera) {
     selectedMaterial.reset();
     selectedGameObject.reset();
     selectedLight.reset();
+    selectedShader.reset();
+}
+
+void SelectionManager::selectShader(const std::shared_ptr<Shader>& shader) {
+    selectedShader = shader;
 }
 
 void SelectionManager::clearSelection() {
@@ -50,4 +60,17 @@ void SelectionManager::clearSelection() {
     selectedGameObject.reset();
     selectedLight.reset();
     selectedCamera.reset();
+    selectedShader.reset();
+}
+
+std::shared_ptr<Material> SelectionManager::getSelectedMaterial() const {
+    return selectedMaterial;
+}
+
+std::shared_ptr<Mesh> SelectionManager::getSelectedMesh() const {
+    return selectedMesh;
+}
+
+std::shared_ptr<Shader> SelectionManager::getSelectedShader() const {
+    return selectedShader;
 }

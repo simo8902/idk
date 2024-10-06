@@ -5,11 +5,11 @@
 #ifndef DIRECTIONALLIGHT_H
 #define DIRECTIONALLIGHT_H
 
-#include <glad/glad.h>
-
+#include "glad/glad.h"
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
 #include "Light.h"
+#include <iostream>
 
 class DirectionalLight : public Light {
 public:

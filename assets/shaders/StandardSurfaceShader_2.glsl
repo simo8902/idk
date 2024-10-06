@@ -31,6 +31,6 @@ uniform vec3 baseColor;
 void main()
 {
     vec4 texColor = texture(albedoTexture, texCoord);
-	FragColor = vec4(baseColor, 1.0);
+    FragColor = texColor * vec4(baseColor, 1.0) * vec4(vertexColor, 1.0);
 }
 

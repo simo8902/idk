@@ -8,7 +8,6 @@
 #include "Component.h"
 #include "Logger.h"
 #include "Mesh.h"
-#include "Shader.h"
 
 class MeshFilter : public Component {
 public:

@@ -6,7 +6,7 @@
 #define DRAGANDDROPPAYLOAD_H
 
 constexpr const char* PAYLOAD_SHADER = "SHADER_PAYLOAD";
-constexpr const char* PAYLOAD_MESH = "MESH_COMPONENT";
-constexpr const char* PAYLOAD_MATERIAL = "MATERIAL_COMPONENT";
+constexpr const char* PAYLOAD_MESH = "MESH_PAYLOAD";
+constexpr const char* PAYLOAD_MATERIAL = "MATERIAL_PAYLOAD";
 
 #endif //DRAGANDDROPPAYLOAD_H

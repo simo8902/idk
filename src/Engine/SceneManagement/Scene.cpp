@@ -96,7 +96,6 @@ void Scene::renderSky() const {
 
     skyShader->Use();
 
-    // Remove translation from the view matrix
     glm::mat4 view = glm::mat4(glm::mat3(m_Camera->getViewMatrix()));
     glm::mat4 projection = m_Camera->getProjectionMatrix();
 
@@ -143,62 +142,46 @@ void Scene::Render3DScene() const {
     }
 
     for (const auto& obj : objects) {
-        std::shared_ptr<const Transform> transformComponent = obj->getComponent<Transform>();
-
-        if (!transformComponent) {
-            std::cerr << "Transform component is null\n";
+        auto transform = obj->getComponent<Transform>();
+        if (!transform) {
+            std::cerr << "[ERROR] Missing Transform for object: " << obj->getName() << "\n";
             continue;
         }
 
-        glm::mat4 model = transformComponent->getModelMatrix();
+        glm::mat4 model = transform->getModelMatrix();
         shaderProgram->setMat4("model", model);
 
-        std::shared_ptr<const MeshFilter> meshFilter = obj->getComponent<MeshFilter>();
-
-        if (meshFilter) {
-            static bool hasOutput = false;
-
-            if (!meshFilter->mesh) {
-                if (!hasOutput) {
-                    logger.Log("[DEBUG] No mesh to render for object: " + obj->getName());
-                    hasOutput = true;
-                }
-                continue;
-            } else {
-                hasOutput = false;
-            }
-        }
-
-        std::shared_ptr<Collider> collider = obj->getComponent<Collider>();
-
+        auto collider = obj->getComponent<Collider>();
         if (collider) {
             wireframe->Use();
             wireframe->setMat4("m_View", view);
             wireframe->setMat4("m_Projection", projection);
-
-            glm::mat4 wireModel = transformComponent->getModelMatrix();
-            wireframe->setMat4("m_Model", wireModel);
-
-            if (auto boxCollider = std::dynamic_pointer_cast<BoxCollider>(collider)) {
-                boxCollider->Draw(*wireframe);
-            }
-            else if (auto capsuleCollider = std::dynamic_pointer_cast<CapsuleCollider>(collider)) {
-                capsuleCollider->Draw(*wireframe);
-            }
-            else if (auto cylinderCollider = std::dynamic_pointer_cast<CylinderCollider>(collider)) {
-                cylinderCollider->Draw(*wireframe);
-            }
-            else if (auto sphereCollider = std::dynamic_pointer_cast<SphereCollider>(collider)) {
-                sphereCollider->Draw(*wireframe);
-            }
-            else {
-                std::cerr << "Unsupported collider type\n";
-            }
+            wireframe->setMat4("m_Model", model);
+            collider->Draw(*wireframe);
         }
 
-        obj->Draw(*shaderProgram);
+        auto meshRenderer = obj->getComponent<MeshRenderer>();
+        if (meshRenderer) {
+            std::shared_ptr<Material> material = meshRenderer->getMaterial();
+            if (material && material->getShader()) {
+                auto shader = material->getShader();
+                shader->Use();
+                shader->setMat4("view", view);
+                shader->setMat4("projection", projection);
+                shader->setMat4("model", model);
+
+                shader->setVec3("baseColor", material->getBaseColor());
+
+                meshRenderer->Render(view, projection);
+            } else {
+                std::cerr << "[ERROR] Missing Material or Shader for object: " << obj->getName() << "\n";
+            }
+        } else {
+            std::cerr << "[INFO] No MeshRenderer for object: " << obj->getName() << "\n";
+        }
     }
 
+    glUseProgram(0);
     for (const auto& light : lights) {
         std::cerr << light->getName() << std::endl;
     }
@@ -206,19 +189,28 @@ void Scene::Render3DScene() const {
 
 
 void Scene::createObjects() {
+    auto globalMaterial = std::make_shared<Material>("GlobalMaterial");
+    AssetManager::getInstance().addMaterial(globalMaterial);
+    globalMaterial->assignShader(shaderProgram);
+
     // Capsule1
     const auto capsule1 = std::make_shared<Capsule>("Capsule1");
     capsule1->addComponent<Transform>();
+    auto capsule1Transform = capsule1->getComponent<Transform>();
+    capsule1->addComponent<CapsuleCollider>(capsule1Transform->getPosition(), 1.0f, 2.0f);
+    float resolution = 512.0f;
 
-    std::shared_ptr<Transform> capsule1Transform = capsule1->getComponent<Transform>();
-    float radius = 1.0f;
-    float height = 2.0f;
-    capsule1->addComponent<CapsuleCollider>(capsule1Transform->getPosition(), radius, height);
+    auto capsuleMeshFilter = capsule1->addComponent<MeshFilter>(capsule1);
+
+    auto capsuleMesh = std::make_shared<Mesh>("Capsule");
+    capsuleMesh->CreateCapsule(1.0f, 2.0f, resolution);
+
+    capsuleMeshFilter->setMesh(capsuleMesh);
+    capsule1->addComponent<MeshRenderer>(capsule1, capsuleMeshFilter, globalMaterial);
 
     // Cube1
     const auto cube1 = std::make_shared<Cube>("Cube1");
 
-    // Add Transform
     cube1->addComponent<Transform>();
     std::shared_ptr<Transform> cube1Transform = cube1->getComponent<Transform>();
     cube1Transform->setPosition(glm::vec3(4.2f, 1.5f, -2.5f));
@@ -227,41 +219,51 @@ void Scene::createObjects() {
     auto meshFilter = cube1->addComponent<MeshFilter>(cube1);
     meshFilter->setMesh(std::make_shared<Mesh>(Mesh::CreateCube(), "Cube"));
 
-    auto material = std::make_shared<Material>("BasicMaterial", shaderProgram);
-    AssetManager::getInstance().addMaterial("BasicMaterial", material);
+    cube1->addComponent<MeshRenderer>(cube1, meshFilter, globalMaterial);
 
-    cube1->addComponent<MeshRenderer>(meshFilter, material);
+    // Cylinder1
+    const auto cylinder1 = std::make_shared<Cylinder>("Cylinder1", 0.5f, 0.5f, 2.0f, 30);
+    cylinder1->addComponent<Transform>();
+    auto cylinder1Transform = cylinder1->getComponent<Transform>();
+    cylinder1Transform->setPosition(glm::vec3(2.20f, 1.65f, -2.50f));
+    cylinder1->addComponent<CylinderCollider>(cylinder1Transform->getPosition(), 2.0f, 0.5f);
 
-    // Cylinder
+    auto cylinderMeshFilter = cylinder1->addComponent<MeshFilter>(cylinder1);
     float baseRadius = 0.5f;
     float topRadius = 0.5f;
     float cheight = 2.0f;
     int sectors = 30;
 
-    const auto cylinder1 = std::make_shared<Cylinder>("Cylinder1", baseRadius, topRadius, cheight, sectors);
-    cylinder1->addComponent<Transform>();
-    std::shared_ptr<Transform> cylinder1Transform = cylinder1->getComponent<Transform>();
-    cylinder1Transform->setPosition(glm::vec3(2.20f, 1.65f, -2.50f));
-    cylinder1->addComponent<CylinderCollider>(cylinder1Transform->getPosition(), cheight,baseRadius);
+    auto cylinderMesh = std::make_shared<Mesh>("Cylinder");
+    cylinderMesh->CreateCylinder(baseRadius ,topRadius, cheight, sectors);
+    cylinderMeshFilter->setMesh(cylinderMesh);
 
-    // sphere
+    cylinder1->addComponent<MeshRenderer>(cylinder1, cylinderMeshFilter, globalMaterial);
+
+    // Sphere1
     const auto sphere1 = std::make_shared<Sphere>("Sphere1");
     sphere1->addComponent<Transform>();
-    std::shared_ptr<Transform> sphere1Transform = sphere1->getComponent<Transform>();
+    auto sphere1Transform = sphere1->getComponent<Transform>();
     sphere1Transform->setPosition(glm::vec3(-2.20f, 1.65f, -2.50f));
     sphere1->addComponent<SphereCollider>(sphere1Transform->getPosition(), 1.2f, glm::vec3(0.0f, 0.0f, 0.0f));
+
+    auto sphereMeshFilter = sphere1->addComponent<MeshFilter>(sphere1);
+    auto sphereMesh = std::make_shared<Mesh>("Sphere");
+    sphereMesh->CreateSphere(1.0f, 1024, 32);
+
+    sphereMeshFilter->setMesh(sphereMesh);
+    sphere1->addComponent<MeshRenderer>(sphere1, sphereMeshFilter, globalMaterial);
+
+    objects.push_back(capsule1);
+    objects.push_back(cube1);
+    objects.push_back(cylinder1);
+    objects.push_back(sphere1);
 
     /*
     skySphere = std::make_shared<Sphere>("SkySphere");
     skySphere->addComponent<Transform>();
     Transform* skySphereTransform = skySphere->getComponent<Transform>();
     skySphereTransform->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));*/
-
-   // objects.push_back(skySphere);
-    objects.push_back(cube1);
-    objects.push_back(capsule1);
-    objects.push_back(cylinder1);
-    objects.push_back(sphere1);
 
     for (auto obj : objects) {
         // obj->printComponents();

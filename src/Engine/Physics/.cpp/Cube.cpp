@@ -8,19 +8,4 @@ Cube::Cube(const std::string& name)
 
 Cube::~Cube() {}
 
-void Cube::Draw(const Shader& shader) {
-    if (mesh) {
-        mesh->Draw(shader);
-    } else {
-        std::cerr << "[ERROR] Mesh is null for Cube: " << getName() << std::endl;
-    }
-}
-
-/*
-auto* material = getComponent<Material>();
-if (material) {
-  glm::vec3 color = material->getColor();
-  shader.setVec3("objectColor", color);
-}else{
-  std::cerr << "Test";
-}*/
+void Cube::Draw(const Shader& shader) {}

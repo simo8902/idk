@@ -6,7 +6,6 @@
 
 #include <LightManager.h>
 
-#include "CameraManager.h"
 #include "imgui_internal.h"
 #include "Logger.h"
 #include "backends/imgui_impl_glfw.h"
@@ -22,7 +21,6 @@
 #include "IconsFontAwesome6Brands.h"
 
 #include "stb_image.h"
-#include "imgui_internal.h"
 
 Renderer::Renderer(Scene* scene, const std::shared_ptr<Camera> & camera,const std::shared_ptr<LightManager> & lightManager, GLFWwindow* m_Window)
     : scene(scene), lightManager(lightManager), m_Window(m_Window), m_Camera(camera)
@@ -212,7 +210,7 @@ void Renderer::renderImGuiLayout() {
     ImGui::Begin("DockSpace Window", nullptr, window_flags);
 
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_NoResize);
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f));
 
     SetupDockingLayout(dockspace_id);
 
@@ -301,10 +299,10 @@ void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint
     scene->DrawGrid(10.0f, 1.0f);
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::IsMouseDown(0)) {
-        ImVec2 windowPos = ImGui::GetWindowPos();       // Get window position (top-left)
-        ImVec2 cursorPos = ImGui::GetMousePos();        // Get the current mouse position
-        ImVec2 contentMin = ImGui::GetWindowContentRegionMin();  // Content start (relative to window)
-        ImVec2 contentMax = ImGui::GetWindowContentRegionMax();  // Content end (relative to window)
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 cursorPos = ImGui::GetMousePos();
+        ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+        ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
 
         float mouseX = cursorPos.x - (windowPos.x + contentMin.x);
         float mouseY = cursorPos.y - (windowPos.y + contentMin.y);
@@ -543,7 +541,7 @@ void Renderer::renderHierarchy() {
 }
 
 void Renderer::renderInspector() {
-    if (ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_NoResize))
+    if (ImGui::Begin("Inspector"))
     {
         inspectorManager.renderInspector();
     }

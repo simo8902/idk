@@ -15,7 +15,7 @@
 class Cube : public GameObject {
 public:
     Cube(const std::string& name);
-    ~Cube();
+    ~Cube() override;
 
     // copy ctor
     Cube(const Cube& other) : GameObject(other) {
@@ -38,35 +38,23 @@ public:
         return *this;
     }
 
-    void onMeshCleared() override  {
-        std::cerr << "[DEBUG] Mesh cleared for Cube: " << getName() << std::endl;
-    }
-
     void Draw(const Shader& shader) override;
 
     std::shared_ptr<GameObject> clone() const override {
-        auto newCube = std::make_shared<Cube>(*this); // Shallow copy
+        auto newCube = std::make_shared<Cube>(*this);
 
         newCube->m_name = this->m_name;
         std::cout << "Copied name: " << newCube->m_name << "\n";
 
-        // Deep copy the components
         newCube->m_components.clear();
         for (const auto& component : this->m_components) {
             newCube->m_components.push_back(component->clone());
         }
-
         return newCube;
     }
-
 private:
-
     std::unique_ptr<BoxCollider> m_collider;
     std::unique_ptr<Mesh> mesh;
-
 };
-
-
-
 
 #endif //NAV2SFM Core_CUBE_H

@@ -27,17 +27,14 @@ void HierarchyManager::setLightManager(const std::shared_ptr<LightManager>& ligh
 }
 
 void HierarchyManager::renderHierarchy() {
-    ImGui::Begin("Hierarchy");
 
     if (renderer == nullptr) {
         std::cerr << "Renderer is null\n";
     } else if (scene == nullptr) {
         std::cerr << "Scene is null\n";
     } else {
-        // Render context menu if needed
        // renderer->RenderContextMenu();
 
-        // Iterate over GameObjects in the scene
         for (const auto& object : scene->objects) {
             bool isSelected = SelectionManager::getInstance().selectedGameObject == object;
             if (ImGui::Selectable(object->getName().c_str(), isSelected)) {
@@ -45,7 +42,6 @@ void HierarchyManager::renderHierarchy() {
             }
         }
 
-        // Render the camera
         const std::shared_ptr<Camera> & camera = renderer->getCamera();
         if (camera != nullptr) {
             bool isSelected = SelectionManager::getInstance().selectedCamera == camera;
@@ -54,7 +50,6 @@ void HierarchyManager::renderHierarchy() {
             }
         }
 
-        // Render the lights
         if (lightManager) {
             const auto& lights = lightManager->getDirectionalLights();
 
@@ -75,12 +70,9 @@ void HierarchyManager::renderHierarchy() {
         }
     }
 
-    // Handle deselection when clicking outside any selectable items
     if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
         if (!ImGui::IsAnyItemHovered()) {
             SelectionManager::getInstance().clearSelection();
         }
     }
-
-    ImGui::End();
 }

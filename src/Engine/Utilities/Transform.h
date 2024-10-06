@@ -5,7 +5,6 @@
 #ifndef LUPUSFIRE_CORE_TRANSFORM_H
 #define LUPUSFIRE_CORE_TRANSFORM_H
 
-#include <iostream>
 #include "Component.h"
 #include "gtx/matrix_decompose.hpp"
 

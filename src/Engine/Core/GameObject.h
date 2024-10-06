@@ -16,12 +16,17 @@
 #include <unordered_map>
 #include <typeindex>
 #include <memory>
-
+#include "Transform.h"
 
 class GameObject {
 public:
-    GameObject(const std::string& name) : m_name(name) {
-        memoryUsage += sizeof(GameObject);
+    GameObject() : id(boost::uuids::random_generator()()) {
+        addComponent<Transform>();
+    }
+
+    GameObject(const std::string& name)
+        : m_name(name), id(boost::uuids::random_generator()()) {
+        addComponent<Transform>();
     }
 
     virtual ~GameObject() {
@@ -29,7 +34,17 @@ public:
     }
     virtual std::shared_ptr<GameObject> clone() const = 0;
 
-    virtual void Draw(const Shader& shader) = 0;
+    virtual void Draw(const Shader& shader) {
+        if (!isBeingRendered) {
+            isBeingRendered = true;
+
+            std::cout << "[GameObject] Base Draw called." << std::endl;
+
+            isBeingRendered = false;
+        } else {
+            std::cerr << "[ERROR] Draw called recursively for object." << std::endl;
+        }
+    }
 
     const std::vector<std::shared_ptr<Component>>& getComponents() const {
         return m_components;
@@ -123,8 +138,15 @@ public:
     glm::vec3 color;
     std::string m_name;
     std::vector<std::shared_ptr<Component>> m_components;
+
+    boost::uuids::uuid getID() const {
+        return id;
+    }
+
 protected:
+    boost::uuids::uuid id;
     static size_t memoryUsage;
+    bool isBeingRendered = false;
 };
 
 

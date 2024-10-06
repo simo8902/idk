@@ -7,8 +7,10 @@
 
 #include <vector>
 #include <memory>
+#include <set>
 #include <string>
-#include "Mesh.h"
+#include <unordered_set>
+
 #include "Material.h"
 
 class ProjectExplorer {
@@ -18,13 +20,24 @@ public:
     void renderProjectExplorer();
     void CreateStandardShaderFile(const std::string& shaderPath);
     void EnsureAssetsFolderExists();
+    void CreateAndAddShader(const std::string& shaderPath, const std::string& shaderName);
 
 private:
-    std::vector<std::shared_ptr<Mesh>> meshes;
+    bool shadersLoaded = false;
+    std::unordered_set<std::string> existingShadersReported;
+    std::unordered_set<std::string> existingMaterialsReported;
+    bool clickedInsideSelectable;
+    std::unordered_set<std::string> userShaderUUIDs;
+
+    void loadShadersFromDirectory();
+    void handleContextMenu();
+    void displayShaders();
+    void displayMaterials();
+
     std::vector<std::shared_ptr<Material>> materials;
 
-    std::shared_ptr<Mesh> selectedMesh = nullptr;
     std::shared_ptr<Material> selectedMaterial = nullptr;
+    std::set<std::string> shadersCreatedByContextMenu;
 
 };
 

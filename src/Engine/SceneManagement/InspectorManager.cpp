@@ -12,9 +12,13 @@
 #include "MeshRenderer.h"
 #include ".h/Collider.h"
 #include "DragAndDropPayload.h"
+#include "imgui_internal.h"
+#include "Texture.h"
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include "SelectionManager.h"
 
 void InspectorManager::renderInspector() {
-    ImGui::Begin("Inspector");
 
     auto& selectionManager = SelectionManager::getInstance();
 
@@ -32,7 +36,6 @@ void InspectorManager::renderInspector() {
         ImGui::Text("No object selected.");
     }
 
-    ImGui::End();
 }
 void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObject>& gameObject) {
    if (!gameObject) return;
@@ -91,14 +94,23 @@ void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObjec
                         ImGui::Text("No material assigned.");
                     }
 
-                    // Drag and Drop Target (for receiving materials)
-                    if (ImGui::BeginDragDropTarget()) {
-                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_MATERIAL)) {
-                            IM_ASSERT(payload->DataSize == sizeof(std::shared_ptr<Material>));
-                            auto material = *static_cast<std::shared_ptr<Material>*>(payload->Data);
-                            meshRenderer->setMaterial(material);
+                    ImGui::Text("Drag and drop a material here to assign.");
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_PAYLOAD")) {
+                            const char* materialUUIDCStr = static_cast<const char*>(payload->Data);
+                            std::string materialUUID(materialUUIDCStr);
+
+                            std::shared_ptr<Material> newMaterial = AssetManager::getInstance().getMaterialByUUID(materialUUID);
+                            if (newMaterial) {
+                                meshRenderer->setMaterial(newMaterial);
+                              //  std::cout << "Assigned material: " << newMaterial->getName() << " to MeshRenderer." << std::endl;
+                            } else {
+                                std::cerr << "Material not found: " << materialUUID << std::endl;
+                            }
                         }
                         ImGui::EndDragDropTarget();
+
                     }
                 }
                 displayedComponents.insert("MeshRenderer");
@@ -282,13 +294,11 @@ void InspectorManager::renderCameraInspector(const std::shared_ptr<Camera>& came
             camera->setFarPlane(farPlane);
         }
 
-        // Display and edit position
         glm::vec3 position = camera->getPosition();
         if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
             camera->setPosition(position);
         }
 
-        // Display and edit rotation (Yaw and Pitch)
         float yaw = camera->getYaw();
         float pitch = camera->getPitch();
 
@@ -306,148 +316,140 @@ void InspectorManager::renderMeshInspector(const std::shared_ptr<Mesh>& mesh) {
 
     ImGui::Text("Mesh: %s", mesh->getName().c_str());
 
-    // Display mesh properties
     ImGui::Text("Vertex Count: %zu", mesh->getVertices().size());
     ImGui::Text("Index Count: %zu", mesh->getIndices().size());
-
-    // Optionally, display other mesh information
 }
 
 void InspectorManager::renderMaterialInspector(const std::shared_ptr<Material>& material) {
-      if (!material) {
-        std::cout << "InspectorManager: No material selected." << std::endl;
+    if (!material) {
+        ImGui::Text("No material selected.");
         return;
     }
 
-    std::cout << "InspectorManager: Rendering inspector for material: " << material->getName() << std::endl;
-
     ImGui::Begin("Inspector");
 
-    // Display Material Name
     ImGui::Text("Material: %s", material->getName().c_str());
     ImGui::Separator();
 
-    // Shader Assignment Section
-    ImGui::Text("Assigned Shader:");
-    if (auto shader = material->getShader()) {
-        std::string shaderName;
-        const auto& shaders = AssetManager::getInstance().getShaders();
-        for (const auto& [name, shaderPtr] : shaders) {
-            if (shaderPtr->GetProgramID() == shader->GetProgramID()) {
-                shaderName = name;
-                break;
-            }
-        }
-        if (!shaderName.empty()) {
-            ImGui::Text("Shader: %s", shaderName.c_str());
-        }
-        else {
-            ImGui::Text("Shader Program ID: %u", shader->GetProgramID());
-        }
-    }
-    else {
+    std::shared_ptr<Shader> shader = material->getShader();
+    if (shader) {
+        ImGui::Text("Shader: %s", shader->getName().c_str());
+        ImGui::Text("UUID: %s", shader->getUUID().c_str());
+    } else {
         ImGui::Text("No shader assigned.");
     }
 
-    // Drop Target Area for Shader Assignment
     ImGui::Separator();
+
     ImGui::Text("Drag and drop a shader here to assign.");
-
-    // Define a drop area (e.g., a button)
-    if (ImGui::Button("Drop Shader Here", ImVec2(-1, 50))) {
-        // Optional: Handle button click if needed
-    }
-
-    // Handle Drop
     if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_SHADER)) {
-            if (payload->Data && payload->DataSize > 0) {
-                const char* shaderNameCStr = static_cast<const char*>(payload->Data);
-                std::string shaderNameStr(shaderNameCStr, payload->DataSize - 1); // Exclude null terminator
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SHADER_PAYLOAD")) {
+            const char* shaderUUIDCStr = static_cast<const char*>(payload->Data);
+            std::string shaderUUID(shaderUUIDCStr);
 
-                std::cout << "InspectorManager: Received shader name: " << shaderNameStr << std::endl;
-
-                // Retrieve the Shader instance from AssetManager
-                try {
-                    auto shader = AssetManager::getInstance().getShader(shaderNameStr);
-                    if (shader) {
-                        // Assign shader to material
-                        material->assignShader(shader);
-                        std::cout << "InspectorManager: Assigned shader " << shaderNameStr << " to material " << material->getName() << std::endl;
-                    }
-                    else {
-                        std::cerr << "InspectorManager Error: Shader " << shaderNameStr << " not found in AssetManager." << std::endl;
-                        // Optionally, display a popup error message
-                        ImGui::OpenPopup("Shader Not Found");
-                    }
-                }
-                catch (const std::runtime_error& e) {
-                    std::cerr << "InspectorManager Error: " << e.what() << std::endl;
-                    // Optionally, display a popup error message
-                    ImGui::OpenPopup("Shader Error");
-                }
-            }
-            else {
-                std::cerr << "InspectorManager Error: Received invalid shader payload." << std::endl;
-                // Optionally, display a popup error message
-                ImGui::OpenPopup("Invalid Payload");
+            std::shared_ptr<Shader> newShader = AssetManager::getInstance().getShaderByUUID(shaderUUID);
+            if (newShader) {
+                material->assignShader(newShader);
+              //  std::cout << "Assigned shader: " << newShader->getName() << " to material: " << material->getName() << std::endl;
+            } else {
+                std::cerr << "Shader not found: " << shaderUUID << std::endl;
             }
         }
-
         ImGui::EndDragDropTarget();
     }
 
-    // Display Assigned Shader Information
-    ImGui::Separator();
-    if (auto shader = material->getShader()) {
-        std::string shaderName;
-        const auto& shaders = AssetManager::getInstance().getShaders();
-        for (const auto& [name, shaderPtr] : shaders) {
-            if (shaderPtr->GetProgramID() == shader->GetProgramID()) {
-                shaderName = name;
-                break;
+ImGui::Separator();
+
+if (shader) {
+    ImGui::Text("Shader Parameters:");
+    ImGui::BeginChild("ShaderParameters", ImVec2(0, 300), true);
+
+    for (auto& [paramName, param] : shader->getParameters()) {
+        ImGui::PushID(paramName.c_str());
+        ImGui::Text("%s:", paramName.c_str());
+        ImGui::SameLine();
+
+        ShaderParameter* shaderParam = material->getParameter(paramName);
+        bool changed = false;
+
+        if (!shaderParam) {
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Parameter not found");
+            ImGui::PopID();
+            continue;
+        }
+
+        if (paramName == "baseColor" && !baseColorPrinted) {
+            std::cout << "[InspectorManager] Attempting to retrieve baseColor from shaderParam." << std::endl;
+            baseColorPrinted = true;
+
+            try {
+                baseColor = std::get<glm::vec3>(shaderParam->value);
+
+                if (ImGui::ColorEdit3(paramName.c_str(), glm::value_ptr(baseColor))) {
+                    shaderParam->value = baseColor;
+                    material->setParameter(paramName, *shaderParam);
+                    changed = true;
+                }
+                //  std::cout << "[InspectorManager] baseColor retrieved: (" << baseColor.r << ", " << baseColor.g << ", " << baseColor.b << ")" << std::endl;
+            } catch (const std::bad_variant_access& e) {
+                std::cerr << "[InspectorManager] Failed to retrieve baseColor: " << e.what() << std::endl;
+                ImGui::PopID();
+                return;
+            }
+
+
+            if (ImGui::ColorEdit3("##baseColor", glm::value_ptr(baseColor))) {
+               // std::cout << "[InspectorManager] baseColor changed via ImGui::ColorEdit3 to: (" << baseColor.r << ", " << baseColor.g << ", " << baseColor.b << ")" << std::endl;
+                shaderParam->value = baseColor;
+
+               // std::cout << "[InspectorManager] Setting the updated baseColor in the material." << std::endl;
+                material->setParameter(paramName, *shaderParam);
+
+                changed = true;
             }
         }
-        if (!shaderName.empty()) {
-            ImGui::Text("Assigned Shader: %s (Program ID: %u)", shaderName.c_str(), shader->GetProgramID());
+
+        else if (paramName == "albedoTexture") {
+            std::shared_ptr<Texture> texture = std::get<std::shared_ptr<Texture>>(shaderParam->value);
+            if (texture) {
+                ImGui::Text("%s", texture->getName().c_str());
+            } else {
+                ImGui::Text("Placeholder Texture");
+            }
+
+            if (ImGui::Button("Change Texture")) {
+                ImGui::OpenPopup("Select Texture");
+            }
+
+            if (ImGui::BeginPopup("Select Texture")) {
+                const auto& textures = AssetManager::getInstance().getTextures();
+                for (const auto& [texName, texPtr] : textures) {
+                    if (ImGui::Selectable(texName.c_str())) {
+                        shaderParam->value = texPtr;
+                        material->setParameter(paramName, *shaderParam);
+                        shader->Use(); // Re-bind textures
+                        ImGui::CloseCurrentPopup();
+                        changed = true;
+                        break;
+                    }
+                }
+                ImGui::EndPopup();
+            }
         }
-        else {
-            ImGui::Text("Assigned Shader Program ID: %u", shader->GetProgramID());
+
+        ImGui::PopID();
+
+        if (changed) {
+            // Handle any changes, if necessary
         }
-    }
-    else {
-        ImGui::Text("No shader assigned to this material.");
-        ImGui::Separator();
-        // Provide instructions or options to assign a shader
-        ImGui::Text("Drag and drop a shader from the Project Explorer to assign.");
     }
 
-    // Handle Popups for Errors
-    if (ImGui::BeginPopup("Shader Not Found")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error: Shader not found.");
-        if (ImGui::Button("OK")) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
+    ImGui::EndChild();
+} else {
+    ImGui::Text("No shader assigned.");
+}
 
-    if (ImGui::BeginPopup("Shader Error")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error assigning shader to material.");
-        if (ImGui::Button("OK")) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-
-    if (ImGui::BeginPopup("Invalid Payload")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid shader payload received.");
-        if (ImGui::Button("OK")) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-
-    ImGui::End();
+ImGui::End();
 }
 
 

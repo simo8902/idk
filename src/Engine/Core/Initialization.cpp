@@ -9,9 +9,9 @@
 #include <LightManager.h>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include "AssetManager.h"
 #include "stb_image.h"
 
-CameraManager cameraManager;
 
 Initialization::Initialization() {
     cameraInit();
@@ -54,9 +54,31 @@ Initialization::Initialization() {
 
     skyboxTexture = loadCubemap(faces);
 
-    std::shared_ptr<Shader> shaderProgram = std::make_shared<Shader>(SOURCE_DIR "/shaders/basicVertex.glsl", SOURCE_DIR "/shaders/basicFragment.glsl");
-    std::shared_ptr<Shader> wireframe = std::make_shared<Shader>(SOURCE_DIR "/shaders/wireframeVert.glsl", SOURCE_DIR "/shaders/wireframeFrag.glsl");
-    std::shared_ptr<Shader> skyShaderProgram = std::make_shared<Shader>(SOURCE_DIR "/shaders/vertexsky.glsl", SOURCE_DIR "/shaders/fragmentsky.glsl");
+    // Initialize Shaders
+    std::shared_ptr<Shader> shaderProgram = std::make_shared<Shader>(
+        SOURCE_DIR "/shaders/basicVertex.glsl",
+        SOURCE_DIR "/shaders/basicFragment.glsl"
+    );
+    shaderProgram->setName("BasicShader");
+
+    std::shared_ptr<Shader> wireframe = std::make_shared<Shader>(
+        SOURCE_DIR "/shaders/wireframeVert.glsl",
+        SOURCE_DIR "/shaders/wireframeFrag.glsl"
+    );
+    wireframe->setName("WireframeShader");
+
+    std::shared_ptr<Shader> skyShaderProgram = std::make_shared<Shader>(
+        SOURCE_DIR "/shaders/vertexsky.glsl",
+        SOURCE_DIR "/shaders/fragmentsky.glsl"
+    );
+    skyShaderProgram->setName("SkyShader");
+
+    AssetManager& assetManager = AssetManager::getInstance();
+    assetManager.addShader(shaderProgram);
+    assetManager.addShader(wireframe);
+    assetManager.addShader(skyShaderProgram);
+
+    std::cout << "[Initialization] Shaders initialized and added to AssetManager with UUIDs." << std::endl;
 
     scene = new Scene(shaderProgram, wireframe,skyShaderProgram, m_MainCamera, skyboxTexture);
 
@@ -82,9 +104,6 @@ Initialization::Initialization() {
     } else {
         std::cout << "Failed to initialize directional light." << std::endl;
     }
-
-    cameraManager.addCamera(m_MainCamera);
-
 
     m_Renderer = std::make_shared<Renderer>(scene,m_MainCamera, lightManager, m_Window);
 
@@ -235,7 +254,7 @@ void Initialization::initializeImGui(GLFWwindow *window){
     const char* fontAwesomePath = SOURCE_DIR "/src/data/fonts/Font Awesome 6 Free-Solid-900.otf";
     if (io.Fonts->AddFontFromFileTTF(fontAwesomePath, 16.0f, &config, icons_ranges)) {
     } else {
-        std::cerr << "Failed to load Font Awesome: " << strerror(errno) << std::endl;
+         std::cerr << "Failed to load Font Awesome: " << strerror(errno) << std::endl;
         return;
     }
 

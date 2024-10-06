@@ -12,20 +12,34 @@
 #include "Material.h"
 #include "MeshFilter.h"
 #include "Shader.h"
+#include "Transform.h"
 
 class MeshRenderer  : public Component{
 public:
-    MeshRenderer(const std::shared_ptr<MeshFilter>& meshFilter, const std::shared_ptr<Material>& material)
-        : meshFilter(meshFilter), material(material) {}
+    MeshRenderer(const std::shared_ptr<GameObject>& owner, const std::shared_ptr<MeshFilter>& meshFilter, const std::shared_ptr<Material>& material)
+        : meshFilter(meshFilter), material(material), gameObject(owner) {}
 
-    void Render() {
-        if (meshFilter && meshFilter->getMesh() && material && material->getShader()) {
-            material->getShader()->Use(); // Activate the shader program
-            meshFilter->getMesh()->Draw(*material->getShader());
-        } else {
-            // Handle cases where meshFilter, mesh, material, or shader is missing
-            // Optionally, log a warning or use a default shader
+    void Render(const glm::mat4& view, const glm::mat4& projection) {
+        if (!meshFilter || !meshFilter->getMesh() || !material || !material->getShader()) {
+            std::cerr << "[MeshRenderer] Cannot render: missing mesh filter, mesh, material, or shader.\n";
+            return;
         }
+
+        std::shared_ptr<Shader> shader = material->getShader();
+        shader->Use();
+
+        auto transform = getGameObject()->getComponent<Transform>();
+        glm::mat4 model = transform->getModelMatrix();
+
+        shader->setMat4("model", model);
+        shader->setMat4("view", view);
+        shader->setMat4("projection", projection);
+
+        glm::vec3 baseColor = material->getBaseColor();
+        shader->setVec3("baseColor", baseColor);
+
+        meshFilter->getMesh()->Draw(*shader);
+
     }
 
     std::unique_ptr<Component> clone() const override {
@@ -38,11 +52,15 @@ public:
     void setMaterial(const std::shared_ptr<Material>& newMaterial) {
         material = newMaterial;
     }
-
+    std::shared_ptr<GameObject> getGameObject() const {
+        return gameObject;
+    }
 
 private:
     std::shared_ptr<MeshFilter> meshFilter;
     std::shared_ptr<Material> material;
+    std::shared_ptr<GameObject> gameObject;
+
 };
 
 #endif //MESHRENDERER_H

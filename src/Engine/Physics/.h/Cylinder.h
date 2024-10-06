@@ -11,6 +11,7 @@
 #include "glad/glad.h"
 #include "glm.hpp"
 #include "GameObject.h"
+#include "Mesh.h"
 
 class Cylinder : public GameObject {
 public:
@@ -48,10 +49,7 @@ private:
     std::vector<glm::vec3> vertices;
     std::vector<unsigned int> indices;
 
-    unsigned int VAO, VBO, EBO;
-
-    void generateVertices();
-    void setupMesh();
+    std::unique_ptr<Mesh > mesh;
 };
 
 

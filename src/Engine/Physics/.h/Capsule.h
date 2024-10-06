@@ -4,40 +4,36 @@
 
 #ifndef LUPUSFIRE_CORE_CAPSULE_H
 #define LUPUSFIRE_CORE_CAPSULE_H
-#include <vector>
-#include <cmath>
-#include "glad/glad.h"
+
 #include "GameObject.h"
-
-struct Vertex {
-    float x, y, z;
-};
-
+#include "Mesh.h"
 
 class Capsule : public GameObject {
 public:
     Capsule(const std::string & name);
-    ~Capsule();
+    ~Capsule() override;
 
     virtual std::shared_ptr<GameObject> clone() const override {
-        std::shared_ptr<Capsule> newCapsule = std::make_shared<Capsule>(*this); // Shallow copy
-
-        return newCapsule;
+        return nullptr;
     }
 
     static size_t GetMemoryUsage() {
         return memoryUsage;
     }
 
+    // Disable copying
+    Capsule(const Capsule&) = delete;
+    Capsule& operator=(const Capsule&) = delete;
 
-    void SetupMesh(float radius, float height, int resolution);
-    void Draw(const Shader& shader);
+    // Enable moving
+    Capsule(Capsule&&) = default;
+    Capsule& operator=(Capsule&&) = default;
+
+    void Draw(const Shader& shader) override;
 
 private:
-    std::vector<Vertex> vertices;
-    GLuint VAO, VBO;
     static size_t memoryUsage;
-
+    std::unique_ptr<Mesh> mesh;
 };
 
 #endif //NAV2SFM Core_CAPSULE_H

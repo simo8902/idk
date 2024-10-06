@@ -9,9 +9,6 @@
 #include <vector>
 
 #include "DirectionalLight.h"
-#include "glm.hpp"
-
-#include "Light.h"
 
 class LightManager {
 public:
