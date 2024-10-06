@@ -1,35 +1,33 @@
-name: Count Lines of Code
+ame: Update Line Count Badge
 
 on:
   push:
     branches:
-      - master 
-  pull_request:
-    branches:
       - master
 
 jobs:
-  count-loc:
+  count-lines:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.MY_PAT }}
 
       - name: Install cloc
-        run: sudo apt-get install -y cloc
+        run: sudo apt-get install cloc
 
       - name: Count lines of code
-        run: cloc .
-        
-      - name: Upload result
-        run: cloc . > cloc_report.txt
+        id: cloc
+        run: echo "::set-output name=lines_of_code::$(cloc src shaders | awk '/SUM/{print $NF}')"
 
-      - name: Display cloc output
-        run: cat cloc_report.txt
+      - name: Update badge
+        run: |
+          LINES_OF_CODE=${{ steps.cloc.outputs.lines_of_code }}
+          sed -i "s|Lines%20of%20Code-.*-green|Lines%20of%20Code-$LINES_OF_CODE-green|g" README.md
 
-      - name: Upload cloc report artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: cloc-report
-          path: cloc_report.txt
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git diff --quiet && git diff --staged --quiet || (git commit -am "Update lines of code badge" && git push)
