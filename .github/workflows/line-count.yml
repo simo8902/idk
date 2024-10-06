@@ -1,4 +1,4 @@
-ame: Update Line Count Badge
+name: Update Line Count Badge
 
 on:
   push:
