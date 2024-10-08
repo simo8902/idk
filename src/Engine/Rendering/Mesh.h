@@ -9,18 +9,20 @@
 #include "glad/glad.h"
 #include "glm.hpp"
 #include "Shader.h"
+#include <filesystem>
+#include "AssetItem.h"
 
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
 };
-class Mesh {
+class Mesh : public AssetItem {
 public:
     ~Mesh();
     Mesh(const std::vector<float>& vertices, const std::string& name);
-    Mesh(const std::string &name);
+    Mesh(const std::string& name);
 
-    const  std::vector<float> & getVertices() const { return vertices; }
+    const std::vector<float> & getVertices() const { return vertices; }
     const std::vector<unsigned int>& getIndices() const { return indices; }
 
     void Draw(const Shader& shader);
@@ -33,12 +35,12 @@ public:
     void CreateCylinder(float m_baseRadius, float m_topRadius, float m_height, int m_sectors);
     static std::vector<float> CreateCube();
 
+    std::string name;
 
 private:
     GLuint VAO, VBO, EBO;
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
-    std::string name;
 };
 
 

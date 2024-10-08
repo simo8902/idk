@@ -334,7 +334,7 @@ void InspectorManager::renderMaterialInspector(const std::shared_ptr<Material>& 
     std::shared_ptr<Shader> shader = material->getShader();
     if (shader) {
         ImGui::Text("Shader: %s", shader->getName().c_str());
-        ImGui::Text("UUID: %s", shader->getUUID().c_str());
+      //  ImGui::Text("UUID: %s", shader->getUUID().c_str());
     } else {
         ImGui::Text("No shader assigned.");
     }
@@ -363,86 +363,6 @@ ImGui::Separator();
 if (shader) {
     ImGui::Text("Shader Parameters:");
     ImGui::BeginChild("ShaderParameters", ImVec2(0, 300), true);
-
-    for (auto& [paramName, param] : shader->getParameters()) {
-        ImGui::PushID(paramName.c_str());
-        ImGui::Text("%s:", paramName.c_str());
-        ImGui::SameLine();
-
-        ShaderParameter* shaderParam = material->getParameter(paramName);
-        bool changed = false;
-
-        if (!shaderParam) {
-            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Parameter not found");
-            ImGui::PopID();
-            continue;
-        }
-
-        if (paramName == "baseColor" && !baseColorPrinted) {
-            std::cout << "[InspectorManager] Attempting to retrieve baseColor from shaderParam." << std::endl;
-            baseColorPrinted = true;
-
-            try {
-                baseColor = std::get<glm::vec3>(shaderParam->value);
-
-                if (ImGui::ColorEdit3(paramName.c_str(), glm::value_ptr(baseColor))) {
-                    shaderParam->value = baseColor;
-                    material->setParameter(paramName, *shaderParam);
-                    changed = true;
-                }
-                //  std::cout << "[InspectorManager] baseColor retrieved: (" << baseColor.r << ", " << baseColor.g << ", " << baseColor.b << ")" << std::endl;
-            } catch (const std::bad_variant_access& e) {
-                std::cerr << "[InspectorManager] Failed to retrieve baseColor: " << e.what() << std::endl;
-                ImGui::PopID();
-                return;
-            }
-
-
-            if (ImGui::ColorEdit3("##baseColor", glm::value_ptr(baseColor))) {
-               // std::cout << "[InspectorManager] baseColor changed via ImGui::ColorEdit3 to: (" << baseColor.r << ", " << baseColor.g << ", " << baseColor.b << ")" << std::endl;
-                shaderParam->value = baseColor;
-
-               // std::cout << "[InspectorManager] Setting the updated baseColor in the material." << std::endl;
-                material->setParameter(paramName, *shaderParam);
-
-                changed = true;
-            }
-        }
-
-        else if (paramName == "albedoTexture") {
-            std::shared_ptr<Texture> texture = std::get<std::shared_ptr<Texture>>(shaderParam->value);
-            if (texture) {
-                ImGui::Text("%s", texture->getName().c_str());
-            } else {
-                ImGui::Text("Placeholder Texture");
-            }
-
-            if (ImGui::Button("Change Texture")) {
-                ImGui::OpenPopup("Select Texture");
-            }
-
-            if (ImGui::BeginPopup("Select Texture")) {
-                const auto& textures = AssetManager::getInstance().getTextures();
-                for (const auto& [texName, texPtr] : textures) {
-                    if (ImGui::Selectable(texName.c_str())) {
-                        shaderParam->value = texPtr;
-                        material->setParameter(paramName, *shaderParam);
-                        shader->Use(); // Re-bind textures
-                        ImGui::CloseCurrentPopup();
-                        changed = true;
-                        break;
-                    }
-                }
-                ImGui::EndPopup();
-            }
-        }
-
-        ImGui::PopID();
-
-        if (changed) {
-            // Handle any changes, if necessary
-        }
-    }
 
     ImGui::EndChild();
 } else {

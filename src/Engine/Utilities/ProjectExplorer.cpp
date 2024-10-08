@@ -1,318 +1,217 @@
-//
-// Created by Simeon on 4/8/2024.
-//
-
+// ProjectExplorer.cpp
 #include "ProjectExplorer.h"
-
-#include <fstream>
-
 #include "AssetManager.h"
-#include "Material.h"
-#include "SelectionManager.h"
-#include "Shader.h"
-#include <filesystem>
 #include "imgui.h"
+#include <iostream>
+#include <algorithm>
+#include <thread>
+#include <boost/uuid/uuid_io.hpp>
+#include "IconsFontAwesome6Brands.h"
 
 ProjectExplorer::ProjectExplorer()
-    : shadersLoaded(false), clickedInsideSelectable(false) {
+    : folderIcon(ICON_FA_FOLDER),
+      shaderIcon(ICON_FA_SHADER),
+      materialIcon(ICON_FA_MATERIAL),
+      selectedAsset(nullptr) {
+    rootFolder = AssetManager::getInstance().getRootFolder();
+}
+ProjectExplorer::~ProjectExplorer() {
+}
+
+bool ProjectExplorer::caseInsensitiveFind(const std::string& str, const std::string& substr) {
+    if (substr.empty()) return true;
+    auto it = std::search(
+        str.begin(), str.end(),
+        substr.begin(), substr.end(),
+        [](char ch1, char ch2) { return std::tolower(static_cast<unsigned char>(ch1)) == std::tolower(static_cast<unsigned char>(ch2)); }
+    );
+    return (it != str.end());
 }
 
 void ProjectExplorer::renderProjectExplorer() {
-    clickedInsideSelectable = false;
+    ImGui::Begin("Project Explorer");
 
-    EnsureAssetsFolderExists();
+    // Calculate dimensions
+    float windowWidth = ImGui::GetContentRegionAvail().x;
+    float windowHeight = ImGui::GetContentRegionAvail().y;
+    float leftPanelWidth = windowWidth * 0.2f; // 20% for the folder tree
 
-    if (!shadersLoaded) {
-        loadShadersFromDirectory();
-        shadersLoaded = true;
+    // Left Panel: Folder Tree
+    ImGui::BeginChild("LeftPanel", ImVec2(leftPanelWidth, windowHeight), true);
+    {
+        std::lock_guard<std::mutex> lock(AssetManager::getInstance().assetMutex);
+        RenderFolderTree(rootFolder);
+    }
+    ImGui::EndChild();
+
+    ImGui::SameLine(); // Place the next widget on the same line
+
+    // Right Panel: Content Area
+    ImGui::BeginChild("ContentArea", ImVec2(0, windowHeight), true);
+    {
+        std::lock_guard<std::mutex> lock(AssetManager::getInstance().assetMutex);
+        if (selectedFolder) {
+            RenderContentArea(selectedFolder);
+        } else {
+            RenderContentArea(rootFolder);
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::End();
+}
+
+void ProjectExplorer::RenderFolderTree(const std::shared_ptr<AssetItem>& folder) {
+    if (!folder || folder->getType() != AssetType::Folder) return;
+
+    ImGui::PushID(folder->getUUID().data);
+
+    std::string nodeLabel = std::string(folderIcon) + " " + folder->getName();
+
+    ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (selectedFolder == folder) {
+        nodeFlags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    handleContextMenu();
+    bool nodeOpen = ImGui::TreeNodeEx(nodeLabel.c_str(), nodeFlags);
 
-    displayShaders();
-    displayMaterials();
+    if (ImGui::IsItemClicked()) {
+        selectedFolder = folder;
+    }
 
-    if (ImGui::BeginPopup("Shader Error")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error assigning shader to material.");
-        if (ImGui::Button("OK")) {
-            ImGui::CloseCurrentPopup();
-            std::cout << "[ProjectExplorer] Closed 'Shader Error' popup." << std::endl;
+    if (nodeOpen) {
+        for (const auto& child : folder->getChildren()) {
+            if (child->getType() == AssetType::Folder) {
+                RenderFolderTree(child);
+            }
         }
+        ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+}
+void ProjectExplorer::RenderContentArea(const std::shared_ptr<AssetItem>& folder) {
+    if (!folder) return;
+
+    const int iconsPerRow = 5;
+    float iconSize = 64.0f;
+    int iconCount = 0;
+
+    for (const auto& item : folder->getChildren()) {
+        RenderAssetItemAsIcon(item, iconSize);
+        iconCount++;
+
+        if (iconCount % iconsPerRow != 0) {
+            ImGui::SameLine();
+        }
+    }
+}
+void ProjectExplorer::RenderAssetItem(const std::shared_ptr<AssetItem>& asset) {
+    ImGui::PushID(asset->getUUID().data);
+
+    // Display asset with icon
+    const char* icon = GetAssetIcon(asset->getType());
+    std::string itemLabel = std::string("    ") + icon + " " + asset->getName();
+
+    ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    if (selectedAsset == asset) {
+        nodeFlags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    ImGui::TreeNodeEx(itemLabel.c_str(), nodeFlags);
+
+    // Handle asset selection
+    if (ImGui::IsItemClicked()) {
+        selectedAsset = asset;
+    }
+
+    ImGui::PopID();
+}
+void ProjectExplorer::HandleFolderPopups(const std::shared_ptr<AssetItem>& folder) {
+    if (createFolderPopupOpen) {
+        ImGui::OpenPopup("Create New Folder");
+        createFolderPopupOpen = false;
+    }
+    if (ImGui::BeginPopupModal("Create New Folder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        static char newFolderName[256] = "";
+        ImGui::InputText("Folder Name", newFolderName, IM_ARRAYSIZE(newFolderName));
+        if (ImGui::Button("Create")) {
+            /*
+            // Create the folder
+            AssetManager::getInstance().createFolder(folder, newFolderName);
+            newFolderName[0] = '\0'; // Reset input
+            ImGui::CloseCurrentPopup();*/
+        }
+        ImGui::SameLine();
+        /*
+        if (ImGui::Button("Cancel")) {
+            newFolderName[0] = '\0'; // Reset input
+            ImGui::CloseCurrentPopup();}*/
+
         ImGui::EndPopup();
     }
 
-    if (ImGui::BeginPopup("Shader Not Found")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error: Shader not found.");
-        if (ImGui::Button("OK")) {
-            ImGui::CloseCurrentPopup();
-            std::cout << "[ProjectExplorer] Closed 'Shader Not Found' popup." << std::endl;
-        }
-        ImGui::EndPopup();
-    }
+    // Similar implementations for renameFolderPopupOpen and deleteFolderPopupOpen
+}
 
-    if (ImGui::BeginPopup("Invalid Payload")) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid shader payload received.");
-        if (ImGui::Button("OK")) {
-            ImGui::CloseCurrentPopup();
-            std::cout << "[ProjectExplorer] Closed 'Invalid Payload' popup." << std::endl;
-        }
-        ImGui::EndPopup();
-    }
+void ProjectExplorer::RenderAssetIcons(const std::vector<std::shared_ptr<AssetItem>>& items) {
+    const int iconsPerRow = 5;
+    int iconCount = 0;
 
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !clickedInsideSelectable && ImGui::IsWindowHovered()) {
-        SelectionManager::getInstance().clearSelection();
+    for (const auto& item : items) {
+        if (item->getType() == AssetType::Folder) continue; // Folders are handled separately
+
+        RenderAssetItemAsIcon(item, 64.0f);
+        iconCount++;
+
+        if (iconCount % iconsPerRow != 0) {
+            ImGui::SameLine();
+        }
     }
 }
 
-void ProjectExplorer::CreateAndAddShader(const std::string& shaderPath, const std::string& shaderName) {
-    try {
-        auto newShader = std::make_shared<Shader>(shaderPath);
-        newShader->setName(shaderName);
+void ProjectExplorer::RenderAssetItemAsIcon(const std::shared_ptr<AssetItem>& items, float iconSize) {
+    if (!items) return;
 
-        AssetManager::getInstance().addShader(newShader);
-
-        userShaderUUIDs.insert(newShader->getUUID());
-
-        std::cout << "[ProjectExplorer] Shader " << shaderName << " created and loaded successfully with UUID: " << newShader->getUUID() << std::endl;
-    }
-    catch (const std::runtime_error& e) {
-        std::cerr << "[ProjectExplorer] Error creating or compiling shader: " << e.what() << std::endl;
-        ImGui::OpenPopup("Shader Error");
-    }
-}
-
-void ProjectExplorer::loadShadersFromDirectory() {
-    std::string shaderDir = std::string(SOURCE_DIR) + "/assets/shaders/";
-    std::cout << "[ProjectExplorer] Loading shaders from directory: " << shaderDir << std::endl;
-
-    try {
-        for (const auto& entry : std::filesystem::directory_iterator(shaderDir)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".glsl") {
-                std::string shaderFileName = entry.path().filename().string();
-                std::string shaderName = entry.path().stem().string();
-
-                bool shaderExists = false;
-                for (const auto& [uuidStr, shaderPtr] : AssetManager::getInstance().getShaders()) {
-                    if (shaderPtr->getName() == shaderName) {
-                        shaderExists = true;
-                        break;
-                    }
-                }
-
-                if (!shaderExists) {
-                    std::string shaderFilePath = shaderDir + shaderFileName;
-
-                    try {
-                        std::shared_ptr<Shader> newShader = std::make_shared<Shader>(shaderFilePath);
-                        newShader->setName(shaderName);
-
-                        AssetManager::getInstance().addShader(newShader);
-
-                        userShaderUUIDs.insert(newShader->getUUID());
-
-                        std::cout << "[ProjectExplorer] Shader " << shaderName << " loaded and added to AssetManager." << std::endl;
-                    } catch (const std::runtime_error& e) {
-                        std::cerr << "[ProjectExplorer] Error loading shader from file: " << e.what() << std::endl;
-                        ImGui::OpenPopup("Shader Error");
-                    }
-                } else {
-                    if (existingShadersReported.find(shaderName) == existingShadersReported.end()) {
-                        std::cout << "[ProjectExplorer] Shader " << shaderName << " already exists in AssetManager." << std::endl;
-                        existingShadersReported.insert(shaderName);
-                    }
-                }
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "[ProjectExplorer] Error scanning shader directory: " << e.what() << std::endl;
-    }
-}
-
-
-void ProjectExplorer::displayMaterials() {
-    const auto& materials = AssetManager::getInstance().getMaterials();
-
-    if (!materials.empty()) {
-        ImGui::Separator();
-        ImGui::Text("Materials (Loaded in AssetManager):");
-        for (const auto& [uuidStr, material] : materials) {
-            std::string displayName = material->getName() + " [" + uuidStr + "]";
-
-            bool isSelected = (SelectionManager::getInstance().getSelectedMaterial() == material);
-            if (ImGui::Selectable(displayName.c_str(), isSelected)) {
-                SelectionManager::getInstance().selectMaterial(material);
-                clickedInsideSelectable = true;
-                std::cout << "[ProjectExplorer] Selected material: " << material->getName()  << " with UUID: " << uuidStr << std::endl;
-            }
-
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-                ImGui::SetDragDropPayload("MATERIAL_PAYLOAD", uuidStr.c_str(), uuidStr.size() + 1, ImGuiCond_Once);
-                ImGui::Text("Dragging %s", material->getName().c_str());
-
-               // std::cout << "[ProjectExplorer] Initiated drag for material: " << material->getName() << " with UUID: " << uuidStr << std::endl;
-                ImGui::EndDragDropSource();
-            }
-        }
+    const char* icon = nullptr;
+    if (items->getType() == AssetType::Folder) {
+        icon = folderIcon.c_str();
     } else {
-        std::cout << "[ProjectExplorer] No materials loaded in AssetManager." << std::endl;
-    }
-}
-
-void ProjectExplorer::handleContextMenu() {
-    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-        ImGui::OpenPopup("Context Menu");
-        std::cout << "[ProjectExplorer] Opened 'Context Menu' popup." << std::endl;
+        icon = GetAssetIcon(items->getType());
     }
 
-    if (ImGui::BeginPopup("Context Menu")) {
-        if (ImGui::MenuItem("Material")) {
-            std::string materialName = "Material_" + std::to_string(AssetManager::getInstance().getMaterials().size() + 1);
-            std::shared_ptr<Material> newMaterial = std::make_shared<Material>(materialName);
+    if (!icon || strlen(icon) == 0) {
+        icon = "[Unknown]";
+    }
 
-            AssetManager::getInstance().addMaterial(newMaterial);
-            std::cout << "[ProjectExplorer] Created new material: " << materialName << std::endl;
+    ImGui::BeginGroup();
 
-            clickedInsideSelectable = true;
+    std::string iconLabel = std::string(icon) + "###" + boost::uuids::to_string(items->getUUID());
+
+    if (ImGui::Button(iconLabel.c_str(), ImVec2(iconSize, iconSize))) {
+        if (items->getType() == AssetType::Folder) {
+            selectedFolder = std::static_pointer_cast<AssetItem>(items);
+        } else {
+            selectedAsset = items;
         }
-
-        if (ImGui::MenuItem("New Standard Surface Shader")) {
-            std::string shaderBaseName = "StandardSurfaceShader";
-            std::string shaderDir = std::string(SOURCE_DIR) + "/assets/shaders/";
-
-            int shaderCount = 1;
-            std::string shaderPath;
-
-            while (true) {
-                std::string potentialFileName = shaderBaseName + "_" + std::to_string(shaderCount) + ".glsl";
-                shaderPath = shaderDir + potentialFileName;
-
-                if (!std::filesystem::exists(shaderPath)) {
-                    break;
-                }
-                shaderCount++;
-            }
-
-            try {
-                EnsureAssetsFolderExists();
-
-                std::cout << "[ProjectExplorer] Creating shader file at: " << shaderPath << std::endl;
-                CreateStandardShaderFile(shaderPath);
-
-                std::string shaderName = shaderBaseName + "_" + std::to_string(shaderCount);
-
-                bool shaderExists = false;
-                for (const auto& [uuidStr, shaderPtr] : AssetManager::getInstance().getShaders()) {
-                    if (shaderPtr->getName() == shaderName) {
-                        shaderExists = true;
-                        break;
-                    }
-                }
-
-                if (!shaderExists) {
-                    CreateAndAddShader(shaderPath, shaderName);
-                } else {
-                    if (existingShadersReported.find(shaderName) == existingShadersReported.end()) {
-                        std::cerr << "[ProjectExplorer] Shader " << shaderName << " already exists in AssetManager." << std::endl;
-                        existingShadersReported.insert(shaderName);
-                    }
-                }
-
-                clickedInsideSelectable = true;
-            } catch (const std::runtime_error& e) {
-                std::cerr << "[ProjectExplorer] Error creating or compiling shader: " << e.what() << std::endl;
-                ImGui::OpenPopup("Shader Error");
-            }
-        }
-
-        ImGui::EndPopup();
-    }
-}
-
-void ProjectExplorer::displayShaders() {
-    const auto& assetManagerShaders = AssetManager::getInstance().getShaders();
-
-    if (!assetManagerShaders.empty()) {
-        ImGui::Separator();
-        ImGui::Text("Shaders (Loaded in AssetManager):");
-        for (const auto& [uuidStr, shaderProgram] : assetManagerShaders) {
-            if (userShaderUUIDs.find(uuidStr) == userShaderUUIDs.end()) {
-                continue;
-            }
-
-            std::string displayName = shaderProgram->getName() + " [" + uuidStr + "]";
-
-            bool isSelected = (SelectionManager::getInstance().getSelectedShader() == shaderProgram);
-
-            ImGui::PushID(uuidStr.c_str());
-
-            if (ImGui::Selectable(displayName.c_str(), isSelected)) {
-                SelectionManager::getInstance().selectShader(shaderProgram);
-                clickedInsideSelectable = true;
-                std::cout << "[ProjectExplorer] Selected shader: " << shaderProgram->getName() << " with UUID: " << uuidStr << std::endl;
-            }
-
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-                ImGui::SetDragDropPayload("SHADER_PAYLOAD", uuidStr.c_str(), uuidStr.size() + 1, ImGuiCond_Once);
-                ImGui::Text("Dragging %s", shaderProgram->getName().c_str());
-               // std::cout << "[ProjectExplorer] Initiated drag for shader: " << shaderProgram->getName()   << " with UUID: " << uuidStr << std::endl;
-
-                ImGui::EndDragDropSource();
-            }
-
-            ImGui::PopID();
-        }
-    } else {
-        std::cout << "[ProjectExplorer] No shaders loaded in AssetManager." << std::endl;
-    }
-}
-
-void ProjectExplorer::CreateStandardShaderFile(const std::string& shaderPath) {
-    std::ofstream shaderFile(shaderPath);
-    if (!shaderFile.is_open()) {
-        throw std::runtime_error("Failed to create shader file: " + shaderPath);
     }
 
-    shaderFile << "#shader vertex\n"
-              << "#version 330 core\n"
-              << "layout(location = 0) in vec3 aPos;\n"
-              << "layout(location = 1) in vec3 aColor;\n"
-              << "layout(location = 2) in vec2 aTexCoord;\n\n"
-              << "out vec3 vertexColor;\n"
-              << "out vec2 texCoord;\n\n"
-              << "uniform mat4 model;\n"
-              << "uniform mat4 view;\n"
-              << "uniform mat4 projection;\n\n"
-              << "void main()\n"
-              << "{\n"
-              << "    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
-              << "    vertexColor = aColor;\n"
-              << "    texCoord = aTexCoord;\n"
-              << "}\n\n";
+    float textWidth = ImGui::CalcTextSize(items->getName().c_str()).x;
+    float textOffset = (iconSize - textWidth) / 2.0f;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + textOffset);
+    ImGui::TextWrapped("%s", items->getName().c_str());
 
-    shaderFile << "#shader fragment\n"
-               << "#version 330 core\n"
-               << "in vec3 vertexColor;\n"
-               << "in vec2 texCoord;\n\n"
-               << "out vec4 FragColor;\n\n"
-               << "uniform sampler2D albedoTexture;\n"
-               << "uniform vec3 baseColor;\n\n"
-               << "void main()\n"
-               << "{\n"
-               << "    vec4 texColor = texture(albedoTexture, texCoord);\n"
-               << "    FragColor = texColor * vec4(baseColor, 1.0) * vec4(vertexColor, 1.0);\n"
-               << "}\n\n";
-
-    shaderFile.close();
-
-    std::cout << "Shader file being created at: " << shaderPath << std::endl;
+    ImGui::EndGroup();
 }
-
-void ProjectExplorer::EnsureAssetsFolderExists() {
-    std::string assetsDir = std::string(SOURCE_DIR) + "/assets/shaders/";
-    if (!std::filesystem::exists(assetsDir)) {
-        std::filesystem::create_directories(assetsDir);
-      //  std::cout << "[ProjectExplorer] Assets folder created at: " << assetsDir << std::endl;
-    } else {
-     //   std::cout << "[ProjectExplorer] Assets folder already exists at: " << assetsDir << std::endl;
+const char* ProjectExplorer::GetAssetIcon(AssetType type) {
+    switch (type) {
+        case AssetType::Shader:
+            return shaderIcon.c_str();
+        case AssetType::PredefinedShader:
+            return shaderIcon.c_str();
+        case AssetType::Material:
+            return materialIcon.c_str();
+        default:
+            return "[Asset]";
     }
 }

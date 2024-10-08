@@ -35,9 +35,6 @@ public:
         shader->setMat4("view", view);
         shader->setMat4("projection", projection);
 
-        glm::vec3 baseColor = material->getBaseColor();
-        shader->setVec3("baseColor", baseColor);
-
         meshFilter->getMesh()->Draw(*shader);
 
     }

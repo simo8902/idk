@@ -9,18 +9,98 @@
 #include <LightManager.h>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include <IconsFontAwesome6Brands.h>
+#include "Shader.h"
+
 #include "AssetManager.h"
 #include "stb_image.h"
 
-
 Initialization::Initialization() {
-    cameraInit();
+    AssetManager& assetManager = AssetManager::getInstance();
 
-    if (m_MainCamera) {
-        std::cout << "Main camera successfully passed to Renderer.\n";
-    } else {
-        std::cerr << "Failed to pass main camera to Renderer!\n";
+    NotImportantForNow();
+    try {
+        std::filesystem::path engineDir = normalizePath(SOURCE_DIR);
+        std::filesystem::current_path(engineDir);
+
+        std::cerr << "[Initialization.h] Current Working Directory: " << std::filesystem::current_path() << std::endl;
     }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to set working directory: " << e.what() << std::endl;
+    }
+
+
+   // std::string sourceDir = assetManager.getSourcePath();
+    assetManager.compileShaders();
+
+    std::shared_ptr<Shader> shaderProgram = assetManager.getShader("basic");
+    if (!shaderProgram) {
+        std::cerr << "Failed to retrieve 'basic' shader from AssetManager." << std::endl;
+        return;
+    }
+
+    std::shared_ptr<Shader> wireframeShader = assetManager.getShader("wireframe");
+    if (!wireframeShader) {
+        std::cerr << "Failed to retrieve 'wireframe' shader from AssetManager." << std::endl;
+        // Decide whether to continue without wireframe shader or exit
+    }
+
+    std::shared_ptr<Shader> skyShaderProgram = assetManager.getShader("sky");
+    if (!skyShaderProgram) {
+        std::cerr << "Failed to retrieve 'sky' shader from AssetManager." << std::endl;
+        // Decide whether to continue without sky shader or exit
+    }
+
+    if (!shaderProgram || !wireframeShader || !skyShaderProgram) {
+        std::cerr << "Failed to retrieve shaders from AssetManager." << std::endl;
+        return;
+    }
+
+    scene = new Scene(shaderProgram, wireframeShader, skyShaderProgram, m_MainCamera, skyboxTexture);
+    std::cout << "[Initialization] Predefined shaders initialized and added to AssetManager with UUIDs." << std::endl;
+
+    NotImportantForNow2();
+}
+
+
+
+
+
+void Initialization::NotImportantForNow2() {
+
+    lightManager = std::make_shared<LightManager>();
+
+    glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+    const auto& directionalLight = std::make_shared<DirectionalLight>(
+        "Main Light",
+        lightDirection,
+        glm::vec3(0.1f, 0.1f, 0.1f),  // Ambient
+        glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
+        glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
+    );
+
+    directionalLight->setDirection(glm::vec3(0.0f, 50.0f, -30.0f));
+    directionalLight->updateDirectionFromRotation();
+
+    lightManager->addDirectionalLight(directionalLight);
+    scene->addDirectionalLight(directionalLight);
+    m_Renderer = std::make_shared<Renderer>(scene, m_MainCamera, lightManager, m_Window);
+
+
+    if (directionalLight) {
+        std::cout << "Directional light initialized successfully: " << directionalLight->getName() << std::endl;
+    } else {
+        std::cout << "Failed to initialize directional light." << std::endl;
+    }
+
+    initializeImGui(m_Window);
+    initImGuiStyle();
+    projectExplorer = std::make_unique<ProjectExplorer>();
+}
+
+void Initialization::NotImportantForNow() {
+
+    cameraInit();
 
     if (!initializeGLFW()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -54,61 +134,6 @@ Initialization::Initialization() {
 
     skyboxTexture = loadCubemap(faces);
 
-    // Initialize Shaders
-    std::shared_ptr<Shader> shaderProgram = std::make_shared<Shader>(
-        SOURCE_DIR "/shaders/basicVertex.glsl",
-        SOURCE_DIR "/shaders/basicFragment.glsl"
-    );
-    shaderProgram->setName("BasicShader");
-
-    std::shared_ptr<Shader> wireframe = std::make_shared<Shader>(
-        SOURCE_DIR "/shaders/wireframeVert.glsl",
-        SOURCE_DIR "/shaders/wireframeFrag.glsl"
-    );
-    wireframe->setName("WireframeShader");
-
-    std::shared_ptr<Shader> skyShaderProgram = std::make_shared<Shader>(
-        SOURCE_DIR "/shaders/vertexsky.glsl",
-        SOURCE_DIR "/shaders/fragmentsky.glsl"
-    );
-    skyShaderProgram->setName("SkyShader");
-
-    AssetManager& assetManager = AssetManager::getInstance();
-    assetManager.addShader(shaderProgram);
-    assetManager.addShader(wireframe);
-    assetManager.addShader(skyShaderProgram);
-
-    std::cout << "[Initialization] Shaders initialized and added to AssetManager with UUIDs." << std::endl;
-
-    scene = new Scene(shaderProgram, wireframe,skyShaderProgram, m_MainCamera, skyboxTexture);
-
-    lightManager = std::make_shared<LightManager>();
-
-    glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
-    const auto & directionalLight = std::make_shared<DirectionalLight>(
-        "Main Light",
-        lightDirection,
-        glm::vec3(0.1f, 0.1f, 0.1f),  // Ambient
-        glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
-        glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
-    );
-
-    directionalLight->setDirection(glm::vec3(0.0f, 50.0f, -30.0f));
-    directionalLight->updateDirectionFromRotation();
-
-    lightManager->addDirectionalLight(directionalLight);
-    scene->addDirectionalLight(directionalLight);
-
-    if (directionalLight) {
-        std::cout << "Directional light initialized successfully: " << directionalLight->getName() << std::endl;
-    } else {
-        std::cout << "Failed to initialize directional light." << std::endl;
-    }
-
-    m_Renderer = std::make_shared<Renderer>(scene,m_MainCamera, lightManager, m_Window);
-
-    initializeImGui(m_Window);
-    initImGuiStyle();
 }
 
 Initialization::~Initialization(){
@@ -118,6 +143,7 @@ Initialization::~Initialization(){
 
     glfwDestroyWindow(m_Window);
     glfwTerminate();
+    shaderProgram->SaveShaderUUIDMap("shader_uuid_map.json");
 }
 
 
@@ -201,7 +227,7 @@ void Initialization::errorCallback(int error, const char *description) {
     std::cerr << "Error: " << error << " " << description << std::endl;
 }
 
-void Initialization::initImGuiStyle(){
+void Initialization::initImGuiStyle() {
     ImGuiStyle &style = ImGui::GetStyle();
 
     style.WindowPadding = ImVec2(0, 0);
@@ -228,7 +254,6 @@ void Initialization::initImGuiStyle(){
 
     style.Colors[ImGuiCol_Button] = style.Colors[ImGuiCol_WindowBg];
 }
-
 void Initialization::initializeImGui(GLFWwindow *window){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -241,24 +266,28 @@ void Initialization::initializeImGui(GLFWwindow *window){
     io.Fonts->Clear();
 
     const char* fontPath = SOURCE_DIR "/CascadiaCode.ttf";
-    if (io.Fonts->AddFontFromFileTTF(fontPath, 17.0f)) {
+    ImFont* primaryFont = io.Fonts->AddFontFromFileTTF(fontPath, 17.0f);
+    if (primaryFont) {
+        std::cout << "Successfully loaded primary font: " << fontPath << std::endl;
     } else {
-        std::cerr << "Failed to load font: " << strerror(errno) << std::endl;
-        return;
+        std::cerr << "Failed to load primary font: " << fontPath << std::endl;
     }
 
-    static const ImWchar icons_ranges[] = { 0xf000, 0xf3ff, 0 };
+    // Define FontAwesome icon ranges (verify these ranges with your FontAwesome version)
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+
     ImFontConfig config;
     config.MergeMode = true;
     config.PixelSnapH = true;
+
     const char* fontAwesomePath = SOURCE_DIR "/src/data/fonts/Font Awesome 6 Free-Solid-900.otf";
-    if (io.Fonts->AddFontFromFileTTF(fontAwesomePath, 16.0f, &config, icons_ranges)) {
+    ImFont* fontAwesome = io.Fonts->AddFontFromFileTTF(fontAwesomePath, 16.0f, &config, icons_ranges);
+    if (fontAwesome) {
+        std::cout << "Successfully loaded FontAwesome: " << fontAwesomePath << std::endl;
     } else {
-         std::cerr << "Failed to load Font Awesome: " << strerror(errno) << std::endl;
-        return;
+        std::cerr << "Failed to load FontAwesome: " << fontAwesomePath << std::endl;
     }
 
-    io.Fonts->Build();
 
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
@@ -310,7 +339,7 @@ void Initialization::runMainLoop() const {
         if (m_Renderer != nullptr){
             m_Renderer->render();
         }else{
-            std::cerr << "m_Renderer is null\n";
+        //    std::cerr << "m_Renderer is null\n";
         }
     }
 }

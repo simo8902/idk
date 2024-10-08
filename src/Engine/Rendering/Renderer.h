@@ -8,6 +8,7 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
+#include "AssetManager.h"
 #include "HierarchyManager.h"
 #include "ImGuizmo.h"
 #include "InspectorManager.h"
@@ -56,6 +57,9 @@ public:
     void setKeyCallback();
 
 private:
+    AssetManager& assetManager = AssetManager::getInstance();
+    std::shared_ptr<AssetItem> rootFolder = assetManager.getRootFolder();
+
     Scene* scene;
     bool dockspace_initialized = false;
     bool noLightSelectedLogged = false;

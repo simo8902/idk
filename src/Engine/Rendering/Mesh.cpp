@@ -7,12 +7,16 @@
 #include <ext/scalar_constants.hpp>
 
 Mesh::Mesh(const std::vector<float>& vertices, const std::string& name)
-    : vertices(vertices), name(name) {
+: AssetItem(std::filesystem::path(name).stem().string(), AssetType::Mesh, std::filesystem::path(name).parent_path().string()),
+      VAO(0), VBO(0), EBO(0),
+      vertices(vertices)
+{
     SetupMesh();
 }
 
 Mesh::Mesh(const std::string &name)
-    : name(name), VAO(0), VBO(0), EBO(0) {}
+    : AssetItem(std::filesystem::path(name).stem().string(), AssetType::Mesh, std::filesystem::path(name).parent_path().string()),
+      VAO(0), VBO(0), EBO(0) {}
 
 Mesh::~Mesh() {
     if (VAO) glDeleteVertexArrays(1, &VAO);

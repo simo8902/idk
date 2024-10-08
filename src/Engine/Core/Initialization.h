@@ -54,6 +54,19 @@ private:
 
     std::shared_ptr<Renderer> m_Renderer;
 
+    void printWorkingDirectory() {
+        std::filesystem::path cwd = std::filesystem::current_path();
+        std::cerr << "[Initialization.h] Current Working Directory: " << cwd << std::endl;
+    }
+    std::string normalizePath(const std::string& path) {
+        std::string normalizedPath = path;
+        std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+        return normalizedPath;
+    }
+
+    void NotImportantForNow();
+    void NotImportantForNow2();
+
 protected:
     void switchToMainCamera() {
         m_ActiveCamera = m_MainCamera;
@@ -62,7 +75,7 @@ protected:
     void switchToSecondCamera() {
         m_ActiveCamera = m_SecondCamera;
     }
-
+    std::shared_ptr<ProjectExplorer> projectExplorer;
 };
 
 #endif //NAV2SFM Core_INIT_H

@@ -10,6 +10,12 @@
 #define ICON_MIN_FAB 0xe007
 #define ICON_MAX_16_FAB 0xf8e8
 #define ICON_MAX_FAB 0xf8e8
+#define ICON_FA_SHADER "\uf121"        // Example: 'fa-code' icon for shaders
+#define ICON_FA_MATERIAL "\uf1fc"      // 'fa-paint-brush' icon for materials
+
+#define ICON_MIN_FA 0xf000
+#define ICON_MAX_FA 0xf3ff
+#define ICON_FA_FOLDER "\uf07b"        // 'fa-folder' icon
 
 #define ICON_FA_GLOBE "\uf0ac"        // World transform (globe icon)
 #define ICON_FA_LOCATION_ARROW "\uf124" // Local transform (location arrow icon)

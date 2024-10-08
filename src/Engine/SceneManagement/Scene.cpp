@@ -23,6 +23,13 @@ Scene::Scene(const std::shared_ptr<Shader> & shaderProgram,const std::shared_ptr
     const std::shared_ptr<Camera> & camera, const GLuint & skyboxTexture):
     skyboxTexture(skyboxTexture), shaderProgram(shaderProgram) ,wireframe(wireframe),
     skyShader(sky), m_Camera(camera) {
+    this->shaderProgram = shaderProgram;
+    this->wireframe = wireframe;
+    this->skyShader = sky;
+
+    this->m_Camera = camera;
+    this->skyboxTexture = skyboxTexture;
+
     createObjects();
     setupSky();
 
@@ -120,7 +127,6 @@ void Scene::Render3DScene() const {
 
     const glm::mat4& view = m_Camera->getViewMatrix();
     const glm::mat4& projection = m_Camera->getProjectionMatrix();
-
     renderSky();
 
     shaderProgram->Use();
@@ -131,14 +137,14 @@ void Scene::Render3DScene() const {
         std::cerr << "Skybox texture failed to load." << std::endl;
     }
 
-    const glm::vec3 objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
-    shaderProgram->setVec3("objectColorUniform", objectColor);
+ //   const glm::vec3 objectColor = glm::vec3(0.2f, 0.2f, 0.2f);
+ //   shaderProgram->setVec3("objectColorUniform", objectColor);
 
     glm::vec3 globalAmbientColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    glUniform3fv(glGetUniformLocation(shaderProgram->GetProgramID(), "globalAmbientColor"), 1, glm::value_ptr(globalAmbientColor));
+    glUniform3fv(glGetUniformLocation(shaderProgram->getProgramID(), "globalAmbientColor"), 1, glm::value_ptr(globalAmbientColor));
 
     for (const auto& light : directionalLights) {
-        light->setUniforms(shaderProgram->GetProgramID());
+        light->setUniforms(shaderProgram->getProgramID());
     }
 
     for (const auto& obj : objects) {
@@ -170,8 +176,6 @@ void Scene::Render3DScene() const {
                 shader->setMat4("projection", projection);
                 shader->setMat4("model", model);
 
-                shader->setVec3("baseColor", material->getBaseColor());
-
                 meshRenderer->Render(view, projection);
             } else {
                 std::cerr << "[ERROR] Missing Material or Shader for object: " << obj->getName() << "\n";
@@ -181,7 +185,6 @@ void Scene::Render3DScene() const {
         }
     }
 
-    glUseProgram(0);
     for (const auto& light : lights) {
         std::cerr << light->getName() << std::endl;
     }
@@ -304,7 +307,7 @@ void Scene::DrawGrid(float gridSize, float gridStep) const {
     glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(Vertex), gridVertices.data(), GL_STATIC_DRAW);
 
     shaderProgram->Use();
-    shaderProgram->setVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
+   // shaderProgram->setVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
 
     glm::mat4 model = gridTransform.getModelMatrix();
     shaderProgram->setMat4("model", model);

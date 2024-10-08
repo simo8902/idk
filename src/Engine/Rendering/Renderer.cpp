@@ -363,7 +363,7 @@ void Renderer::renderSceneViewport(int viewportWidth, int viewportHeight, GLuint
             }
 
             if (closestObject) {
-                std::cout << "Selected Object: " << closestObject->getName() << std::endl;
+              //  std::cout << "Selected Object: " << closestObject->getName() << std::endl;
                 SelectionManager::getInstance().selectGameObject(closestObject);
             } else {
                 SelectionManager::getInstance().clearSelection();
@@ -551,7 +551,7 @@ void Renderer::renderInspector() {
 void Renderer::renderProjectExplorer() {
     if (ImGui::Begin("Project Explorer", nullptr, ImGuiWindowFlags_NoResize))
     {
-        projectExplorer.renderProjectExplorer();
+       projectExplorer.renderProjectExplorer();
     }
     ImGui::End();
 }

@@ -5,40 +5,35 @@
 #ifndef LUPUSFIRE_CORE_PROJECTEXPLORER_H
 #define LUPUSFIRE_CORE_PROJECTEXPLORER_H
 
-#include <vector>
-#include <memory>
-#include <set>
 #include <string>
-#include <unordered_set>
-
-#include "Material.h"
+#include <memory>
+#include <vector>
+#include "AssetItem.h"
 
 class ProjectExplorer {
 public:
     ProjectExplorer();
+    ~ProjectExplorer();
 
     void renderProjectExplorer();
-    void CreateStandardShaderFile(const std::string& shaderPath);
-    void EnsureAssetsFolderExists();
-    void CreateAndAddShader(const std::string& shaderPath, const std::string& shaderName);
-
+    void RenderAssetItem(const std::shared_ptr<AssetItem>& asset);
+    void RenderContentArea(const std::shared_ptr<AssetItem>& folder);
 private:
-    bool shadersLoaded = false;
-    std::unordered_set<std::string> existingShadersReported;
-    std::unordered_set<std::string> existingMaterialsReported;
-    bool clickedInsideSelectable;
-    std::unordered_set<std::string> userShaderUUIDs;
+    bool caseInsensitiveFind(const std::string& str, const std::string& substr);
+    void RenderFolderTree(const std::shared_ptr<AssetItem>& folder);
+    void RenderAssetIcons(const std::vector<std::shared_ptr<AssetItem>>& assets);
+    void RenderAssetItemAsIcon(const std::shared_ptr<AssetItem>& asset, float iconSize);
+    void HandleFolderPopups(const std::shared_ptr<AssetItem>& folder);
+    bool createFolderPopupOpen = false;
+    const char* GetAssetIcon(AssetType type);
 
-    void loadShadersFromDirectory();
-    void handleContextMenu();
-    void displayShaders();
-    void displayMaterials();
+    std::string folderIcon;
+    std::string shaderIcon;
+    std::string materialIcon;
 
-    std::vector<std::shared_ptr<Material>> materials;
-
-    std::shared_ptr<Material> selectedMaterial = nullptr;
-    std::set<std::string> shadersCreatedByContextMenu;
-
+    std::shared_ptr<AssetItem> rootFolder;
+    std::shared_ptr<AssetItem> selectedFolder;
+    std::shared_ptr<AssetItem> selectedAsset;
 };
 
 

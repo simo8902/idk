@@ -20,10 +20,10 @@ public:
     GLuint getID() const { return textureID; }
 
     void bind(GLenum textureUnit = GL_TEXTURE0) const;
+    boost::uuids::uuid uuid;
 
 private:
     std::string name;
-    boost::uuids::uuid uuid;
     std::string uuidStr;
     GLuint textureID;
 
