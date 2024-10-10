@@ -28,7 +28,7 @@ public:
     std::shared_ptr<Shader> getShader(const std::string& name);
     bool removeShader(const std::string &uuidStr);
     const std::unordered_map<std::string, std::shared_ptr<Shader> > &getShaders() const;
-    bool addMaterial(std::shared_ptr<Material> material);
+    void addMaterial(const std::shared_ptr<Material>& material);
     std::shared_ptr<Material> getMaterialByUUID(const std::string &uuidStr) const;
     bool removeMaterial(const std::string &uuidStr);
     const std::unordered_map<std::string, std::shared_ptr<Material> > &getMaterials() const;
@@ -50,6 +50,13 @@ public:
     void scanDirectory(const std::filesystem::path& directoryPath, const std::shared_ptr<AssetItem>& parentFolder);
     void validatePaths();
     void printAssetTree(const std::shared_ptr<AssetItem>& folder, int indent);
+    void createShader(const std::shared_ptr<AssetItem>& parentFolder, const std::string& shaderName);
+    void createMaterial(const std::shared_ptr<AssetItem>& parentFolder, const std::string& materialName);
+    std::string generateUniquePath(const std::shared_ptr<AssetItem>& parentFolder, const std::string& assetName, AssetType type);
+
+    // Delete copy ctors
+    AssetManager(const AssetManager&) = delete;
+    AssetManager& operator=(const AssetManager&) = delete;
 
     void createFolder(const std::shared_ptr<AssetItem>& parentFolder, const std::string& folderName) {
         std::string newFolderPath = parentFolder->getPath() + "/" + folderName;
@@ -85,10 +92,7 @@ private:
     }
 
     AssetManager();
-    AssetManager(const AssetManager &) = delete;
     std::unordered_map<std::string, std::shared_ptr<AssetItem>> assets;
-    AssetManager &operator=(const AssetManager &) = delete;
-
     std::unordered_map<std::string, std::shared_ptr<Shader> > shaders;
     std::unordered_map<std::string, std::shared_ptr<Material> > materials;
 

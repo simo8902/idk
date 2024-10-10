@@ -334,7 +334,7 @@ void InspectorManager::renderMaterialInspector(const std::shared_ptr<Material>& 
     std::shared_ptr<Shader> shader = material->getShader();
     if (shader) {
         ImGui::Text("Shader: %s", shader->getName().c_str());
-      //  ImGui::Text("UUID: %s", shader->getUUID().c_str());
+        ImGui::Text("UUID: %s", shader->getUUIDStr().c_str());
     } else {
         ImGui::Text("No shader assigned.");
     }
@@ -343,16 +343,19 @@ void InspectorManager::renderMaterialInspector(const std::shared_ptr<Material>& 
 
     ImGui::Text("Drag and drop a shader here to assign.");
     if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SHADER_PAYLOAD")) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_SHADER)) {
+            // Ensure the payload data is null-terminated
             const char* shaderUUIDCStr = static_cast<const char*>(payload->Data);
             std::string shaderUUID(shaderUUIDCStr);
 
             std::shared_ptr<Shader> newShader = AssetManager::getInstance().getShaderByUUID(shaderUUID);
             if (newShader) {
                 material->assignShader(newShader);
-              //  std::cout << "Assigned shader: " << newShader->getName() << " to material: " << material->getName() << std::endl;
+                std::cout << "[InspectorManager] Assigned shader: " << newShader->getName()
+                          << " to material: " << material->getName() << std::endl;
             } else {
-                std::cerr << "Shader not found: " << shaderUUID << std::endl;
+                std::cerr << "[InspectorManager] Shader not found: " << shaderUUID << std::endl;
+                ImGui::OpenPopup("Shader Not Found");
             }
         }
         ImGui::EndDragDropTarget();

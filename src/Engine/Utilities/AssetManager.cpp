@@ -5,7 +5,6 @@
 #include <thread>
 #include <algorithm>
 #include <cctype>
-#include <set>
 #include <regex>
 #include <unordered_set>
 
@@ -14,10 +13,10 @@ AssetManager& AssetManager::getInstance() {
     return instance;
 }
 AssetManager::AssetManager()
-: sourcePath(std::filesystem::absolute(std::string(SOURCE_DIR)).string()),
-  rootFolder(std::make_shared<AssetItem>("ROOT", AssetType::Folder, sourcePath + "/ROOT")),
-  engineShadersPath("C:/Users/Simeon/Documents/NAV2SFM_Core/shaders"),
-  runtimeShadersPath("C:/Users/Simeon/Documents/NAV2SFM_Core/ROOT/shaders") {
+    : engineShadersPath("C:/Users/Simeon/Documents/NAV2SFM_Core/shaders"),
+      runtimeShadersPath("C:/Users/Simeon/Documents/NAV2SFM_Core/ROOT/shaders"),
+      sourcePath(std::filesystem::absolute(std::string(SOURCE_DIR)).string()),
+      rootFolder(std::make_shared<AssetItem>("ROOT", AssetType::Folder, sourcePath + "/ROOT")) {
     std::cout << "[AssetManager] Initializing AssetManager with:\n"
               << "  Source path: " << sourcePath << "\n"
               << "  Root folder: " << rootFolder->getPath() << "\n"
@@ -33,6 +32,7 @@ AssetManager::AssetManager()
         throw;
     }
 }
+
 void AssetManager::validatePaths() {
     if (!std::filesystem::exists(rootFolder->getPath())) {
         throw std::runtime_error("ROOT directory does not exist: " + rootFolder->getPath());
@@ -101,13 +101,10 @@ void AssetManager::compileShaders() {
 void AssetManager::scanUserAssets() {
     std::cout << "[AssetManager] Scanning user assets in: " << rootFolder->getPath() << std::endl;
 
-    // Clear existing assets in rootFolder
     rootFolder->clearChildren();
 
-    // Start scanning from the root folder
     scanDirectory(rootFolder->getPath(), rootFolder);
 
-    // Optional: Print the asset tree to verify
     std::cout << "[AssetManager] Asset tree structure:" << std::endl;
     printAssetTree(rootFolder, 0);
 }
@@ -129,27 +126,20 @@ std::shared_ptr<AssetItem> AssetManager::getRootFolder() const {
 }
 
 void AssetManager::scanDirectory(const std::filesystem::path& directoryPath, const std::shared_ptr<AssetItem>& parentFolder) {
-    for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
+     for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
         if (entry.is_directory()) {
-            // Create a new folder AssetItem
             std::string folderName = entry.path().filename().string();
             auto folderItem = std::make_shared<AssetItem>(folderName, AssetType::Folder, entry.path().string(), parentFolder);
             parentFolder->addChild(folderItem);
-
-            // Recursively scan this subdirectory
             scanDirectory(entry.path(), folderItem);
         } else if (entry.is_regular_file()) {
-            // Identify the asset type based on file extension
             std::string extension = entry.path().extension().string();
             std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
             AssetType assetType = AssetType::Unknown;
             if (extension == ".glsl" || extension == ".shader") {
                 assetType = AssetType::Shader;
             } else if (extension == ".mat") {
                 assetType = AssetType::Material;
-            } else {
-                assetType = AssetType::Unknown;
             }
 
             if (assetType != AssetType::Unknown) {
@@ -157,23 +147,37 @@ void AssetManager::scanDirectory(const std::filesystem::path& directoryPath, con
                 std::shared_ptr<AssetItem> assetItem;
 
                 if (assetType == AssetType::Shader) {
-                    // Create a Shader object directly
                     auto shader = std::make_shared<Shader>(entry.path().string());
                     shader->setName(assetName);
                     {
-                        std::lock_guard<std::mutex> lock(shadersMutex);
-                        shaders[assetName] = shader; // Add to shaders map
+                        std::lock_guard<std::mutex> lock(assetMutex);
+                        if (shaders.find(shader->getUUIDStr()) == shaders.end()) {
+                            shaders[shader->getUUIDStr()] = shader;
+                            assetItem = shader;
+                        } else {
+                            std::cerr << "[AssetManager] Duplicate Shader UUID: " << shader->getUUIDStr()
+                                      << " for shader: " << shader->getName() << ". Skipping." << std::endl;
+                            continue;
+                        }
                     }
-                    assetItem = shader; // Use the Shader object as the AssetItem
-                } else {
-                    // For other asset types, create an AssetItem
-                    assetItem = std::make_shared<AssetItem>(assetName, assetType, entry.path().string(), parentFolder);
+                } else if (assetType == AssetType::Material) {
+                    auto material = std::make_shared<Material>(entry.path().string());
+                    {
+                        std::lock_guard<std::mutex> lock(assetMutex);
+                        if (materials.find(material->getUUIDStr()) == materials.end()) {
+                            materials[material->getUUIDStr()] = material;
+                            assetItem = material;
+                        } else {
+                            std::cerr << "[AssetManager] Duplicate Material UUID: " << material->getUUIDStr()
+                                      << " for material: " << material->getName() << ". Skipping." << std::endl;
+                            continue;
+                        }
+                    }
                 }
 
                 parentFolder->addChild(assetItem);
             }
         }
-        // Handle symbolic links or other file types if necessary
     }
 }
 
@@ -191,13 +195,90 @@ std::string AssetManager::getRootPath() const {
 
 
 
+std::string AssetManager::generateUniquePath(const std::shared_ptr<AssetItem>& parentFolder, const std::string& assetName, AssetType type) {
+    std::string parentPath = parentFolder->getPath();
+    std::cerr << parentPath << std::endl;
 
+    // Define file extension based on asset type
+    std::string extension;
+    switch (type) {
+        case AssetType::Shader:
+            extension = ".shader";
+        break;
+        case AssetType::Material:
+            extension = ".material";
+        break;
+        // Add other cases as needed
+        default:
+            extension = "";
+    }
 
+    // Construct the full path
+    std::filesystem::path fullPath = std::filesystem::path(parentPath) / (assetName + extension);
+
+    // Ensure the path is unique (e.g., by appending a number if necessary)
+    int counter = 1;
+    while (std::filesystem::exists(fullPath)) {
+        std::stringstream ss;
+        ss << assetName << "_" << counter++ << extension;
+        fullPath = std::filesystem::path(parentPath) / ss.str();
+    }
+
+    return fullPath.string();
+}
+
+void AssetManager::createShader(const std::shared_ptr<AssetItem>& parentFolder, const std::string& shaderName) {
+    if (!parentFolder || parentFolder->getType() != AssetType::Folder) {
+        return;
+    }
+
+    std::string shaderPath = generateUniquePath(parentFolder, shaderName, AssetType::Shader);
+    const auto shader = std::make_shared<AssetItem>(shaderName, AssetType::Shader, shaderPath, parentFolder);
+    parentFolder->addChild(shader);
+}
+
+void AssetManager::createMaterial(const std::shared_ptr<AssetItem>& parentFolder, const std::string& materialName) {
+    if (!parentFolder || parentFolder->getType() != AssetType::Folder) {
+        std::cerr << "[AssetManager] Failed to create material: Invalid parent folder." << std::endl;
+        return;
+    }
+
+    // Generate a unique path for the new material
+    std::string materialPath = generateUniquePath(parentFolder, materialName, AssetType::Material);
+    std::cout << "[AssetManager] Generated material path: " << materialPath << std::endl;
+
+    // Create the .mat file on disk
+    std::ofstream materialFile(materialPath);
+    if (!materialFile) {
+        std::cerr << "[AssetManager] Failed to create material file at: " << materialPath << std::endl;
+        return;
+    }
+    // Optionally, write default content to the material file
+    materialFile << "Material: " << materialName << std::endl;
+    materialFile.close();
+    std::cout << "[AssetManager] Created material file at: " << materialPath << std::endl;
+
+    // Create a Material object
+    const auto material = std::make_shared<Material>(materialPath);
+    std::cout << "[AssetManager] Created Material object: " << material->getName() << std::endl;
+
+    // Add the material to the parent folder
+    parentFolder->addChild(material);
+    std::cout << "[AssetManager] Added Material to parent folder: " << parentFolder->getName() << std::endl;
+
+    // Register the material with AssetManager
+    addMaterial(material);
+    std::cout << "[AssetManager] Registered Material with UUID: " << material->getUUID() << std::endl;
+
+    std::cout << "[AssetManager] Successfully created material: " << materialName << std::endl;
+}
 
 std::shared_ptr<Shader> AssetManager::getShaderByUUID(const std::string& uuidStr) const {
     std::lock_guard<std::mutex> lock(assetMutex);
     auto it = shaders.find(uuidStr);
-    if (it != shaders.end()) return it->second;
+    if (it != shaders.end() && it->second->getType() == AssetType::Shader) {
+        return it->second;
+    }
     return nullptr;
 }
 
@@ -227,8 +308,9 @@ std::shared_ptr<Shader> AssetManager::getShader(const std::string& name) {
     }
     return nullptr;
 }
-bool AssetManager::addMaterial(std::shared_ptr<Material> material) {
-    return true;
+void AssetManager::addMaterial(const std::shared_ptr<Material>& material) {
+    materials[boost::uuids::to_string(material->getUUID())] = material;
+    std::cout << "[AssetManager] Material " << material->getName() << " added to AssetManager." << std::endl;
 }
 
 std::shared_ptr<Material> AssetManager::getMaterialByUUID(const std::string& uuidStr) const {

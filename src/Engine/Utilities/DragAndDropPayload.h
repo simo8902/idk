@@ -8,5 +8,6 @@
 constexpr const char* PAYLOAD_SHADER = "SHADER_PAYLOAD";
 constexpr const char* PAYLOAD_MESH = "MESH_PAYLOAD";
 constexpr const char* PAYLOAD_MATERIAL = "MATERIAL_PAYLOAD";
+constexpr const char* PAYLOAD_FOLDER = "FOLDER_PAYLOAD";
 
 #endif //DRAGANDDROPPAYLOAD_H

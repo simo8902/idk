@@ -232,28 +232,34 @@ void Initialization::initImGuiStyle() {
 
     style.WindowPadding = ImVec2(0, 0);
 
-    // Customize Colors
-    ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    ImVec4 greyColor = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
-    ImVec4 grey2Color = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
-    ImVec4 blackColor = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-    ImVec4 black2Color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    const auto redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    const auto interfaceColor = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
+    const auto grey2Color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    const auto black2Color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    const auto orange = ImVec4(0.8f, 0.45f, 0.0f, 1.0f);
 
-    style.Colors[ImGuiCol_Text] = greyColor;
-    style.Colors[ImGuiCol_FrameBg] = grey2Color;
-    style.Colors[ImGuiCol_HeaderActive] = grey2Color;
-    style.Colors[ImGuiCol_HeaderHovered] = black2Color;
+    style.Colors[ImGuiCol_WindowBg] = interfaceColor;
+    style.Colors[ImGuiCol_FrameBg] = black2Color;
+
+    style.Colors[ImGuiCol_HeaderActive] = black2Color;
+    style.Colors[ImGuiCol_HeaderHovered] = orange;
     style.Colors[ImGuiCol_TabActive] = grey2Color;
     style.Colors[ImGuiCol_TabUnfocused] = redColor;
     style.Colors[ImGuiCol_TabUnfocusedActive] = grey2Color;
     style.Colors[ImGuiCol_TabHovered] = grey2Color;
     style.Colors[ImGuiCol_Tab] = redColor;
-    style.Colors[ImGuiCol_TitleBgActive] = blackColor;
+    style.Colors[ImGuiCol_TitleBgActive] = black2Color;
+    style.Colors[ImGuiCol_FrameBgHovered] = orange;
+    style.Colors[ImGuiCol_ButtonHovered] = orange;
+    style.Colors[ImGuiCol_Header] = orange;
+    style.Colors[ImGuiCol_Text] = black2Color;
 
     style.WindowMenuButtonPosition = ImGuiDir_None;
 
     style.Colors[ImGuiCol_Button] = style.Colors[ImGuiCol_WindowBg];
 }
+
+
 void Initialization::initializeImGui(GLFWwindow *window){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -265,7 +271,7 @@ void Initialization::initializeImGui(GLFWwindow *window){
 
     io.Fonts->Clear();
 
-    const char* fontPath = SOURCE_DIR "/CascadiaCode.ttf";
+    auto fontPath = SOURCE_DIR "/CascadiaCode-Bold.ttf";
     ImFont* primaryFont = io.Fonts->AddFontFromFileTTF(fontPath, 17.0f);
     if (primaryFont) {
         std::cout << "Successfully loaded primary font: " << fontPath << std::endl;
@@ -273,7 +279,6 @@ void Initialization::initializeImGui(GLFWwindow *window){
         std::cerr << "Failed to load primary font: " << fontPath << std::endl;
     }
 
-    // Define FontAwesome icon ranges (verify these ranges with your FontAwesome version)
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
     ImFontConfig config;
@@ -281,13 +286,12 @@ void Initialization::initializeImGui(GLFWwindow *window){
     config.PixelSnapH = true;
 
     const char* fontAwesomePath = SOURCE_DIR "/src/data/fonts/Font Awesome 6 Free-Solid-900.otf";
-    ImFont* fontAwesome = io.Fonts->AddFontFromFileTTF(fontAwesomePath, 16.0f, &config, icons_ranges);
+    ImFont* fontAwesome = io.Fonts->AddFontFromFileTTF(fontAwesomePath, 17.0f, &config, icons_ranges);
     if (fontAwesome) {
         std::cout << "Successfully loaded FontAwesome: " << fontAwesomePath << std::endl;
     } else {
         std::cerr << "Failed to load FontAwesome: " << fontAwesomePath << std::endl;
     }
-
 
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
@@ -339,7 +343,7 @@ void Initialization::runMainLoop() const {
         if (m_Renderer != nullptr){
             m_Renderer->render();
         }else{
-        //    std::cerr << "m_Renderer is null\n";
+            std::cerr << "m_Renderer is null\n";
         }
     }
 }

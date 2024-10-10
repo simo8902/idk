@@ -17,14 +17,14 @@
 class Material: public AssetItem  {
 public:
     Material(const std::string& filePath)
-        : AssetItem(std::filesystem::path(filePath).stem().string(), AssetType::Material, std::filesystem::path(filePath).parent_path().string()) {
-        uuid = uuidGenerator();
-        uuidStr = boost::uuids::to_string(uuid);
-        std::cout << "[Material] Material created: " << name << " with UUID: " << uuidStr << std::endl;
+            : AssetItem(std::filesystem::path(filePath).stem().string(),
+                       AssetType::Material,
+                       std::filesystem::path(filePath).parent_path().string(),
+                       nullptr),
+              shader(nullptr)
+    {
+        std::cout << "[Material] Material created: " << getName() << " with UUID: " << getUUIDStr() << std::endl;
     }
-
-    std::string getName() const { return name; }
-    std::string getUUID() const { return uuidStr; }
 
     void assignShader(const std::shared_ptr<Shader>& newShader) {
         shader = newShader;
@@ -32,7 +32,6 @@ public:
     }
 
     std::shared_ptr<Shader> getShader() const { return shader; }
-
 
     std::string name;
 

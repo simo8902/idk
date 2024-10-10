@@ -21,6 +21,7 @@ void SelectionManager::selectMaterial(const std::shared_ptr<Material>& material)
     selectedLight.reset();
     selectedCamera.reset();
     selectedShader.reset();
+    selectedFolder.reset();
 }
 
 void SelectionManager::selectGameObject(const std::shared_ptr<GameObject>& object) {
@@ -40,7 +41,11 @@ void SelectionManager::selectLight(const std::shared_ptr<Light>& light) {
     selectedCamera.reset();
     selectedShader.reset();
 }
-
+void SelectionManager::selectFolder(const std::shared_ptr<AssetItem>& folder) {
+    selectedFolder = folder;
+ //   selectedShader.reset();
+ //   selectedMaterial.reset();
+}
 void SelectionManager::selectCamera(const std::shared_ptr<Camera>& camera) {
     selectedCamera = camera;
     selectedMesh.reset();
@@ -50,8 +55,11 @@ void SelectionManager::selectCamera(const std::shared_ptr<Camera>& camera) {
     selectedShader.reset();
 }
 
+
 void SelectionManager::selectShader(const std::shared_ptr<Shader>& shader) {
     selectedShader = shader;
+    selectedMaterial.reset();
+    selectedFolder.reset();
 }
 
 void SelectionManager::clearSelection() {
@@ -73,4 +81,8 @@ std::shared_ptr<Mesh> SelectionManager::getSelectedMesh() const {
 
 std::shared_ptr<Shader> SelectionManager::getSelectedShader() const {
     return selectedShader;
+}
+
+std::shared_ptr<AssetItem> SelectionManager::getSelectedFolder() const {
+    return selectedFolder;
 }
