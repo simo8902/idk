@@ -21,6 +21,7 @@
 #include "IconsFontAwesome6Brands.h"
 
 #include "stb_image.h"
+#include "Tracker.h"
 
 Renderer::Renderer(Scene* scene, const std::shared_ptr<Camera> & camera,const std::shared_ptr<LightManager> & lightManager, GLFWwindow* m_Window)
     : scene(scene), lightManager(lightManager), m_Window(m_Window), m_Camera(camera)
@@ -150,7 +151,6 @@ void Renderer::createSceneFramebuffer(int sceneWidth, int sceneHeight) {
 
 }
 
-//Main Loop
 void Renderer::render() {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -162,6 +162,8 @@ void Renderer::render() {
     processInput(m_Window);
 
     renderImGuiLayout();
+
+   // ImGui::ShowStyleEditor();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

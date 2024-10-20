@@ -11,6 +11,8 @@
 #include <string>
 #include <iostream>
 
+#include "Profiler.h"
+
 enum class CameraMovement {
     FORWARD,
     BACKWARD,
@@ -44,6 +46,9 @@ public:
         updateViewMatrix();
 
     }
+
+    static size_t memoryUsage;
+    static Profiler profiler;
 
     void updateViewMatrix() {
         const glm::vec3 & target = m_position + m_forwardVec;
@@ -245,5 +250,6 @@ private:
         m_upVec = glm::normalize(glm::cross(right, m_forwardVec));
     }
 };
+
 
 #endif //NAV2SFM Core_CAMERA_H

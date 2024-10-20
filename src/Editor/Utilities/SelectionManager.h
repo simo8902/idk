@@ -55,7 +55,7 @@ public:
 
         auto uuid = item->getUUID();
         if (selectedItems.find(uuid) != selectedItems.end()) {
-            selectedItems.erase(uuid);  // Deselect if already selected
+            selectedItems.erase(uuid);
         } else {
             selectedItems.insert(uuid);
         }

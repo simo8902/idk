@@ -14,8 +14,8 @@ ProjectExplorer::ProjectExplorer()
     : folderIcon(ICON_FA_FOLDER),
       shaderIcon(ICON_FA_SHADER),
       materialIcon(ICON_FA_MATERIAL),
-      clickedInsideSelectable(false),
-      shadersLoaded(false) {
+      shadersLoaded(false),
+      clickedInsideSelectable(false) {
     rootFolder = AssetManager::getInstance().getRootFolder();
 }
 
@@ -117,6 +117,10 @@ void ProjectExplorer::RenderFolderTree(const std::shared_ptr<AssetItem>& folder)
         if (ImGui::MenuItem("Create Shader")) {
             createShaderPopupOpen = true;
             targetFolderForCreation = folder;
+        }
+        if (ImGui::MenuItem("Create New Folder")) {
+            createFolderPopupOpen = false;
+            HandleFolderPopups(folder);
         }
         if (ImGui::MenuItem("Create Material")) {
             createMaterialPopupOpen = true;
@@ -248,6 +252,29 @@ void ProjectExplorer::RenderAssetItemAsIcon(const std::shared_ptr<AssetItem>& it
     }
 
     ImGui::EndGroup();
+}
+
+
+void ProjectExplorer::HandleFolderPopups(const std::shared_ptr<AssetItem>& folder) {
+    if (ImGui::BeginPopupModal("Create New Folder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        static char newFolderName[256] = "";
+        ImGui::InputText("Folder Name", newFolderName, IM_ARRAYSIZE(newFolderName));
+        if (ImGui::Button("Create")) {
+
+            AssetManager::getInstance().createFolder(folder, newFolderName);
+            newFolderName[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel")) {
+            newFolderName[0] = '\0';
+            ImGui::CloseCurrentPopup();}
+
+        ImGui::EndPopup();
+    }
+
+    // TODO: renameFolderPopupOpen and deleteFolderPopupOpen
 }
 
 const char* ProjectExplorer::GetAssetIcon(const AssetType & type) {

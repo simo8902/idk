@@ -232,27 +232,53 @@ void Initialization::initImGuiStyle() {
 
     style.WindowPadding = ImVec2(0, 0);
 
-    const auto redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    const auto interfaceColor = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
-    const auto grey2Color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
-    const auto black2Color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    const auto orange = ImVec4(0.8f, 0.45f, 0.0f, 1.0f);
+    const auto RED = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    const auto BLACK = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    const auto DARK_GREY = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+    const auto GREY = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    const auto GREY_HIGHLIGHT = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+    const auto COSMOS = ImVec4(0.1f, 0.0f, 0.2f, 1.0f);
+    const auto DARK_COSMOS = ImVec4(0.05f, 0.0f, 0.15f, 1.0f);
+    const auto FRAME = ImVec4(0.09f, 0.0f, 0.09f, 1.0f);
 
-    style.Colors[ImGuiCol_WindowBg] = interfaceColor;
-    style.Colors[ImGuiCol_FrameBg] = black2Color;
+    // BG and frame
+    style.Colors[ImGuiCol_WindowBg] = BLACK;
+    style.Colors[ImGuiCol_FrameBg] = DARK_GREY;
+    style.Colors[ImGuiCol_FrameBgHovered] = COSMOS;
+    style.Colors[ImGuiCol_FrameBgActive] = GREY;
 
-    style.Colors[ImGuiCol_HeaderActive] = black2Color;
-    style.Colors[ImGuiCol_HeaderHovered] = orange;
-    style.Colors[ImGuiCol_TabActive] = grey2Color;
-    style.Colors[ImGuiCol_TabUnfocused] = redColor;
-    style.Colors[ImGuiCol_TabUnfocusedActive] = grey2Color;
-    style.Colors[ImGuiCol_TabHovered] = grey2Color;
-    style.Colors[ImGuiCol_Tab] = redColor;
-    style.Colors[ImGuiCol_TitleBgActive] = black2Color;
-    style.Colors[ImGuiCol_FrameBgHovered] = orange;
-    style.Colors[ImGuiCol_ButtonHovered] = orange;
-    style.Colors[ImGuiCol_Header] = orange;
-    style.Colors[ImGuiCol_Text] = black2Color;
+    // Title and border
+    style.Colors[ImGuiCol_TitleBg] = BLACK;
+    style.Colors[ImGuiCol_TitleBgCollapsed] = BLACK;
+    style.Colors[ImGuiCol_TitleBgActive] = BLACK;
+    style.Colors[ImGuiCol_Border] = FRAME;
+
+    // Menubar and tabs
+    style.Colors[ImGuiCol_MenuBarBg] = COSMOS;
+    style.Colors[ImGuiCol_Tab] = BLACK;
+    style.Colors[ImGuiCol_TabHovered] = BLACK;
+    style.Colors[ImGuiCol_TabSelected] = BLACK;
+    style.Colors[ImGuiCol_TabSelectedOverline] = RED;
+    style.Colors[ImGuiCol_TabDimmed] = COSMOS;
+    style.Colors[ImGuiCol_TabDimmedSelected] = BLACK;
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = BLACK;
+
+    // Buttons and headers
+    style.Colors[ImGuiCol_Button] = BLACK;
+    style.Colors[ImGuiCol_ButtonHovered] = COSMOS;
+    style.Colors[ImGuiCol_ButtonActive] = DARK_COSMOS;
+    style.Colors[ImGuiCol_Header] = DARK_COSMOS;
+    style.Colors[ImGuiCol_HeaderHovered] = COSMOS;
+    style.Colors[ImGuiCol_HeaderActive] = COSMOS;
+
+    style.Colors[ImGuiCol_ResizeGrip] = FRAME;
+    style.Colors[ImGuiCol_ResizeGripActive] = FRAME;
+    style.Colors[ImGuiCol_ResizeGripHovered] = FRAME;
+
+    // Text and other elements
+    style.Colors[ImGuiCol_Text] = GREY_HIGHLIGHT;
+    style.Colors[ImGuiCol_TextDisabled] = DARK_COSMOS;
+    style.Colors[ImGuiCol_BorderShadow] = BLACK;
 
     style.WindowMenuButtonPosition = ImGuiDir_None;
 

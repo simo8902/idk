@@ -59,7 +59,6 @@ public:
 private:
     AssetManager& assetManager = AssetManager::getInstance();
     std::shared_ptr<AssetItem> rootFolder = assetManager.getRootFolder();
-
     Scene* scene;
     bool dockspace_initialized = false;
     bool noLightSelectedLogged = false;
