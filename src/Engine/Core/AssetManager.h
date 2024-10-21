@@ -53,6 +53,7 @@ public:
     void createShader(const std::shared_ptr<AssetItem>& parentFolder, const std::string& shaderName);
     void createMaterial(const std::shared_ptr<AssetItem>& parentFolder, const std::string& materialName);
     std::string generateUniquePath(const std::shared_ptr<AssetItem>& parentFolder, const std::string& assetName, AssetType type);
+    void loadPredefinedMaterials();
 
     // Delete copy ctors
     AssetManager(const AssetManager&) = delete;
@@ -68,6 +69,8 @@ public:
             std::cerr << "[AssetManager] Failed to create folder: " << newFolderPath << std::endl;
         }
     }
+
+    void addPredefinedMaterials();
 private:
     std::mutex shadersMutex;
     std::string engineShadersPath;

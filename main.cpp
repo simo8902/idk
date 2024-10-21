@@ -5,7 +5,7 @@ int main() {
 
     init->runMainLoop();
 
-    Renderer renderer(init->getScene(),
+    const Renderer renderer(init->getScene(),
         init->getMainCamera(),
         init->getLightManager(),
         init->getWindow()

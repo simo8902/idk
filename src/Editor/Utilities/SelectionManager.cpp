@@ -21,7 +21,7 @@ void SelectionManager::selectMaterial(const std::shared_ptr<Material>& material)
     selectedLight.reset();
     selectedCamera.reset();
     selectedShader.reset();
-    selectedFolder.reset();
+   // selectedFolder.reset();
 }
 
 void SelectionManager::selectGameObject(const std::shared_ptr<GameObject>& object) {

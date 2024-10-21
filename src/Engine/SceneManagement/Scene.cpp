@@ -192,7 +192,7 @@ void Scene::Render3DScene() const {
 
 
 void Scene::createObjects() {
-    auto globalMaterial = std::make_shared<Material>("GlobalMaterial");
+    auto globalMaterial = std::make_shared<Material>("GlobalMaterial",SOURCE_DIR "/ROOT/materials", true);
     AssetManager::getInstance().addMaterial(globalMaterial);
     globalMaterial->assignShader(shaderProgram);
 

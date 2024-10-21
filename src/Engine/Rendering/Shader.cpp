@@ -26,7 +26,6 @@ Shader::Shader(const std::string& filePath)
 
     try {
         parseShaderFile(filePath);
-        // Compilation is deferred until OpenGL context is initialized
     } catch (const std::exception& e) {
         std::cerr << "[Shader] Error parsing shader file: " << e.what() << std::endl;
         throw;
@@ -35,15 +34,12 @@ Shader::Shader(const std::string& filePath)
 Shader::Shader(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename)
     : AssetItem("PredefinedShader", AssetType::PredefinedShader, "") {
 
-
-    // Create filesystem paths from the provided filenames
     std::filesystem::path vertexP(vertexShaderFilename);
     std::filesystem::path fragmentP(fragmentShaderFilename);
 
     // Base path for predefined shaders
-    std::filesystem::path basePath = "C:/Users/Simeon/Documents/NAV2SFM_Core/shaders";
+    const std::filesystem::path & basePath = std::string(SOURCE_DIR) + "/shaders";
 
-    // Check if the paths are relative
     if (vertexP.is_relative()) {
         vertexP = basePath / vertexP;
     }
@@ -60,7 +56,6 @@ Shader::Shader(const std::string& vertexShaderFilename, const std::string& fragm
               << "\" and fragment path: \"" << fragmentPath << " UUID: " << boost::uuids::to_string(getUUID()) << std::endl;
 
     loadShaderSources();
-    // Compilation deferred
 }
 void Shader::parseShaderFile(const std::string& filePath) {
     std::ifstream shaderFile(filePath);
@@ -74,7 +69,6 @@ void Shader::parseShaderFile(const std::string& filePath) {
 
     std::string line;
     while (std::getline(shaderFile, line)) {
-        // Trim whitespace
         line.erase(line.find_last_not_of(" \t\r\n") + 1);
         if (line.find("#shader") != std::string::npos) {
             if (line.find("vertex") != std::string::npos) {

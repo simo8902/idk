@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-project(NAV2SFM_Core)
+project(idk_core)
 
 add_definitions(-DSOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
 
@@ -189,13 +189,13 @@ include_directories(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(NAV2SFM_Core main.cpp ${GLAD_SOURCE} ${SOURCE_FILES})
+add_executable(idk_core main.cpp ${GLAD_SOURCE} ${SOURCE_FILES})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_USE_UCRT")
 endif()
 
-target_compile_options(NAV2SFM_Core PRIVATE -Wno-narrowing)
+target_compile_options(idk_core PRIVATE -Wno-narrowing)
 
-target_link_libraries(NAV2SFM_Core PRIVATE ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ImGui opengl32 imm32 )
+target_link_libraries(idk_core PRIVATE ${GLFW_LIBRARIES} ${Boost_LIBRARIES} ImGui opengl32 imm32 )

@@ -87,27 +87,22 @@ private:
 
     void CheckCompileErrors(GLuint shader, const std::string& type);
     std::string getCommonPath(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
-        return "C:/Users/Simeon/Documents/NAV2SFM_Core/shaders";
+        return std::string(SOURCE_DIR) + "/shaders";
     }
 
     std::filesystem::path resolveShaderPath(const std::string& shaderPath) {
         std::filesystem::path path(shaderPath);
 
-        // Check if the path is relative or absolute
         if (path.is_relative()) {
-            // If it's relative, assume it's in the shaders directory
-            std::filesystem::path baseDir = "C:/Users/Simeon/Documents/NAV2SFM_Core/shaders";
+            std::filesystem::path baseDir = std::string(SOURCE_DIR) + "/shaders";
             path = baseDir / path;
         }
 
-        // Normalize the path to ensure consistent slashes
         return path.lexically_normal();
     }
 
-    // Store shader sources
     std::string vertexSource;
     std::string fragmentSource;
-    // Paths to shader files
     std::string vertexPath;
     std::string fragmentPath;
 };

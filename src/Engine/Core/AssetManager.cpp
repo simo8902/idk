@@ -13,10 +13,10 @@ AssetManager& AssetManager::getInstance() {
     return instance;
 }
 AssetManager::AssetManager()
-    : engineShadersPath("C:/Users/Simeon/Documents/NAV2SFM_Core/shaders"),
-      runtimeShadersPath("C:/Users/Simeon/Documents/NAV2SFM_Core/ROOT/shaders"),
-      sourcePath(std::filesystem::absolute(std::string(SOURCE_DIR)).string()),
-      rootFolder(std::make_shared<AssetItem>("ROOT", AssetType::Folder, sourcePath + "/ROOT")) {
+    :   engineShadersPath(std::filesystem::absolute(std::string(SOURCE_DIR) + "/shaders").string()),
+        runtimeShadersPath(std::string(SOURCE_DIR) + "/ROOT/shaders"),
+        sourcePath(std::filesystem::absolute(std::string(SOURCE_DIR)).string()),
+        rootFolder(std::make_shared<AssetItem>("ROOT", AssetType::Folder, sourcePath + "/ROOT")) {
     std::cout << "[AssetManager] Initializing AssetManager with:\n"
               << "  Source path: " << sourcePath << "\n"
               << "  Root folder: " << rootFolder->getPath() << "\n"
@@ -25,6 +25,7 @@ AssetManager::AssetManager()
     try {
         validatePaths();
         loadPredefinedShaders();
+       // addPredefinedMaterials();
         scanUserAssets();
         std::cout << "[AssetManager] Initialization complete." << std::endl;
     } catch (const std::exception& e) {
@@ -79,7 +80,7 @@ void AssetManager::loadPredefinedShaders() {
                       << " and fragment file: " << pair.second.second << std::endl;
             try {
                 auto shader = std::make_shared<Shader>(pair.second.first, pair.second.second);
-                shader->setName(pair.first);  // Set shader name to baseName
+                shader->setName(pair.first);
                 if (addShader(shader)) {
                     std::cout << "[AssetManager] Predefined shader added: " << pair.first << std::endl;
                 } else {
@@ -90,6 +91,35 @@ void AssetManager::loadPredefinedShaders() {
             }
         } else {
             std::cerr << "[AssetManager] Unpaired shader found: " << pair.first << std::endl;
+        }
+    }
+}
+
+void AssetManager::loadPredefinedMaterials() {
+    std::string predefinedMaterialPath = std::string(SOURCE_DIR) + "/predefined_materials";
+    std::cout << "[AssetManager] Loading predefined materials from: " << predefinedMaterialPath << std::endl;
+
+    for (const auto& entry : std::filesystem::directory_iterator(predefinedMaterialPath)) {
+        if (entry.is_regular_file() && (entry.path().extension() == ".material" || entry.path().extension() == ".mat")) {
+            std::string materialName = entry.path().stem().string();
+            std::cout << "[AssetManager] Loading predefined material: " << materialName << std::endl;
+
+            try {
+                auto material = std::make_shared<Material>(materialName, entry.path().string(), false);
+
+                //  material->setName(materialName);
+
+                std::lock_guard<std::mutex> lock(assetMutex);
+                if (materials.find(material->getUUIDStr()) == materials.end()) {
+                    materials[material->getUUIDStr()] = material;
+                    std::cout << "[AssetManager] Predefined material added: " << materialName << std::endl;
+                } else {
+                    std::cerr << "[AssetManager] Duplicate Material UUID: " << material->getUUIDStr()
+                              << " for material: " << material->getName() << ". Skipping." << std::endl;
+                }
+            } catch (const std::exception& e) {
+                std::cerr << "[AssetManager] Error loading predefined material: " << materialName << " - " << e.what() << std::endl;
+            }
         }
     }
 }
@@ -131,51 +161,35 @@ void AssetManager::scanDirectory(const std::filesystem::path& directoryPath, con
             std::string folderName = entry.path().filename().string();
             auto folderItem = std::make_shared<AssetItem>(folderName, AssetType::Folder, entry.path().string(), parentFolder);
             parentFolder->addChild(folderItem);
-            scanDirectory(entry.path(), folderItem);
+            scanDirectory(entry.path(), folderItem);  // Рекурсивно сканиране на поддиректории
         } else if (entry.is_regular_file()) {
             std::string extension = entry.path().extension().string();
             std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
             AssetType assetType = AssetType::Unknown;
-            if (extension == ".glsl" || extension == ".shader") {
-                assetType = AssetType::Shader;
-            } else if (extension == ".mat") {
+
+            if (extension == ".material" || extension == ".mat") {
                 assetType = AssetType::Material;
+            } else if (extension == ".glsl" || extension == ".shader") {
+                assetType = AssetType::Shader;
             }
 
-            if (assetType != AssetType::Unknown) {
-                std::string assetName = entry.path().stem().string();
-                std::shared_ptr<AssetItem> assetItem;
+            if (assetType == AssetType::Material) {
+                // Извличане на името на файла без разширението за име на материала
+                std::string materialName = entry.path().stem().string();  // Име на файла без разширението
+                std::cout << "[AssetManager] Found material: " << materialName << std::endl;
 
-                if (assetType == AssetType::Shader) {
-                    auto shader = std::make_shared<Shader>(entry.path().string());
-                    shader->setName(assetName);
-                    {
-                        std::lock_guard<std::mutex> lock(assetMutex);
-                        if (shaders.find(shader->getUUIDStr()) == shaders.end()) {
-                            shaders[shader->getUUIDStr()] = shader;
-                            assetItem = shader;
-                        } else {
-                            std::cerr << "[AssetManager] Duplicate Shader UUID: " << shader->getUUIDStr()
-                                      << " for shader: " << shader->getName() << ". Skipping." << std::endl;
-                            continue;
-                        }
-                    }
-                } else if (assetType == AssetType::Material) {
-                    auto material = std::make_shared<Material>(entry.path().string());
-                    {
-                        std::lock_guard<std::mutex> lock(assetMutex);
-                        if (materials.find(material->getUUIDStr()) == materials.end()) {
-                            materials[material->getUUIDStr()] = material;
-                            assetItem = material;
-                        } else {
-                            std::cerr << "[AssetManager] Duplicate Material UUID: " << material->getUUIDStr()
-                                      << " for material: " << material->getName() << ". Skipping." << std::endl;
-                            continue;
-                        }
-                    }
+                // Създаване на материал от файла с извлечено име
+                auto material = std::make_shared<Material>(materialName, entry.path().string(), false);
+
+                if (materials.find(material->getUUIDStr()) == materials.end()) {
+                    materials[material->getUUIDStr()] = material;
+                    parentFolder->addChild(material);
+                    std::cout << "[AssetManager] Added file-based material: " << material->getName() << std::endl;
+                } else {
+                    std::cerr << "[AssetManager] Duplicate Material UUID: " << material->getUUIDStr()
+                              << " for material: " << material->getName() << ". Skipping." << std::endl;
+                    continue;
                 }
-
-                parentFolder->addChild(assetItem);
             }
         }
     }
@@ -190,7 +204,16 @@ std::string AssetManager::getRootPath() const {
     return rootPath;
 }
 
-
+void AssetManager::addPredefinedMaterials() {
+    /*
+    auto globalMaterial = std::make_shared<Material>("GlobalMaterial", true);  // predefined = true
+    if (materials.find(globalMaterial->getUUIDStr()) == materials.end()) {
+        materials[globalMaterial->getUUIDStr()] = globalMaterial;
+        std::cout << "[AssetManager] Added predefined material: " << globalMaterial->getName() << std::endl;
+    } else {
+        std::cerr << "[AssetManager] Duplicate Predefined Material UUID: " << globalMaterial->getUUIDStr() << std::endl;
+    }*/
+}
 
 
 
@@ -237,42 +260,6 @@ void AssetManager::createShader(const std::shared_ptr<AssetItem>& parentFolder, 
     parentFolder->addChild(shader);
 }
 
-void AssetManager::createMaterial(const std::shared_ptr<AssetItem>& parentFolder, const std::string& materialName) {
-    if (!parentFolder || parentFolder->getType() != AssetType::Folder) {
-        std::cerr << "[AssetManager] Failed to create material: Invalid parent folder." << std::endl;
-        return;
-    }
-
-    // Generate a unique path for the new material
-    std::string materialPath = generateUniquePath(parentFolder, materialName, AssetType::Material);
-    std::cout << "[AssetManager] Generated material path: " << materialPath << std::endl;
-
-    // Create the .mat file on disk
-    std::ofstream materialFile(materialPath);
-    if (!materialFile) {
-        std::cerr << "[AssetManager] Failed to create material file at: " << materialPath << std::endl;
-        return;
-    }
-    // Optionally, write default content to the material file
-    materialFile << "Material: " << materialName << std::endl;
-    materialFile.close();
-    std::cout << "[AssetManager] Created material file at: " << materialPath << std::endl;
-
-    // Create a Material object
-    const auto material = std::make_shared<Material>(materialPath);
-    std::cout << "[AssetManager] Created Material object: " << material->getName() << std::endl;
-
-    // Add the material to the parent folder
-    parentFolder->addChild(material);
-    std::cout << "[AssetManager] Added Material to parent folder: " << parentFolder->getName() << std::endl;
-
-    // Register the material with AssetManager
-    addMaterial(material);
-    std::cout << "[AssetManager] Registered Material with UUID: " << material->getUUID() << std::endl;
-
-    std::cout << "[AssetManager] Successfully created material: " << materialName << std::endl;
-}
-
 std::shared_ptr<Shader> AssetManager::getShaderByUUID(const std::string& uuidStr) const {
     std::lock_guard<std::mutex> lock(assetMutex);
     auto it = shaders.find(uuidStr);
@@ -310,7 +297,7 @@ std::shared_ptr<Shader> AssetManager::getShader(const std::string& name) {
 }
 void AssetManager::addMaterial(const std::shared_ptr<Material>& material) {
     materials[boost::uuids::to_string(material->getUUID())] = material;
-    std::cout << "[AssetManager] Material " << material->getName() << " added to AssetManager." << std::endl;
+    std::cerr << "[AssetManager] Material " << material->getName() << " added to AssetManager." << std::endl;
 }
 
 std::shared_ptr<Material> AssetManager::getMaterialByUUID(const std::string& uuidStr) const {
@@ -342,4 +329,7 @@ bool AssetManager::addShader(const std::shared_ptr<Shader>& shader) {
         return true;
     }
     return false;
+}
+
+void AssetManager::createMaterial(const std::shared_ptr<AssetItem>& parentFolder, const std::string& materialName) {
 }

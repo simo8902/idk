@@ -51,6 +51,7 @@ public:
     }
 
     void toggleSelectItem(const std::shared_ptr<AssetItem>& item) {
+        /*
         if (!item) return;
 
         auto uuid = item->getUUID();
@@ -58,7 +59,7 @@ public:
             selectedItems.erase(uuid);
         } else {
             selectedItems.insert(uuid);
-        }
+        }*/
     }
 
     void clearSelections() {

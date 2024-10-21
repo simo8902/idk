@@ -11,9 +11,9 @@
 #include <boost/uuid/uuid_io.hpp> // For boost::uuids::to_string
 
 ProjectExplorer::ProjectExplorer()
-    : folderIcon(ICON_FA_FOLDER),
-      shaderIcon(ICON_FA_SHADER),
-      materialIcon(ICON_FA_MATERIAL),
+    : folderIcon("[Folder]"),
+      shaderIcon("[Shader]"),
+      materialIcon("[Material]"),
       shadersLoaded(false),
       clickedInsideSelectable(false) {
     rootFolder = AssetManager::getInstance().getRootFolder();
@@ -24,10 +24,11 @@ ProjectExplorer::~ProjectExplorer() {}
 void ProjectExplorer::renderProjectExplorer() {
     ImGui::Begin("Project Explorer");
 
+    /*
     if (!shadersLoaded) {
         loadShadersFromDirectory();
         shadersLoaded = true;
-    }
+    }*/
 
     float windowWidth = ImGui::GetContentRegionAvail().x;
     float windowHeight = ImGui::GetContentRegionAvail().y;
@@ -99,7 +100,13 @@ void ProjectExplorer::RenderFolderTree(const std::shared_ptr<AssetItem>& folder)
 
     ImGui::PushID(folder->getUUIDStr().c_str());
 
-    std::string nodeLabel = std::string(folderIcon) + " " + folder->getName();
+    if (folderIcon.empty()) {
+        folderIcon = "[Folder]";
+    }
+
+    std::string folderName = folder->getName().empty() ? "[Unnamed Folder]" : folder->getName();
+
+    std::string nodeLabel = folderIcon + " " + folderName;
 
     ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (SelectionManager::getInstance().getSelectedFolder() == folder) {
@@ -150,14 +157,35 @@ void ProjectExplorer::RenderContentArea(const std::shared_ptr<AssetItem>& folder
 
     ImGui::BeginChild("ProjectExplorerContent", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
+    // Set to store the UUIDs of already rendered items (either file-based or virtual)
+    std::unordered_set<std::string> renderedUUIDs;
+
+    // Render file-based items in the current folder (children items)
     for (const auto& item : folder->getChildren()) {
         RenderAssetItemAsIcon(item, iconSize);
+        renderedUUIDs.insert(item->getUUIDStr());  // Mark this item's UUID as rendered
         itemCount++;
 
         if (itemCount % itemsPerRow != 0) {
             ImGui::SameLine();
         }
     }
+
+    // Only render virtual materials if this is the 'materials' folder and avoid duplicates
+    if (folder->getPath().find("materials") != std::string::npos) {
+        auto virtualMaterials = AssetManager::getInstance().getMaterials();
+        for (const auto& [uuidStr, material] : virtualMaterials) {
+            // Render only if this material hasn't been rendered already
+            if (renderedUUIDs.find(uuidStr) == renderedUUIDs.end()) {
+                RenderAssetItemAsIcon(material, iconSize);
+                itemCount++;
+                if (itemCount % itemsPerRow != 0) {
+                    ImGui::SameLine();
+                }
+            }
+        }
+    }
+
 
     ImGui::EndChild();
 }
@@ -166,21 +194,29 @@ void ProjectExplorer::RenderAssetItemAsIcon(const std::shared_ptr<AssetItem>& it
     if (!item) return;
 
     const char* icon = GetAssetIcon(item->getType());
+    // Ensure icon is not empty
     if (!icon || strlen(icon) == 0) {
         icon = "[Unknown]";
     }
 
     ImGui::BeginGroup();
 
-    const std::string uniqueID = "##" + boost::uuids::to_string(item->getUUID());
-    const std::string buttonLabel = std::string(icon) + uniqueID;
+    // Determine the prefix based on the material type
+    std::string prefix;
+    if (item->getType() == AssetType::Material) {
+        auto material = std::dynamic_pointer_cast<Material>(item);
+        if (material) {
+            prefix = material->isPredefinedMaterial() ? "[Predefined] " : "[File-based] ";
+        }
+    }
+
+    const std::string uniqueID = boost::uuids::to_string(item->getUUID());
+    const std::string buttonLabel = prefix + icon + "##" + uniqueID;
 
     const float buttonSizeMultiplier = 1.25f;
     const ImVec2 buttonSize(iconSize * buttonSizeMultiplier, iconSize * buttonSizeMultiplier);
 
-    bool isSelected = (selectedAsset == item || selectedFolder == item);
-
-  //  const bool isSelected = SelectionManager::getInstance().isItemSelected(item);
+    bool isSelected = SelectionManager::getInstance().isItemSelected(item);
 
     if (ImGui::Button(buttonLabel.c_str(), buttonSize)) {
         clickedInsideSelectable = true;
@@ -214,25 +250,40 @@ void ProjectExplorer::RenderAssetItemAsIcon(const std::shared_ptr<AssetItem>& it
         ImGui::GetWindowDrawList()->AddRect(itemMin, itemMax, ImGui::GetColorU32(ImGuiCol_ButtonHovered), 4.0f);
     }
 
+    if (item->getType() == AssetType::Material) {
+        auto material = std::dynamic_pointer_cast<Material>(item);
+        if (material) {
+            std::string materialUniqueID = material->getUUIDStr();
 
+            // Validate materialUniqueID
+            if (materialUniqueID.empty()) {
+                std::cerr << "[RenderAssetItemAsIcon] Warning: materialUniqueID is empty for material: " << material->getName() << std::endl;
+                materialUniqueID = "invalid_material_uuid";
+            }
 
-    if (item->getType() == AssetType::Shader) {
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            const std::string uuidStr = boost::uuids::to_string(item->getUUID());
-
-            ImGui::SetDragDropPayload(PAYLOAD_SHADER, uuidStr.c_str(), sizeof(char) * (uuidStr.size() + 1)); // Include null terminator
-            ImGui::Text("Dragging %s", item->getName().c_str());
-
-            ImGui::EndDragDropSource();
+            /*
+            // Display material status
+            if (material->isPredefinedMaterial()) {
+                ImGui::TextColored(ImVec4(0.9f, 0.7f, 0.0f, 1.0f), "Predefined Material");
+            } else {
+                ImGui::Text("File-based Material");
+            }*/
         }
-    }
-    else if (item->getType() == AssetType::Material) {
+
+
+        // Drag and drop handling for materials
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
             const std::string uuidStr = boost::uuids::to_string(item->getUUID());
-
             ImGui::SetDragDropPayload(PAYLOAD_MATERIAL, uuidStr.c_str(), sizeof(char) * (uuidStr.size() + 1));
             ImGui::Text("Dragging %s", item->getName().c_str());
-
+            ImGui::EndDragDropSource();
+        }
+    } else if (item->getType() == AssetType::Shader) {
+        // Drag and drop handling for shaders
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            const std::string uuidStr = boost::uuids::to_string(item->getUUID());
+            ImGui::SetDragDropPayload(PAYLOAD_SHADER, uuidStr.c_str(), sizeof(char) * (uuidStr.size() + 1));
+            ImGui::Text("Dragging %s", item->getName().c_str());
             ImGui::EndDragDropSource();
         }
     }
@@ -280,13 +331,13 @@ void ProjectExplorer::HandleFolderPopups(const std::shared_ptr<AssetItem>& folde
 const char* ProjectExplorer::GetAssetIcon(const AssetType & type) {
     switch (type) {
         case AssetType::Shader:
-            return shaderIcon.c_str();
+            return !shaderIcon.empty() ? shaderIcon.c_str() : "[Shader]";
         case AssetType::PredefinedShader:
-            return shaderIcon.c_str();
+            return !shaderIcon.empty() ? shaderIcon.c_str() : "[Shader]";
         case AssetType::Material:
-            return materialIcon.c_str();
+            return !materialIcon.empty() ? materialIcon.c_str() : "[Material]";
         case AssetType::Folder:
-            return folderIcon.c_str();
+            return !folderIcon.empty() ? folderIcon.c_str() : "[Folder]";
         default:
             return "[Asset]";
     }

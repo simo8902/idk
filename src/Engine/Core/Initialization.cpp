@@ -20,7 +20,7 @@ Initialization::Initialization() {
 
     NotImportantForNow();
     try {
-        std::filesystem::path engineDir = normalizePath(SOURCE_DIR);
+        const std::filesystem::path & engineDir = normalizePath(SOURCE_DIR);
         std::filesystem::current_path(engineDir);
 
         std::cerr << "[Initialization.h] Current Working Directory: " << std::filesystem::current_path() << std::endl;
@@ -42,13 +42,11 @@ Initialization::Initialization() {
     std::shared_ptr<Shader> wireframeShader = assetManager.getShader("wireframe");
     if (!wireframeShader) {
         std::cerr << "Failed to retrieve 'wireframe' shader from AssetManager." << std::endl;
-        // Decide whether to continue without wireframe shader or exit
     }
 
     std::shared_ptr<Shader> skyShaderProgram = assetManager.getShader("sky");
     if (!skyShaderProgram) {
         std::cerr << "Failed to retrieve 'sky' shader from AssetManager." << std::endl;
-        // Decide whether to continue without sky shader or exit
     }
 
     if (!shaderProgram || !wireframeShader || !skyShaderProgram) {
@@ -60,6 +58,8 @@ Initialization::Initialization() {
     std::cout << "[Initialization] Predefined shaders initialized and added to AssetManager with UUIDs." << std::endl;
 
     NotImportantForNow2();
+    ImGui::GetIO().LogFilename = NULL;
+
 }
 
 
@@ -143,7 +143,7 @@ Initialization::~Initialization(){
 
     glfwDestroyWindow(m_Window);
     glfwTerminate();
-    shaderProgram->SaveShaderUUIDMap("shader_uuid_map.json");
+  //  shaderProgram->SaveShaderUUIDMap("shader_uuid_map.json");
 }
 
 
@@ -229,7 +229,6 @@ void Initialization::errorCallback(int error, const char *description) {
 
 void Initialization::initImGuiStyle() {
     ImGuiStyle &style = ImGui::GetStyle();
-
     style.WindowPadding = ImVec2(0, 0);
 
     const auto RED = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
