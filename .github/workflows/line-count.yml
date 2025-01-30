@@ -12,7 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.TEST2 }}
+          token: ${{ secrets.Test }}
 
       - name: Install cloc
         run: sudo apt-get install cloc
