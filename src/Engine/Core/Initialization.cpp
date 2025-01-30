@@ -116,7 +116,7 @@ void Initialization::initializeImGui(GLFWwindow *window){
 
     io.Fonts->Clear();
 
-    const auto &fontPath = SOURCE_DIR "/CascadiaCode-Bold.ttf";
+    const auto &fontPath = SOURCE_DIR "/src/data/fonts/CascadiaCode-Bold.ttf";
     const ImFont* primaryFont = io.Fonts->AddFontFromFileTTF(fontPath, 17.0f);
     if (primaryFont) {
        // std::cout << "Successfully loaded primary font: " << fontPath << std::endl;
