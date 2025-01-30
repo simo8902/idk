@@ -21,9 +21,6 @@ jobs:
         id: cloc
         run: echo "::set-output name=lines_of_code::$(cloc src | awk '/SUM/{print $NF}')"
 
-      - name: Debug line count
-        run: echo "Lines of code in src: ${{ steps.cloc.outputs.lines_of_code }}"
-
       - name: Update badge
         run: |
           LINES_OF_CODE=${{ steps.cloc.outputs.lines_of_code }}
