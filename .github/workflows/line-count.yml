@@ -12,7 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.MY_PAT 
+          token: ${{ secrets.MY_PAT }}
 
       - name: Install cloc
         run: sudo apt-get install cloc
@@ -20,6 +20,9 @@ jobs:
       - name: Count lines of code in src directory
         id: cloc
         run: echo "::set-output name=lines_of_code::$(cloc src | awk '/SUM/{print $NF}')"
+
+      - name: Debug line count
+        run: echo "Lines of code in src: ${{ steps.cloc.outputs.lines_of_code }}"
 
       - name: Update badge
         run: |
@@ -30,5 +33,5 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git diff --quiet && git diff --staged --quiet || (git commit -am "Update lines of code badge" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -am "Update lines of code badge" && git push https://x-access-token:${{ secrets.MY_PAT }}@github.com/simo8902/idk.git)
 
