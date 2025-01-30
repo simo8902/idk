@@ -1,110 +1,48 @@
 //
-// Created by Simeon-PC on 3/28/2024.
+// Created by simeon on 24.01.25.
 //
 
 #ifndef SHADER_H
 #define SHADER_H
 
+#include <AssetItem.h>
+
 #include "glad/glad.h"
+
 #include "glm.hpp"
-
-#include <string>
-#include <variant>
+#include "gtc/type_ptr.hpp"
 #include <unordered_map>
-#include <memory>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <fstream>
-#include "json.hpp"
-#include "AssetItem.h"
 
-class Shader: public AssetItem  {
+class Shader : public AssetItem {
 public:
-    // Constructor for runtime-created or asset-based shaders
-    Shader(const std::string& filePath);
 
-    // Constructor for predefined, code-based shaders
-    Shader(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+    unsigned int m_ProgramID;
+    GLuint getProgramID() const { return m_ProgramID; }
 
-
-    void Use() const;
-
-    void setFloat(const std::string& name, float value) const;
-    void setInt(const std::string& name, int value) const;
-    void setVec3(const std::string& name, const glm::vec3& value) const;
-    void setVec4(const std::string& name, const glm::vec4& value) const;
-    void setMat4(const std::string& name, const glm::mat4& matrix) const;
-
-    GLuint getProgramID() const {
-        if (!predefinedShaders.empty()) {
-            // Assuming the shader has a unique name
-            auto it = predefinedShaders.find(name);
-            if (it != predefinedShaders.end()) {
-                return it->second.programID;
-            }
+    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string& name);
+    ~Shader() {
+        if (m_ProgramID != 0) {
+            glDeleteProgram(m_ProgramID);
         }
-        return shaderProgram;
     }
 
-    struct ShaderProgram {
-        std::string name;
-        GLuint programID;
-        boost::uuids::uuid uuid;
-    };
-
-    const std::unordered_map<std::string, ShaderProgram>& getPredefinedShaders() const {
-        return predefinedShaders;
+    void Use() const {
+        glUseProgram(m_ProgramID);
     }
-
-    const std::string& getName() const;
-    void setName(const std::string& shaderName);
-
+    void setMat4(const std::string &name, const glm::mat4 &matrix) const;
+    void setVec3(const std::string& name, const glm::vec3& value) const;
+    void setInt(const std::string& name, int value) const;
+    void setFloat(const std::string& name, float value) const;
     GLint getUniformLocation(const std::string& name) const;
 
-    std::string name;
-    void SaveShaderUUIDMap(const std::string& mapFilePath);
-    void LoadShaderUUIDMap(const std::string& mapFilePath);
-    void loadShaderSources();
-
-    void compile();
-    void parseShaderFile(const std::string& filePath);
 private:
-    // For predefined shaders
-    std::unordered_map<std::string, ShaderProgram> predefinedShaders;
+    std::string vertexShaderPath;
+    std::string fragmentShaderPath;
 
-    // For runtime shaders
-    GLuint shaderProgram = 0;
-    std::unordered_map<std::string, std::string> uniforms;
+    static std::string readFile(const char* filePath);
+    static void checkCompileStatus(unsigned int shader, const std::string& type);
 
-    std::unordered_map<std::string, std::string> ParseShader(const std::string& filePath);
-    void CompileShaders(const std::string& vertexSource, const std::string& fragmentSource);
     mutable std::unordered_map<std::string, GLint> uniformLocations;
-    static boost::uuids::random_generator uuidGenerator;
-
-    // Utility
-    static std::string readFile(const std::string& filePath);
-
-    void CheckCompileErrors(GLuint shader, const std::string& type);
-    std::string getCommonPath(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
-        return std::string(SOURCE_DIR) + "/shaders";
-    }
-
-    std::filesystem::path resolveShaderPath(const std::string& shaderPath) {
-        std::filesystem::path path(shaderPath);
-
-        if (path.is_relative()) {
-            std::filesystem::path baseDir = std::string(SOURCE_DIR) + "/shaders";
-            path = baseDir / path;
-        }
-
-        return path.lexically_normal();
-    }
-
-    std::string vertexSource;
-    std::string fragmentSource;
-    std::string vertexPath;
-    std::string fragmentPath;
 };
 
-#endif // SHADER_H
+#endif //SHADER_H

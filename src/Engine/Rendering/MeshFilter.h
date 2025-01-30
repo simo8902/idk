@@ -9,25 +9,24 @@
 #include "Logger.h"
 #include "Mesh.h"
 
-class MeshFilter : public Component {
+class MeshFilter final : public Component {
 public:
-    MeshFilter() = default;
+    explicit MeshFilter(const std::string & name) : name(name){}
+    ~MeshFilter() override = default;
 
-    MeshFilter(const std::shared_ptr<GameObject> & owner) : mesh(nullptr), m_owner(owner) {}
-    ~MeshFilter() override {}
+    const std::string & getName() const override { return name; }
+    void setName(const std::string &newName) override {
+        name = newName;
+    }
 
     void setMesh(const std::shared_ptr<Mesh>& mesh) {
         this->mesh = mesh;
+        UpdateMesh();
     }
 
     std::shared_ptr<Mesh> getMesh() const {
         return mesh;
     }
-
-    std::unique_ptr<Component> clone() const override {
-        return std::make_unique<MeshFilter>(*this);
-    }
-
     void clearMesh() {
         if (mesh) {
             logger.Log("[DEBUG] Mesh is valid, proceeding to clear.\n");
@@ -38,7 +37,7 @@ public:
         }
     }
 
-    void UpdateMesh() {
+    void UpdateMesh() const{
         if (mesh) {
             mesh->SetupMesh();
         }
@@ -46,6 +45,7 @@ public:
     std::shared_ptr<Mesh> mesh;
 
 private:
+    std::string name;
     std::weak_ptr<GameObject> m_owner;
 };
 

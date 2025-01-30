@@ -20,3 +20,31 @@
 
 # TODO:
     Still GUI and Triangle classes are unused! Make main.cpp less code, implement rendering in its class file
+    
+# Update 0.0.6 - 01.25.2025
+**1. A lot lot of changes have been made so far:**
+ - Many issues has been fixed
+ - Swithched from forward to deferred rendering
+ - Significantly optimized the Mesh system 
+ - All of the standard objects like cube, capsule and so on had over 65000 vertices and 200k indices for each type object --fixed
+ - Rewritten the project explorer and assetmanager structure
+ - Added Makefile 
+ - Added Compatibility with Linux OS
+ - Created global lighting system alongside the new renderer
+ - Moved the framebuffer implementation to Scene class
+ - Fixed the fps drop that were on the previous patch 0.0.5.. caused the fps to drop below 5
+ - Rewrriten thread system
+ - Optimized shaders and their recursive func for finding them in real time
+ - Added more logs
+ - Fixed CMakeLists configuration --added sanitizers support for both OS
+ - moved some definitions from Initialization to main to maintain with the thread system: TODO- move them again to Init back
+ - Fixed significant memory leak from the thread system
+ - Rewritten basic and lighting shaders for the new rendering system
+ - Removed the Profilier for now 
+ - For each of the objects, removed their implementation in their main classes. Now creating objects is happening in the Scene class
+ - Fixed the transparency caused by the new rendering system for part of the objects
+ - Fixed camera yaw and pitch to update correctly the forward vector
+ - TODO: still there is one more memory leak caused by new_allocator.h from object creation that need to be fixed urgently
+ - Optimized the framebuffer performance
+ - Switch gameobject's to inherit Components, not GameObject class
+ - Integrated wireframe directly into geometry shader

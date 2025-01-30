@@ -20,6 +20,8 @@ public:
     void renderInspector();
 
 private:
+    void renderComponentObjectsInspector(const std::shared_ptr<Component>& componentObj);
+
     void renderGameObjectInspector(const std::shared_ptr<GameObject>& gameObject);
     void renderLightInspector(const std::shared_ptr<Light>& light);
     void renderCameraInspector(const std::shared_ptr<Camera>& camera);

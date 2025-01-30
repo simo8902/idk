@@ -17,40 +17,45 @@
 class Material: public AssetItem  {
 public:
     Material(const std::string& name, const std::string& filePath, const bool isPredefined = false)
-        : AssetItem(name,  // Използва директно подаденото име
-                   AssetType::Material,
-                   std::filesystem::path(filePath).parent_path().string(),
-                   nullptr),
-          shader(nullptr), predefined(isPredefined)
-    {
+        : AssetItem(name, AssetType::Material, filePath),
+          shader(nullptr), predefined(isPredefined) {
         std::cout << "[Material] Material created: " << getName() << " with UUID: " << getUUIDStr() << std::endl;
     }
 
     void assignShader(const std::shared_ptr<Shader>& newShader) {
         shader = newShader;
-        std::cout << "[Material] Assigned new shader: " << shader->getName() << std::endl;;
+        //std::cout << "[Material] Assigned new shader: " << shader->getName() << std::endl;;
     }
 
     std::shared_ptr<Shader> getShader() const { return shader; }
 
     std::string name;
     bool isPredefinedMaterial() const {
+        static bool debugMessagePrinted = false;
+
         if (predefined) {
-            std::cout << "[DEBUG] Material '" << this->getName() << "' is predefined." << std::endl;
+            if (!debugMessagePrinted) {
+                std::cout << "[DEBUG] Material '" << this->getName() << "' is predefined." << std::endl;
+                debugMessagePrinted = true;
+            }
             return true;
         } else if (std::filesystem::exists(std::filesystem::path(getPath()))) {
-            std::cout << "[DEBUG] Material '" << this->getName() << "' is file-based." << std::endl;
+            if (!debugMessagePrinted) {
+                std::cout << "[DEBUG] Material '" << this->getName() << "' is file-based." << std::endl;
+                debugMessagePrinted = true;
+            }
             return false;
         } else {
-            std::cout << "[DEBUG] Material '" << this->getName() << "' is neither predefined nor file-based." << std::endl;
+            if (!debugMessagePrinted) {
+                std::cout << "[DEBUG] Material '" << this->getName() << "' is neither predefined nor file-based." << std::endl;
+                debugMessagePrinted = true;
+            }
             return false;
         }
     }
 private:
     std::string uuidStr;
-    boost::uuids::uuid uuid;
     std::shared_ptr<Shader> shader;
-    static boost::uuids::random_generator uuidGenerator;
     bool predefined;
 };
 

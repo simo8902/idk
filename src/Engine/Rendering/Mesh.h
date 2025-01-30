@@ -18,27 +18,31 @@ struct Vertex {
 };
 class Mesh : public AssetItem {
 public:
+    Mesh(const Mesh &other, const std::string &newName);
     ~Mesh();
-    Mesh(const std::vector<float>& vertices, const std::string& name);
-    Mesh(const std::string& name);
+    explicit Mesh(const std::vector<float>& vertices, const std::string& name);
+    explicit Mesh(const std::string& name);
 
     const std::vector<float> & getVertices() const { return vertices; }
     const std::vector<unsigned int>& getIndices() const { return indices; }
 
-    void Draw(const Shader& shader);
+    void Draw(const Shader& shader) const;
+
+    Mesh(Mesh&& other) noexcept = default;
+    Mesh& operator=(Mesh&& other) noexcept = default;
 
     void CreateSphere(float radius, int stacks, int sectors);
     const std::string& getName() const { return name; }
     void SetupMesh();
     bool hasMesh() const { return !vertices.empty(); }
-    void CreateCapsule(float radius, float height, int resolution);
+    void CreateCapsule(const float& radius, const float& height);
     void CreateCylinder(float m_baseRadius, float m_topRadius, float m_height, int m_sectors);
-    static std::vector<float> CreateCube();
+    static Mesh CreateCube();
 
     std::string name;
 
 private:
-    GLuint VAO, VBO, EBO;
+    GLuint VAO{}, VBO{}, EBO{};
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
 };

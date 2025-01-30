@@ -23,6 +23,15 @@ public:
 
     virtual ~Light() = default;
 
+    virtual bool isInitialized() const {
+        return transform != nullptr && !name.empty();
+    }
+    void setPosition(const glm::vec3& position) {
+        if (transform) {
+            transform->setPosition(position);
+        }
+    }
+
     virtual void setUniforms(unsigned int shaderProgram) const = 0;
     virtual void updateDirectionFromRotation() {}
 
@@ -73,4 +82,4 @@ protected:
     std::unordered_map<std::type_index, std::shared_ptr<Component>> components;
 
 };
-#endif //NAV2SFM Core_LIGHT_H
+#endif

@@ -5,9 +5,8 @@
 #ifndef SELECTIONMANAGER_H
 #define SELECTIONMANAGER_H
 
+#include <Component.h>
 #include <memory>
-#include <unordered_set>
-
 #include "AssetItem.h"
 
 class Mesh;
@@ -23,7 +22,6 @@ public:
 
     void selectMesh(const std::shared_ptr<Mesh>& mesh);
     void selectMaterial(const std::shared_ptr<Material>& material);
-    void selectGameObject(const std::shared_ptr<GameObject>& object);
     void selectLight(const std::shared_ptr<Light>& light);
     void selectCamera(const std::shared_ptr<Camera>& camera);
     void selectShader(const std::shared_ptr<Shader>& shader);
@@ -44,16 +42,19 @@ public:
     std::shared_ptr<Shader> selectedShader;
     std::shared_ptr<AssetItem> selectedFolder;
 
+    void selectComponent(const std::shared_ptr<Component>& component);
+    std::shared_ptr<Component> getSelectedComponent() const;
 
     bool isItemSelected(const std::shared_ptr<AssetItem>& item) const {
         if (!item) return false;
-        return selectedItems.find(item->getUUID()) != selectedItems.end();
+        return true;
     }
 
     void toggleSelectItem(const std::shared_ptr<AssetItem>& item) {
-        /*
+        
         if (!item) return;
 
+        /*
         auto uuid = item->getUUID();
         if (selectedItems.find(uuid) != selectedItems.end()) {
             selectedItems.erase(uuid);
@@ -62,14 +63,16 @@ public:
         }*/
     }
 
-    void clearSelections() {
-        selectedItems.clear();
-    }
+    std::shared_ptr<Light> getSelectedLight() const { return selectedLight; }
+    std::shared_ptr<Camera> getSelectedCamera() const { return selectedCamera; }
+
+    void clearSelections() {}
+
+    std::shared_ptr<Component> selectedComponent;
 private:
     SelectionManager() = default;
     SelectionManager(const SelectionManager&) = delete;
     SelectionManager& operator=(const SelectionManager&) = delete;
-    std::unordered_set<boost::uuids::uuid> selectedItems;
 
 };
 

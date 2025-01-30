@@ -11,9 +11,11 @@
 #include <vector>
 #include "AssetItem.h"
 #include "imgui.h"
+#include "glad/glad.h"
 
 class ProjectExplorer {
 public:
+
     ProjectExplorer();
     ~ProjectExplorer();
 
@@ -30,6 +32,7 @@ private:
     const char* GetAssetIcon(const AssetType & type);
     std::string AbbreviateText(const std::string& text, float maxWidth, float fontScale );
     void handleContextMenu();
+    std::vector<std::string> SplitTextIntoLines(const std::string& text, float maxWidth, const ImFont* font);
 
     void RenderAssetIcon(const std::shared_ptr<AssetItem>& asset, const ImVec2& itemSize, float iconSize);
     void RenderFolderIcon(const std::shared_ptr<AssetItem>& folder, float iconSize);
@@ -44,7 +47,7 @@ private:
     std::string shaderIcon;
     std::string materialIcon;
 
-    std::shared_ptr<AssetItem> rootFolder;
+    std::weak_ptr<AssetItem> rootFolder;
     std::shared_ptr<AssetItem> selectedFolder;
     std::shared_ptr<AssetItem> selectedAsset;
     std::shared_ptr<AssetItem> selectedShader;
@@ -52,6 +55,7 @@ private:
 
     bool createShaderPopupOpen = false;
     bool createMaterialPopupOpen = false;
+    GLuint shaderIconTexture = 0;
 
     std::shared_ptr<AssetItem> targetFolderForCreation;
     std::unordered_set<std::string> existingShadersReported;
@@ -67,7 +71,8 @@ private:
     void CreateStandardShaderFile(const std::string& shaderPath);
     void CreateAndAddShader(const std::string& shaderPath, const std::string& shaderName);
     void displayShaders();
+    void initializeTextures();
 };
 
 
-#endif //NAV2SFM Core_PROJECT_DIR_H
+#endif

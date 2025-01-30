@@ -15,9 +15,6 @@ public:
           rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)), m_scale(glm::vec3(1.0f)) {
     }
 
-    std::unique_ptr<Component> clone() const override {
-        return std::make_unique<Transform>(*this);
-    }
 
     void setPosition(const glm::vec3& pos) { position = pos; }
     void setRotation(const glm::quat& rot) { rotation = rot; }

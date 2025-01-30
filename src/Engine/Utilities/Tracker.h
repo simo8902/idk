@@ -5,6 +5,7 @@
 #ifndef TRACKER_H
 #define TRACKER_H
 
+/*
 #include <Windows.h>
 
 inline unsigned int GetNumberOfLogicalCores() {
@@ -36,6 +37,6 @@ inline double GetProcessCPUUsage(double elapsedTime) {
 
     unsigned int numLogicalCores = GetNumberOfLogicalCores();
     return (cpuTimeDifference / (elapsedTime * numLogicalCores)) * 100.0;
-}
+}*/
 
 #endif //TRACKER_H

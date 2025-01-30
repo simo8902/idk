@@ -18,7 +18,7 @@ void HierarchyManager::setRenderer(Renderer* renderer) {
     this->renderer = renderer;
 }
 
-void HierarchyManager::setScene(Scene* scene) {
+void HierarchyManager::setScene(const std::shared_ptr<Scene> & scene) {
     this->scene = scene;
 }
 
@@ -26,7 +26,7 @@ void HierarchyManager::setLightManager(const std::shared_ptr<LightManager>& ligh
     this->lightManager = lightManager;
 }
 
-void HierarchyManager::renderHierarchy() {
+void HierarchyManager::renderHierarchy() const {
 
     if (renderer == nullptr) {
         std::cerr << "Renderer is null\n";
@@ -35,21 +35,31 @@ void HierarchyManager::renderHierarchy() {
     } else {
        // renderer->RenderContextMenu();
 
-        for (const auto& object : scene->objects) {
-            bool isSelected = SelectionManager::getInstance().selectedGameObject == object;
-            if (ImGui::Selectable(object->getName().c_str(), isSelected)) {
-                SelectionManager::getInstance().selectGameObject(object);
+        for (size_t i = 0; i < scene->components.size(); ++i) {
+            auto& object = scene->components[i];
+
+            if (object->getName().empty()) {
+                object->setName("Object " + std::to_string(i));
+            }
+
+            if (const bool &isSelected = (SelectionManager::getInstance().getSelectedComponent() == object);
+                ImGui::Selectable((object->getName() + "##" + std::to_string(i)).c_str(), isSelected))
+            {
+                SelectionManager::getInstance().selectComponent(object);
             }
         }
 
+        /*
         const std::shared_ptr<Camera> & camera = renderer->getCamera();
         if (camera != nullptr) {
             bool isSelected = SelectionManager::getInstance().selectedCamera == camera;
-            if (ImGui::Selectable(camera->getName().c_str(), isSelected)) {
-                SelectionManager::getInstance().selectCamera(camera);
-            }
-        }
 
+            if (ImGui::Selectable(camera->getName().c_str(), isSelected)) {
+                //SelectionManager::getInstance().selectCamera(camera);
+            }
+        }*/
+
+        /*
         if (lightManager) {
             const auto& lights = lightManager->getDirectionalLights();
 
@@ -67,7 +77,7 @@ void HierarchyManager::renderHierarchy() {
             }
         } else {
             std::cerr << "LightManager is null\n";
-        }
+        }*/
     }
 
     if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {

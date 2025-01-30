@@ -3,202 +3,87 @@
 //
 
 #include "Initialization.h"
+
+#include <IconsFontAwesome6Brands.h>
+
 #include "CameraManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#include <LightManager.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <IconsFontAwesome6Brands.h>
+#include "LightManager.h"
 #include "Shader.h"
-
 #include "AssetManager.h"
-#include "stb_image.h"
+#include "boost/uuid.hpp"
 
-Initialization::Initialization() {
-    AssetManager& assetManager = AssetManager::getInstance();
+namespace fs = std::filesystem;
 
-    NotImportantForNow();
+Initialization::Initialization(GLFWwindow* window)
+    : scene(nullptr), lightManager(nullptr), m_Window(window), m_Renderer(nullptr){
     try {
-        const std::filesystem::path & engineDir = normalizePath(SOURCE_DIR);
-        std::filesystem::current_path(engineDir);
+        std::cout << "[Initialization] Starting Initialization in thread "
+                  << std::this_thread::get_id() << std::endl;
 
-        std::cerr << "[Initialization.h] Current Working Directory: " << std::filesystem::current_path() << std::endl;
+        const fs::path engineDir = SOURCE_DIR;
+        if (!fs::exists(engineDir))
+        {
+            std::cerr << "[Initialization] Engine directory does not exist: " << engineDir << std::endl;
+            throw std::runtime_error("Engine directory does not exist.");
+        }
+        current_path(engineDir);
+
+        auto shaderProgram = std::make_shared<Shader>(SOURCE_DIR "/src/shaders/basic.vert", SOURCE_DIR "/src/shaders/basic.frag", "shaderProgram");
+        auto lightShader = std::make_shared<Shader>(SOURCE_DIR "/src/shaders/lightShader.vert", SOURCE_DIR "/src/shaders/lightShader.frag", "lightShader");
+        auto finalPassShader = std::make_shared<Shader>(SOURCE_DIR "/src/shaders/finalPass.vert", SOURCE_DIR "/src/shaders/finalPass.frag", "finalPassShader");
+        assets.push_back(shaderProgram);
+        assets.push_back(lightShader);
+        assets.push_back(finalPassShader);
+
+        for (const auto& asset : assets) {
+            asset->printID();
+        }
+        cameraInit();
+        glfwSetWindowUserPointer(m_Window, this);
+
+        lightManager = std::make_shared<LightManager>();
+
+        glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+        const auto& directionalLight = std::make_shared<DirectionalLight>(
+            "Main Light",
+            lightDirection,
+            glm::vec3(0.9f, 0.9f, 0.9f),  // Ambient
+            glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
+            glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
+        );
+        directionalLight->updateDirectionFromRotation();
+
+       lightManager->addDirectionalLight(directionalLight);
+
+        std::cout << "[INIT] Light manager: " << (lightManager ? "valid" : "null") << std::endl;
+        std::cout << "[INIT] Camera: " << (m_MainCamera ? "valid" : "null") << std::endl;
+
+        scene = std::make_shared<Scene>(shaderProgram, lightShader,finalPassShader,m_MainCamera, lightManager);
+        m_Renderer = std::make_shared<Renderer>(scene, m_MainCamera, lightManager, m_Window);
+
+        initializeImGui(m_Window);
     }
     catch (const std::exception& e) {
-        std::cerr << "Failed to set working directory: " << e.what() << std::endl;
+        std::cerr << "[Initialization] Exception caught in constructor: " << e.what()
+                          << " in thread " << std::this_thread::get_id() << std::endl;
+        throw;
     }
-
-
-   // std::string sourceDir = assetManager.getSourcePath();
-    assetManager.compileShaders();
-
-    std::shared_ptr<Shader> shaderProgram = assetManager.getShader("basic");
-    if (!shaderProgram) {
-        std::cerr << "Failed to retrieve 'basic' shader from AssetManager." << std::endl;
-        return;
-    }
-
-    std::shared_ptr<Shader> wireframeShader = assetManager.getShader("wireframe");
-    if (!wireframeShader) {
-        std::cerr << "Failed to retrieve 'wireframe' shader from AssetManager." << std::endl;
-    }
-
-    std::shared_ptr<Shader> skyShaderProgram = assetManager.getShader("sky");
-    if (!skyShaderProgram) {
-        std::cerr << "Failed to retrieve 'sky' shader from AssetManager." << std::endl;
-    }
-
-    if (!shaderProgram || !wireframeShader || !skyShaderProgram) {
-        std::cerr << "Failed to retrieve shaders from AssetManager." << std::endl;
-        return;
-    }
-
-    scene = new Scene(shaderProgram, wireframeShader, skyShaderProgram, m_MainCamera, skyboxTexture);
-    std::cout << "[Initialization] Predefined shaders initialized and added to AssetManager with UUIDs." << std::endl;
-
-    NotImportantForNow2();
-    ImGui::GetIO().LogFilename = NULL;
-
-}
-
-
-
-
-
-void Initialization::NotImportantForNow2() {
-
-    lightManager = std::make_shared<LightManager>();
-
-    glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
-    const auto& directionalLight = std::make_shared<DirectionalLight>(
-        "Main Light",
-        lightDirection,
-        glm::vec3(0.1f, 0.1f, 0.1f),  // Ambient
-        glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
-        glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
-    );
-
-    directionalLight->setDirection(glm::vec3(0.0f, 50.0f, -30.0f));
-    directionalLight->updateDirectionFromRotation();
-
-    lightManager->addDirectionalLight(directionalLight);
-    scene->addDirectionalLight(directionalLight);
-    m_Renderer = std::make_shared<Renderer>(scene, m_MainCamera, lightManager, m_Window);
-
-
-    if (directionalLight) {
-        std::cout << "Directional light initialized successfully: " << directionalLight->getName() << std::endl;
-    } else {
-        std::cout << "Failed to initialize directional light." << std::endl;
-    }
-
-    initializeImGui(m_Window);
-    initImGuiStyle();
-    projectExplorer = std::make_unique<ProjectExplorer>();
-}
-
-void Initialization::NotImportantForNow() {
-
-    cameraInit();
-
-    if (!initializeGLFW()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return;
-    }
-
-    m_Window = createGLFWWindow(1280, 720);
-    if (!m_Window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return;
-    }
-
-    if (!initializeOpenGL()) {
-        std::cerr << "Failed to initialize OpenGL context" << std::endl;
-        glfwDestroyWindow(m_Window);
-        glfwTerminate();
-        return;
-    }
-
-    glfwSetWindowUserPointer(m_Window, this);
-
-    std::vector<std::string> faces {
-        SOURCE_DIR "/src/data/skybox/skybox1/pink_left_2.png",
-        SOURCE_DIR "/src/data/skybox/skybox1/pink_right_3.png",
-        SOURCE_DIR "/src/data/skybox/skybox1/pink_top_4.png",
-        SOURCE_DIR "/src/data/skybox/skybox1/pink_bottom_5.png",
-        SOURCE_DIR "/src/data/skybox/skybox1/pink_front_0.png",
-        SOURCE_DIR "/src/data/skybox/skybox1/pink_back_1.png"
-    };
-
-    skyboxTexture = loadCubemap(faces);
-
 }
 
 Initialization::~Initialization(){
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-    glfwDestroyWindow(m_Window);
-    glfwTerminate();
-  //  shaderProgram->SaveShaderUUIDMap("shader_uuid_map.json");
-}
-
-
-GLuint Initialization::loadCubemap(std::vector<std::string> faces) {
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    int width, height, nrChannels;
-    for (GLuint i = 0; i < faces.size(); i++) {
-        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
-        if (data) {
-            GLenum format = GL_RGB;
-            if (nrChannels == 4)
-                format = GL_RGBA;
-
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
-        } else {
-            std::cerr << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
-            stbi_image_free(data);
-            glDeleteTextures(1, &textureID);
-            return 0;
-        }
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    return textureID;
 }
 
 std::shared_ptr<LightManager> Initialization::getLightManager() const {
     return lightManager;
 }
 
-Shader * Initialization::getShader() const {
-    return shaderProgram;
-}
-
-Scene * Initialization::getScene() const {
+const std::shared_ptr<Scene> & Initialization::getScene() const {
     return scene;
-}
-Shader * Initialization::getWireframeShader() const {
-    return wireframe;
-}
-
-const std::shared_ptr<Camera>& Initialization::getMainCamera() {
-    return m_MainCamera;
 }
 
 GLFWwindow * Initialization::getWindow() const {
@@ -206,9 +91,9 @@ GLFWwindow * Initialization::getWindow() const {
 }
 
 void Initialization::cameraInit() {
-    glm::vec3 position = glm::vec3(0.0f, 3.0f, -7.0f);
-    glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 position = glm::vec3(0.5f, 3.0f, -7.0f);
+    glm::vec3 forward = glm::vec3(-0.026f, -0.0471f, 0.99f);
+    glm::vec3 up = glm::vec3(-0.0012f, 1.0f, 0.047f);
     float yaw = -90.0f;
     float pitch = 0.0f;
     float moveSpeed = 3.0f;
@@ -218,72 +103,7 @@ void Initialization::cameraInit() {
     float farPlane = 1000.0f;
     const std::string name = "Main Camera";
     m_MainCamera = std::make_shared<Camera>(name, position, forward, up, yaw, pitch, moveSpeed, mouseSensitivity, fov, nearPlane, farPlane);
-
-    m_ActiveCamera = m_MainCamera;
 }
-
-
-void Initialization::errorCallback(int error, const char *description) {
-    std::cerr << "Error: " << error << " " << description << std::endl;
-}
-
-void Initialization::initImGuiStyle() {
-    ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowPadding = ImVec2(0, 0);
-
-    const auto RED = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    const auto BLACK = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    const auto DARK_GREY = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-    const auto GREY = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
-    const auto GREY_HIGHLIGHT = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
-    const auto COSMOS = ImVec4(0.1f, 0.0f, 0.2f, 1.0f);
-    const auto DARK_COSMOS = ImVec4(0.05f, 0.0f, 0.15f, 1.0f);
-    const auto FRAME = ImVec4(0.09f, 0.0f, 0.09f, 1.0f);
-
-    // BG and frame
-    style.Colors[ImGuiCol_WindowBg] = BLACK;
-    style.Colors[ImGuiCol_FrameBg] = DARK_GREY;
-    style.Colors[ImGuiCol_FrameBgHovered] = COSMOS;
-    style.Colors[ImGuiCol_FrameBgActive] = GREY;
-
-    // Title and border
-    style.Colors[ImGuiCol_TitleBg] = BLACK;
-    style.Colors[ImGuiCol_TitleBgCollapsed] = BLACK;
-    style.Colors[ImGuiCol_TitleBgActive] = BLACK;
-    style.Colors[ImGuiCol_Border] = FRAME;
-
-    // Menubar and tabs
-    style.Colors[ImGuiCol_MenuBarBg] = COSMOS;
-    style.Colors[ImGuiCol_Tab] = BLACK;
-    style.Colors[ImGuiCol_TabHovered] = BLACK;
-    style.Colors[ImGuiCol_TabSelected] = BLACK;
-    style.Colors[ImGuiCol_TabSelectedOverline] = RED;
-    style.Colors[ImGuiCol_TabDimmed] = COSMOS;
-    style.Colors[ImGuiCol_TabDimmedSelected] = BLACK;
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = BLACK;
-
-    // Buttons and headers
-    style.Colors[ImGuiCol_Button] = BLACK;
-    style.Colors[ImGuiCol_ButtonHovered] = COSMOS;
-    style.Colors[ImGuiCol_ButtonActive] = DARK_COSMOS;
-    style.Colors[ImGuiCol_Header] = DARK_COSMOS;
-    style.Colors[ImGuiCol_HeaderHovered] = COSMOS;
-    style.Colors[ImGuiCol_HeaderActive] = COSMOS;
-
-    style.Colors[ImGuiCol_ResizeGrip] = FRAME;
-    style.Colors[ImGuiCol_ResizeGripActive] = FRAME;
-    style.Colors[ImGuiCol_ResizeGripHovered] = FRAME;
-
-    // Text and other elements
-    style.Colors[ImGuiCol_Text] = GREY_HIGHLIGHT;
-    style.Colors[ImGuiCol_TextDisabled] = DARK_COSMOS;
-    style.Colors[ImGuiCol_BorderShadow] = BLACK;
-
-    style.WindowMenuButtonPosition = ImGuiDir_None;
-
-    style.Colors[ImGuiCol_Button] = style.Colors[ImGuiCol_WindowBg];
-}
-
 
 void Initialization::initializeImGui(GLFWwindow *window){
     IMGUI_CHECKVERSION();
@@ -296,24 +116,24 @@ void Initialization::initializeImGui(GLFWwindow *window){
 
     io.Fonts->Clear();
 
-    auto fontPath = SOURCE_DIR "/CascadiaCode-Bold.ttf";
-    ImFont* primaryFont = io.Fonts->AddFontFromFileTTF(fontPath, 17.0f);
+    const auto &fontPath = SOURCE_DIR "/CascadiaCode-Bold.ttf";
+    const ImFont* primaryFont = io.Fonts->AddFontFromFileTTF(fontPath, 17.0f);
     if (primaryFont) {
-        std::cout << "Successfully loaded primary font: " << fontPath << std::endl;
+       // std::cout << "Successfully loaded primary font: " << fontPath << std::endl;
     } else {
         std::cerr << "Failed to load primary font: " << fontPath << std::endl;
     }
 
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    static constexpr ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
     ImFontConfig config;
     config.MergeMode = true;
     config.PixelSnapH = true;
 
-    const char* fontAwesomePath = SOURCE_DIR "/src/data/fonts/Font Awesome 6 Free-Solid-900.otf";
-    ImFont* fontAwesome = io.Fonts->AddFontFromFileTTF(fontAwesomePath, 17.0f, &config, icons_ranges);
+    const auto fontAwesomePath = SOURCE_DIR "/src/data/fonts/Font Awesome 6 Free-Solid-900.otf";
+    const ImFont* fontAwesome = io.Fonts->AddFontFromFileTTF(fontAwesomePath, 17.0f, &config, icons_ranges);
     if (fontAwesome) {
-        std::cout << "Successfully loaded FontAwesome: " << fontAwesomePath << std::endl;
+       // std::cout << "Successfully loaded FontAwesome: " << fontAwesomePath << std::endl;
     } else {
         std::cerr << "Failed to load FontAwesome: " << fontAwesomePath << std::endl;
     }
@@ -330,35 +150,6 @@ void Initialization::initializeImGui(GLFWwindow *window){
     ImGui_ImplOpenGL3_Init("#version 460");
 }
 
-GLFWwindow *Initialization::createGLFWWindow(int width, int height) {
-    GLFWwindow *window = glfwCreateWindow(width, height, "LupusFire_core", nullptr, nullptr);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return nullptr;
-    }
-    glfwMakeContextCurrent(window);
-    return window;
-}
-
-bool Initialization::initializeGLFW()
-{
-    glfwSetErrorCallback(errorCallback);
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return false;
-    }
-    return true;
-}
-
-bool Initialization::initializeOpenGL(){
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
-        std::cout << "Failed to initialize OpenGL context" << std::endl;
-        return false;
-    }
-    return true;
-}
-
 bool Initialization::ShouldClose() const {
     return glfwWindowShouldClose(m_Window);
 }
@@ -371,4 +162,60 @@ void Initialization::runMainLoop() const {
             std::cerr << "m_Renderer is null\n";
         }
     }
+}
+
+void Initialization::initImGuiStyle() {
+    ImGuiStyle &style = ImGui::GetStyle();
+    style.WindowPadding = ImVec2(0, 0);
+
+    constexpr auto RED = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    constexpr auto BLACK = ImVec4(0.12f, 0.12f, 0.12f, 1.0f);
+    constexpr auto DARK_GREY = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
+    constexpr auto TEXT = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+    constexpr auto FRAME = ImVec4(0.10f, 0.10f, 0.10f, 1.0f);
+    constexpr auto TOOLBAR_BG = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+
+    // BG and frame
+    style.Colors[ImGuiCol_WindowBg] = DARK_GREY;
+
+    style.Colors[ImGuiCol_FrameBg] = BLACK;
+    style.Colors[ImGuiCol_FrameBgHovered] = RED;
+    style.Colors[ImGuiCol_FrameBgActive] = RED;
+
+    // Title and border
+    style.Colors[ImGuiCol_TitleBg] = BLACK;
+    style.Colors[ImGuiCol_TitleBgCollapsed] = BLACK;
+    style.Colors[ImGuiCol_TitleBgActive] = BLACK;
+    style.Colors[ImGuiCol_Border] = FRAME;
+
+    // Toolbar and menubar
+    style.Colors[ImGuiCol_MenuBarBg] = TOOLBAR_BG;
+    style.Colors[ImGuiCol_Tab] = BLACK;
+    style.Colors[ImGuiCol_TabHovered] = RED;
+    style.Colors[ImGuiCol_TabSelected] = BLACK;
+    style.Colors[ImGuiCol_TabDimmedSelected] = DARK_GREY;
+    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = BLACK;
+    style.Colors[ImGuiCol_TabSelectedOverline] = BLACK;
+
+    // Buttons and headers
+    style.Colors[ImGuiCol_Button] = BLACK;
+    style.Colors[ImGuiCol_ButtonHovered] = RED;
+    style.Colors[ImGuiCol_ButtonActive] = RED;
+    style.Colors[ImGuiCol_Header] = BLACK;
+    style.Colors[ImGuiCol_HeaderHovered] = BLACK;
+    style.Colors[ImGuiCol_HeaderActive] = BLACK;
+
+    // Resize grips
+    style.Colors[ImGuiCol_ResizeGrip] = FRAME;
+    style.Colors[ImGuiCol_ResizeGripActive] = FRAME;
+    style.Colors[ImGuiCol_ResizeGripHovered] = FRAME;
+
+    // Text and others
+    style.Colors[ImGuiCol_Text] = TEXT;
+    style.Colors[ImGuiCol_TextDisabled] = RED;
+    style.Colors[ImGuiCol_BorderShadow] = BLACK;
+
+    style.WindowMenuButtonPosition = ImGuiDir_None;
+
+    style.Colors[ImGuiCol_Button] = style.Colors[ImGuiCol_WindowBg];
 }

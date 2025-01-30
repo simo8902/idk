@@ -1,7 +1,3 @@
-//
-// Created by Simeon on 4/4/2024.
-//
-
 #ifndef LUPUSFIRE_CORE_CAMERA_H
 #define LUPUSFIRE_CORE_CAMERA_H
 
@@ -10,6 +6,7 @@
 #include "glad/glad.h"
 #include <string>
 #include <iostream>
+#include <utility>
 
 #include "Profiler.h"
 
@@ -25,13 +22,13 @@ enum class CameraMovement {
 
 class Camera {
 public:
-    Camera(const std::string& name, glm::vec3 position, glm::vec3 forward, glm::vec3 up,
+    Camera(std::string  name, glm::vec3 position, glm::vec3 forward, glm::vec3 up,
            float yaw, float pitch, float moveSpeed,
            float mouseSensitivity, float fov, float nearPlane, float farPlane)
         : m_position(position),
           m_forwardVec(forward),
           m_upVec(up),
-          name(name),
+          name(std::move(name)),
           m_yaw(yaw),
           m_pitch(pitch),
           m_movementSpeed(moveSpeed),
@@ -39,28 +36,37 @@ public:
           m_fov(fov),
           m_nearPlane(nearPlane),
           m_farPlane(farPlane)
-
     {
+        m_yaw = glm::degrees(atan2(m_forwardVec.z, m_forwardVec.x));
+        m_pitch = glm::degrees(asin(m_forwardVec.y));
+
         updateProjectionMatrix();
         updateVectors();
         updateViewMatrix();
 
     }
 
-    static size_t memoryUsage;
-    static Profiler profiler;
+    void updateVectors() {
+        glm::vec3 forward;
+        forward.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+        forward.y = sin(glm::radians(m_pitch));
+        forward.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+        m_forwardVec = glm::normalize(forward);
 
-    void updateViewMatrix() {
-        const glm::vec3 & target = m_position + m_forwardVec;
-        m_viewMatrix = glm::lookAt(m_position, target, m_upVec);
+        right = glm::normalize(glm::cross(m_forwardVec, glm::vec3(0.0f, 1.0f, 0.0f)));
+        m_upVec = glm::normalize(glm::cross(right, m_forwardVec));
     }
-
-    glm::mat4 getViewMatrix() {
-        return m_viewMatrix;
+    void updateViewMatrix() {
+        glm::vec3 target = m_position + m_forwardVec;
+        m_viewMatrix = glm::lookAt(m_position, target, m_upVec);
     }
 
     void updateProjectionMatrix() {
         m_ProjectionMatrix = glm::perspective(glm::radians(m_fov), 16.0f / 9.0f, m_nearPlane, m_farPlane);
+    }
+
+    glm::mat4 getViewMatrix() {
+        return m_viewMatrix;
     }
 
     void setProjectionMatrix(const glm::mat4& projection) {
@@ -74,7 +80,19 @@ public:
     std::string getName() const {
         return name;
     }
+    void setCamera(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up) {
+        m_position = position;
+        m_forwardVec = glm::normalize(forward);
+        m_upVec = glm::normalize(up);
 
+        // Recalculate yaw and pitch based on the forward vector
+        m_yaw = glm::degrees(atan2(m_forwardVec.z, m_forwardVec.x));
+        m_pitch = glm::degrees(asin(m_forwardVec.y));
+
+        // Update matrices
+        updateVectors();
+        updateViewMatrix();
+    }
     void processKeyboard(CameraMovement direction, float deltaTime) {
         float velocity = m_movementSpeed * deltaTime;
         if (direction == CameraMovement::FORWARD)
@@ -227,9 +245,9 @@ public:
 
 private:
     std::string name;
-    glm::mat4 m_ProjectionMatrix;
-    glm::mat4 m_viewMatrix;
-    glm::vec3 right;
+    glm::mat4 m_ProjectionMatrix{};
+    glm::mat4 m_viewMatrix{};
+    glm::vec3 right{};
     float m_yaw;
     float m_pitch;
     float m_movementSpeed;
@@ -238,18 +256,6 @@ private:
     float m_nearPlane;
     float m_farPlane;
 
-    void updateVectors() {
-        glm::vec3 forward;
-        forward.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-        forward.y = sin(glm::radians(m_pitch));
-        forward.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-        m_forwardVec = glm::normalize(forward);
-
-        // Recalculate the right and up vector
-        const glm::vec3 & right = glm::normalize(glm::cross(m_forwardVec, glm::vec3(0.0f, 1.0f, 0.0f)));
-        m_upVec = glm::normalize(glm::cross(right, m_forwardVec));
-    }
 };
 
-
-#endif //NAV2SFM Core_CAMERA_H
+#endif

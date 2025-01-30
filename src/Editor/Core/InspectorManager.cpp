@@ -10,20 +10,16 @@
 #include "DirectionalLight.h"
 #include "MeshFilter.h"
 #include "MeshRenderer.h"
-#include ".h/Collider.h"
+#include "Collider.h"
 #include "DragAndDropPayload.h"
-#include "imgui_internal.h"
-#include "Texture.h"
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include "SelectionManager.h"
 
-void InspectorManager::renderInspector() {
 
+void InspectorManager::renderInspector() {
     auto& selectionManager = SelectionManager::getInstance();
 
-    if (selectionManager.selectedGameObject) {
-        renderGameObjectInspector(selectionManager.selectedGameObject);
+    if (selectionManager.selectedComponent) {
+        renderComponentObjectsInspector(selectionManager.selectedComponent);
     } else if (selectionManager.selectedLight) {
         renderLightInspector(selectionManager.selectedLight);
     } else if (selectionManager.selectedCamera) {
@@ -35,49 +31,49 @@ void InspectorManager::renderInspector() {
     } else {
         ImGui::Text("No object selected.");
     }
-
 }
-void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObject>& gameObject) {
-   if (!gameObject) return;
+
+void InspectorManager::renderComponentObjectsInspector(const std::shared_ptr<Component> &componentObj)
+{
+    if (!componentObj) return;
 
     static char nameBuffer[256];
-    strcpy(nameBuffer, gameObject->getName().c_str());
+    strcpy(nameBuffer, componentObj->getName().c_str());
     if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
-        gameObject->setName(std::string(nameBuffer));
+        componentObj->setName(std::string(nameBuffer));
     }
 
-    auto transform = gameObject->getComponent<Transform>();
+    auto transform = componentObj->getComponent<Transform>();
     if (transform) {
         if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-            glm::vec3 position = transform->getPosition();
-            if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+            if (glm::vec3 position = transform->getPosition(); ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
                 transform->setPosition(position);
             }
 
-            glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->getRotation()));
-            if (ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f)) {
+            if (glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->getRotation())); ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f)) {
                 glm::vec3 radians = glm::radians(rotation);
                 transform->setRotation(glm::quat(radians));
             }
 
-            glm::vec3 scale = transform->getScale();
-            if (ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1f)) {
+            if (glm::vec3 scale = transform->getScale(); ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1f)) {
                 transform->setScale(scale);
             }
         }
     }
 
-    const auto& components = gameObject->getComponents();
+    const auto& components = componentObj->getComponents();
     std::unordered_set<std::string> displayedComponents;
 
     for (const auto& component : components) {
         if (std::dynamic_pointer_cast<Transform>(component)) {
             continue;
-        } else if (auto meshFilter = std::dynamic_pointer_cast<MeshFilter>(component)) {
-            if (displayedComponents.find("MeshFilter") == displayedComponents.end()) {
+        }
+
+        if (auto meshFilter = std::dynamic_pointer_cast<MeshFilter>(component)) {
+            if (!displayedComponents.contains("MeshFilter")) {
                 if (ImGui::CollapsingHeader("Mesh Filter", ImGuiTreeNodeFlags_DefaultOpen)) {
                     if (meshFilter->mesh) {
-                        ImGui::Text("Mesh: %s", meshFilter->mesh->getName().c_str());
+                        ImGui::Text("Mesh: %s", meshFilter->getName().c_str());
                     } else {
                         ImGui::Text("No mesh assigned.");
                     }
@@ -86,13 +82,14 @@ void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObjec
             }
         }
         else if (auto meshRenderer = std::dynamic_pointer_cast<MeshRenderer>(component)) {
-            if (displayedComponents.find("MeshRenderer") == displayedComponents.end()) {
+            if (!displayedComponents.contains("MeshRenderer")) {
                 if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    /*
                     if (meshRenderer->getMaterial()) {
                         ImGui::Text("Material: %s", meshRenderer->getMaterial()->getName().c_str());
                     } else {
                         ImGui::Text("No material assigned.");
-                    }
+                    }*/
 
                     ImGui::Text("Drag and drop a material here to assign.");
                     if (ImGui::BeginDragDropTarget())
@@ -101,13 +98,15 @@ void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObjec
                             const char* materialUUIDCStr = static_cast<const char*>(payload->Data);
                             std::string materialUUID(materialUUIDCStr);
 
-                            std::shared_ptr<Material> newMaterial = AssetManager::getInstance().getMaterialByUUID(materialUUID);
+                            // std::shared_ptr<Material> newMaterial = AssetManager::getInstance().getMaterialByUUID(materialUUID);
+
+                            /*
                             if (newMaterial) {
                                 meshRenderer->setMaterial(newMaterial);
                               //  std::cout << "Assigned material: " << newMaterial->getName() << " to MeshRenderer." << std::endl;
                             } else {
                                 std::cerr << "Material not found: " << materialUUID << std::endl;
-                            }
+                            }*/
                         }
                         ImGui::EndDragDropTarget();
 
@@ -135,15 +134,16 @@ void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObjec
 }
 
 void InspectorManager::renderLightInspector(const std::shared_ptr<Light>& light) {
+    /*
     if (!light) return;
 
     // Allow renaming the light
     static char nameBuffer[256];
     strcpy(nameBuffer, light->getName().c_str());
-    /*
+    
     if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
         light->setName(std::string(nameBuffer));
-    }*/
+    }
 
     // Display and edit the Transform component if present
     auto transform = light->getComponent<Transform>();
@@ -176,7 +176,7 @@ void InspectorManager::renderLightInspector(const std::shared_ptr<Light>& light)
         }
     }
 
-    /*else if (auto pointLight = std::dynamic_pointer_cast<PointLight>(light)) {
+    else if (auto pointLight = std::dynamic_pointer_cast<PointLight>(light)) {
         if (ImGui::CollapsingHeader("Point Light Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
             glm::vec3 position = pointLight->getPosition();
             if (ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
@@ -264,10 +264,10 @@ void InspectorManager::renderLightInspector(const std::shared_ptr<Light>& light)
             if (ImGui::DragFloat("Quadratic", &quadratic, 0.0001f, 0.0f, 1.0f)) {
                 spotLight->setQuadratic(quadratic);
             }
-        }*/
+        }
      else {
         ImGui::Text("Unknown light type.");
-    }
+    }*/
 }
 
 void InspectorManager::renderCameraInspector(const std::shared_ptr<Camera>& camera) {
@@ -333,8 +333,8 @@ void InspectorManager::renderMaterialInspector(const std::shared_ptr<Material>& 
 
     std::shared_ptr<Shader> shader = material->getShader();
     if (shader) {
-        ImGui::Text("Shader: %s", shader->getName().c_str());
-        ImGui::Text("UUID: %s", shader->getUUIDStr().c_str());
+       // ImGui::Text("Shader: %s", shader->getName().c_str());
+      //  ImGui::Text("UUID: %s", shader->getUUIDStr().c_str());
     } else {
         ImGui::Text("No shader assigned.");
     }
@@ -344,19 +344,19 @@ void InspectorManager::renderMaterialInspector(const std::shared_ptr<Material>& 
     ImGui::Text("Drag and drop a shader here to assign.");
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_SHADER)) {
-            // Ensure the payload data is null-terminated
             const char* shaderUUIDCStr = static_cast<const char*>(payload->Data);
             std::string shaderUUID(shaderUUIDCStr);
 
+            /*
             std::shared_ptr<Shader> newShader = AssetManager::getInstance().getShaderByUUID(shaderUUID);
             if (newShader) {
                 material->assignShader(newShader);
-                std::cout << "[InspectorManager] Assigned shader: " << newShader->getName()
-                          << " to material: " << material->getName() << std::endl;
+              //  std::cout << "[InspectorManager] Assigned shader: " << newShader->getName()
+              //            << " to material: " << material->getName() << std::endl;
             } else {
                 std::cerr << "[InspectorManager] Shader not found: " << shaderUUID << std::endl;
                 ImGui::OpenPopup("Shader Not Found");
-            }
+            }*/
         }
         ImGui::EndDragDropTarget();
     }
