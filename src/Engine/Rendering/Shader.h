@@ -5,44 +5,59 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include <AssetItem.h>
-
 #include "glad/glad.h"
-
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
+
+#include <iostream>
+#include <memory>
 #include <unordered_map>
 
-class Shader : public AssetItem {
+
+class Shader {
 public:
+    struct Paths {
+        std::string vertex;
+        std::string fragment;
+    };
 
-    unsigned int m_ProgramID;
-    GLuint getProgramID() const { return m_ProgramID; }
+    Shader(const char* path, bool isCombined = true);
+    Shader(const char* vertexPath, const char* fragmentPath);
+    ~Shader();
 
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string& name);
-    ~Shader() {
-        if (m_ProgramID != 0) {
-            glDeleteProgram(m_ProgramID);
-        }
-    }
+    GLuint getProgramID() const { return shaderProgram; }
 
-    void Use() const {
-        glUseProgram(m_ProgramID);
-    }
-    void setMat4(const std::string &name, const glm::mat4 &matrix) const;
-    void setVec3(const std::string& name, const glm::vec3& value) const;
+    void Use() const;
+    void reload();
+    void reloadFromPath(const std::string& path);
+
+    // Uniform setters
+    void setMat4(const std::string& name, const glm::mat4& matrix) const;
     void setInt(const std::string& name, int value) const;
-    void setFloat(const std::string& name, float value) const;
-    GLint getUniformLocation(const std::string& name) const;
+    void setVec3(const std::string& name, const glm::vec3& value) const;
+
+    // State management
+    bool isValid() const { return shaderProgram != 0; }
+    std::string getLastModified() const;
+    const Paths& getPaths() const { return currentPaths; }
 
 private:
-    std::string vertexShaderPath;
-    std::string fragmentShaderPath;
+    GLuint shaderProgram = 0;
+    bool isCombined;
+    Paths currentPaths;
+    mutable std::unordered_map<std::string, GLint> uniformCache;
+    mutable std::mutex uniformMutex;
 
-    static std::string readFile(const char* filePath);
-    static void checkCompileStatus(unsigned int shader, const std::string& type);
+    void compileAndLink(const std::string& vertexCode, const std::string& fragmentCode);
+    GLuint compileShader(const std::string& source, GLenum type);
+    std::pair<std::string, std::string> parseCombinedShader(const std::string& path);
+    std::string readFile(const std::string& path);
+    void checkCompileErrors(GLuint shader, const std::string& type);
+    bool checkCompileStatus(GLuint shader, const std::string& type);
+    void loadSeparateShaders(const char* vertexPath, const char* fragmentPath);
+    void loadCombinedShader(const char* path);
+    void checkLinkStatus(GLuint program);
 
-    mutable std::unordered_map<std::string, GLint> uniformLocations;
 };
 
 #endif //SHADER_H

@@ -48,3 +48,16 @@
  - Optimized the framebuffer performance
  - Switch gameobject's to inherit Components, not GameObject class
  - Integrated wireframe directly into geometry shader
+
+# Update 0.0.61 - 02.09.2025
+**1. Minor changes:**
+- Added Shader Manager class
+- Optimized the structure
+- Added my own library for managing the engine (closed source)
+- Changed the imgui layout and fixed docking
+- Fixed DrawGrid and Capsule Collider - removed the deprecated immediate mode rendering
+- Forced of use of OpenGL 4.6 and glad core profile
+- Made significant optimization of the CPU and RAM usage (more in the future)
+- Added Profiler
+- Some changes in the Project explorer
+- and few more

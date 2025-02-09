@@ -5,79 +5,134 @@
 #include "Initialization.h"
 
 #include <IconsFontAwesome6Brands.h>
-
-#include "CameraManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "LightManager.h"
 #include "Shader.h"
 #include "AssetManager.h"
+#include "ShaderManager.h"
 #include "boost/uuid.hpp"
-
 namespace fs = std::filesystem;
 
-Initialization::Initialization(GLFWwindow* window)
-    : scene(nullptr), lightManager(nullptr), m_Window(window), m_Renderer(nullptr){
+#define LIBDATA_API
+extern "C" LIBDATA_API void imguieffects();
+extern ImGuiContext* g_ImGuiContext;
+
+Initialization::Initialization()
+    : scene(nullptr), lightManager(nullptr), m_Window(nullptr), m_Renderer(nullptr) {
     try {
-        std::cout << "[Initialization] Starting Initialization in thread "
-                  << std::this_thread::get_id() << std::endl;
+        m_Window = createWindow();
 
-        const fs::path engineDir = SOURCE_DIR;
-        if (!fs::exists(engineDir))
-        {
-            std::cerr << "[Initialization] Engine directory does not exist: " << engineDir << std::endl;
-            throw std::runtime_error("Engine directory does not exist.");
-        }
-        current_path(engineDir);
-
-        auto shaderProgram = std::make_shared<Shader>(SOURCE_DIR "/src/shaders/basic.vert", SOURCE_DIR "/src/shaders/basic.frag", "shaderProgram");
-        auto lightShader = std::make_shared<Shader>(SOURCE_DIR "/src/shaders/lightShader.vert", SOURCE_DIR "/src/shaders/lightShader.frag", "lightShader");
-        auto finalPassShader = std::make_shared<Shader>(SOURCE_DIR "/src/shaders/finalPass.vert", SOURCE_DIR "/src/shaders/finalPass.frag", "finalPassShader");
-        assets.push_back(shaderProgram);
-        assets.push_back(lightShader);
-        assets.push_back(finalPassShader);
-
-        for (const auto& asset : assets) {
-            asset->printID();
-        }
         cameraInit();
+        init();
+
+        g_ImGuiContext = ImGui::GetCurrentContext();
+        if (g_ImGuiContext) {
+            imguieffects();
+        } else {
+            std::cerr << "ImGui context is not set. Cannot call..." << std::endl;
+        }
+
+        PROFILE_SCOPE("Shader Manager Init");
+        ShaderManager &shaderManager = ShaderManager::Instance();
+        shaderManager.Initialize();
+
         glfwSetWindowUserPointer(m_Window, this);
 
-        lightManager = std::make_shared<LightManager>();
+        {
+            PROFILE_SCOPE("SCENE");
+            scene = std::make_shared<Scene>(shaderProgram, lightShader, finalPassShader, m_MainCamera, lightManager);
+        }
 
-        glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
-        const auto& directionalLight = std::make_shared<DirectionalLight>(
-            "Main Light",
-            lightDirection,
-            glm::vec3(0.9f, 0.9f, 0.9f),  // Ambient
-            glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
-            glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
-        );
-        directionalLight->updateDirectionFromRotation();
-
-       lightManager->addDirectionalLight(directionalLight);
-
-        std::cout << "[INIT] Light manager: " << (lightManager ? "valid" : "null") << std::endl;
-        std::cout << "[INIT] Camera: " << (m_MainCamera ? "valid" : "null") << std::endl;
-
-        scene = std::make_shared<Scene>(shaderProgram, lightShader,finalPassShader,m_MainCamera, lightManager);
-        m_Renderer = std::make_shared<Renderer>(scene, m_MainCamera, lightManager, m_Window);
-
-        initializeImGui(m_Window);
-    }
-    catch (const std::exception& e) {
-        std::cerr << "[Initialization] Exception caught in constructor: " << e.what()
-                          << " in thread " << std::this_thread::get_id() << std::endl;
+        {
+            PROFILE_SCOPE("RENDERER");
+            m_Renderer = std::make_shared<Renderer>(scene, m_MainCamera, m_Window);
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "[Init] Exception caught in constructor: " << e.what()
+                << " in thread " << std::this_thread::get_id() << std::endl;
         throw;
     }
 }
 
 Initialization::~Initialization(){
+    const char* ini_path = ImGui::GetIO().IniFilename;
+    if (ini_path) {
+      //  std::cout << "[ImGui] Attempting to save settings to: " << ini_path << "\n";
+        if (std::filesystem::exists(ini_path)) {
+            auto ftime = std::filesystem::last_write_time(ini_path);
+            auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+      //      std::cout << " - Existing file last modified: "
+      //                << std::chrono::system_clock::to_time_t(system_time) << "\n";
+        }
+    }
+
+    ImGui::SaveIniSettingsToDisk(ini_path);
+   // std::cout << "[ImGui] Settings saved (destructor)\n";
+
+    if (ini_path && std::filesystem::exists(ini_path)) {
+      //  std::cout << " - New file size: "
+      //            << std::filesystem::file_size(ini_path) << " bytes\n";
+
+        auto ftime = std::filesystem::last_write_time(ini_path);
+        auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+
+    //    std::cout << " - New last modified: " << std::chrono::system_clock::to_time_t(system_time) << "\n";
+    }
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    if (ini_path) {
+    //    std::cout << "[ImGui] Post-destruction file status: "
+    //              << (std::filesystem::exists(ini_path) ? "Exists" : "Missing")  << "\n";
+    }
 }
 
+GLFWwindow* Initialization::createWindow() {
+    {
+        PROFILE_SCOPE("GLFW Initialization");
+        if (!glfwInit()) {
+            std::cerr << "Failed to initialize GLFW" << std::endl;
+            throw std::runtime_error("Failed to initialize GLFW");
+        }
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+        PROFILE_SCOPE("GLFW Window Creation");
+        GLFWwindow* window = glfwCreateWindow(1280, 720, "idk", nullptr, nullptr);
+        if (!window) {
+            std::cerr << "Failed to create GLFW window" << std::endl;
+            glfwTerminate();
+            throw std::runtime_error("Failed to create GLFW window");
+        }
+
+    glfwMakeContextCurrent(window);
+
+    glfwSwapInterval(0);
+
+    {
+        PROFILE_SCOPE("Load OpenGL with GLAD");
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            std::cerr << "Failed to initialize GLAD" << std::endl;
+            glfwDestroyWindow(window);
+            glfwTerminate();
+            throw std::runtime_error("Failed to initialize GLAD");
+        }
+    }
+
+    {
+        PROFILE_SCOPE("Store Main Thread ID");
+        mainThreadId = std::this_thread::get_id();
+        std::cout << "[main] Main thread ID: " << mainThreadId << "." << std::endl;
+    }
+
+    return window;
+}
 std::shared_ptr<LightManager> Initialization::getLightManager() const {
     return lightManager;
 }
@@ -108,11 +163,14 @@ void Initialization::cameraInit() {
 void Initialization::initializeImGui(GLFWwindow *window){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-
+    ImGui::SetCurrentContext(ImGui::GetCurrentContext());
     ImGuiIO& io = ImGui::GetIO();
-    (void)io;
 
-    io.IniFilename = SOURCE_DIR "/src/imgui.ini";
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 460");
 
     io.Fonts->Clear();
 
@@ -138,24 +196,95 @@ void Initialization::initializeImGui(GLFWwindow *window){
         std::cerr << "Failed to load FontAwesome: " << fontAwesomePath << std::endl;
     }
 
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-    io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
+    io.IniFilename = SOURCE_DIR "/src/imgui.ini";
+   // std::cout << "[ImGui] Configuring settings file: " << io.IniFilename << "\n";
 
-    initImGuiStyle();
+    if (std::filesystem::exists(io.IniFilename)) {
+    //    std::cout << "[ImGui] Loading existing settings file:\n";
+    //    std::cout << " - Size: " << std::filesystem::file_size(io.IniFilename) << " bytes\n";
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 460");
+        // Convert last write time to system_clock::time_point
+        auto ftime = std::filesystem::last_write_time(io.IniFilename);
+        auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+
+     //   std::cout << " - Last modified: " << std::chrono::system_clock::to_time_t(system_time) << "\n";
+
+     //   std::cout << "[ImGui] Settings loaded successfully\n";
+    } else {
+        std::cout << "[ImGui] No existing settings file found\n";
+    }
+
+    if (std::filesystem::exists(io.IniFilename)) {
+        ImGui::LoadIniSettingsFromDisk(io.IniFilename);
+        if (io.Fonts->IsBuilt()) {
+            ImGui_ImplOpenGL3_CreateFontsTexture();
+        }
+    }
 }
 
 bool Initialization::ShouldClose() const {
     return glfwWindowShouldClose(m_Window);
 }
 
+void Initialization::init()
+{
+  //  std::cout << "[Initialization] Starting Initialization in thread "
+  //        << std::this_thread::get_id() << std::endl;
+
+    const fs::path engineDir = SOURCE_DIR;
+    if (!fs::exists(engineDir))
+    {
+        std::cerr << "[Initialization] Engine directory does not exist: " << engineDir << std::endl;
+        throw std::runtime_error("Engine directory does not exist.");
+    }
+    current_path(engineDir);
+
+    initializeImGui(m_Window);
+
+    shaderProgram = std::make_shared<Shader>(
+               SOURCE_DIR "/src/shaders/basic.vert",
+               SOURCE_DIR "/src/shaders/basic.frag"
+           );
+
+    lightShader = std::make_shared<Shader>(
+       SOURCE_DIR "/src/shaders/lightShader.vert",
+       SOURCE_DIR "/src/shaders/lightShader.frag"
+   );
+
+    finalPassShader = std::make_shared<Shader>(
+        SOURCE_DIR "/src/shaders/finalPass.vert",
+        SOURCE_DIR "/src/shaders/finalPass.frag"
+    );
+
+    if (!shaderProgram || !lightShader || !finalPassShader) {
+        throw std::runtime_error("Failed to load one or more shaders");
+    }
+
+    lightManager = std::make_shared<LightManager>();
+
+    glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+    const auto& directionalLight = std::make_shared<DirectionalLight>(
+        "Main Light",
+        lightDirection,
+        glm::vec3(0.9f, 0.9f, 0.9f),  // Ambient
+        glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
+        glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
+    );
+    directionalLight->updateDirectionFromRotation();
+
+    lightManager->addDirectionalLight(directionalLight);
+
+ //   std::cout << "[INIT] Light manager: " << (lightManager ? "valid" : "null") << std::endl;
+//    std::cout << "[INIT] Camera: " << (m_MainCamera ? "valid" : "null") << std::endl;
+}
+
 void Initialization::runMainLoop() const {
     while (!ShouldClose()) {
+        if (!glfwGetCurrentContext()) {
+            std::cerr << "No OpenGL context current!" << std::endl;
+            break;
+        }
         if (m_Renderer != nullptr){
             m_Renderer->render();
         }else{
@@ -164,58 +293,3 @@ void Initialization::runMainLoop() const {
     }
 }
 
-void Initialization::initImGuiStyle() {
-    ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowPadding = ImVec2(0, 0);
-
-    constexpr auto RED = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    constexpr auto BLACK = ImVec4(0.12f, 0.12f, 0.12f, 1.0f);
-    constexpr auto DARK_GREY = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
-    constexpr auto TEXT = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
-    constexpr auto FRAME = ImVec4(0.10f, 0.10f, 0.10f, 1.0f);
-    constexpr auto TOOLBAR_BG = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
-
-    // BG and frame
-    style.Colors[ImGuiCol_WindowBg] = DARK_GREY;
-
-    style.Colors[ImGuiCol_FrameBg] = BLACK;
-    style.Colors[ImGuiCol_FrameBgHovered] = RED;
-    style.Colors[ImGuiCol_FrameBgActive] = RED;
-
-    // Title and border
-    style.Colors[ImGuiCol_TitleBg] = BLACK;
-    style.Colors[ImGuiCol_TitleBgCollapsed] = BLACK;
-    style.Colors[ImGuiCol_TitleBgActive] = BLACK;
-    style.Colors[ImGuiCol_Border] = FRAME;
-
-    // Toolbar and menubar
-    style.Colors[ImGuiCol_MenuBarBg] = TOOLBAR_BG;
-    style.Colors[ImGuiCol_Tab] = BLACK;
-    style.Colors[ImGuiCol_TabHovered] = RED;
-    style.Colors[ImGuiCol_TabSelected] = BLACK;
-    style.Colors[ImGuiCol_TabDimmedSelected] = DARK_GREY;
-    style.Colors[ImGuiCol_TabDimmedSelectedOverline] = BLACK;
-    style.Colors[ImGuiCol_TabSelectedOverline] = BLACK;
-
-    // Buttons and headers
-    style.Colors[ImGuiCol_Button] = BLACK;
-    style.Colors[ImGuiCol_ButtonHovered] = RED;
-    style.Colors[ImGuiCol_ButtonActive] = RED;
-    style.Colors[ImGuiCol_Header] = BLACK;
-    style.Colors[ImGuiCol_HeaderHovered] = BLACK;
-    style.Colors[ImGuiCol_HeaderActive] = BLACK;
-
-    // Resize grips
-    style.Colors[ImGuiCol_ResizeGrip] = FRAME;
-    style.Colors[ImGuiCol_ResizeGripActive] = FRAME;
-    style.Colors[ImGuiCol_ResizeGripHovered] = FRAME;
-
-    // Text and others
-    style.Colors[ImGuiCol_Text] = TEXT;
-    style.Colors[ImGuiCol_TextDisabled] = RED;
-    style.Colors[ImGuiCol_BorderShadow] = BLACK;
-
-    style.WindowMenuButtonPosition = ImGuiDir_None;
-
-    style.Colors[ImGuiCol_Button] = style.Colors[ImGuiCol_WindowBg];
-}

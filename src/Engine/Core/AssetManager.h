@@ -7,7 +7,6 @@
 
 #include <unordered_map>
 #include <string>
-#include <memory>
 #include "AssetItem.h"
 #include "Shader.h"
 #include <filesystem>
@@ -15,7 +14,6 @@
 #include <unordered_set>
 
 #include "ShaderData.h"
-#include "ThreadSafeQueue.h"
 
 class AssetManager {
 public:
@@ -56,12 +54,15 @@ public:
     bool isMainThread() const;
 
     const std::shared_ptr<AssetItem> & getRootFolder() const;
+    void setRootFolder(std::shared_ptr<AssetItem> root);
+
     void scanUserAssetsLoop();
     void scanRuntimeShaders();
     void scanPredefinedShaders();
     void scanDirectory(const std::string& directory, bool isPredefined);
 
     void loadShaderData(const ShaderData& shaderData);
+    void populateShadersFromShaderManager();
 
 private:
     std::unordered_set<std::string> scannedShaders_;
@@ -69,7 +70,6 @@ private:
 
     std::thread scanThread_;
     std::atomic<bool> running_;
-    ThreadSafeQueue<std::pair<std::string, std::string>> shaderQueue_;
 
     std::string engineShadersPath;
     std::string runtimeShadersPath;

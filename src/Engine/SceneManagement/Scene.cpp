@@ -15,12 +15,13 @@ Scene::Scene(const std::shared_ptr<Shader> & shaderProgram, const std::shared_pt
     const std::shared_ptr<Camera> & camera, const std::shared_ptr<LightManager> & lightManager)
     : gPosition(0), gAlbedoSpec(0),
     gNormal(0),
-    gBuffer(0), lightingShader(lightingShader), lightingTexture(0), finalPassTexture(0),
+    gBuffer(0),  lightingTexture(0), finalPassTexture(0),
     lightingFramebuffer(0),
     rboDepth(0),
     width(0), height(0), skyboxTexture(0), skyVAO(0),
     skyVBO(0),
     shaderProgram(shaderProgram),
+    lightingShader(lightingShader),
     finalPassShader(finalPassShader),
     m_Camera(camera),
     lightManager(lightManager)
@@ -32,6 +33,7 @@ Scene::Scene(const std::shared_ptr<Shader> & shaderProgram, const std::shared_pt
         std::cerr << "[Scene] One or more parameters are null!" << std::endl;
         throw std::runtime_error("Scene ctor received null parameters");
     }
+
     createObjects();
 }
 
@@ -56,36 +58,6 @@ Scene::~Scene() {
     if (finalFramebuffer) glDeleteFramebuffers(1, &finalFramebuffer);
 }
 
-void Scene::initFullscreenQuad()
-{
-    if (quadVAO != 0)
-        return;
-
-    float quadVertices[] = {
-        // positions (2D)  // texcoords (flipped V)
-        -1.0f,  1.0f,    0.0f, 0.0f,  // bottom left
-        -1.0f, -1.0f,    0.0f, 1.0f,  // top left
-         1.0f, -1.0f,    1.0f, 1.0f,  // top right
-        -1.0f,  1.0f,    0.0f, 0.0f,  // bottom left
-         1.0f, -1.0f,    1.0f, 1.0f,  // top right
-         1.0f,  1.0f,    1.0f, 0.0f   // bottom right
-    };
-
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-    // pos attribute (vec2)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-    // texcoord attribute (vec2)
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-}
 void Scene::RenderGeometryPass() const
 {
     if (!shaderProgram || !m_Camera) return;
@@ -137,7 +109,6 @@ void Scene::RenderGeometryPass() const
 
         }
 
-
         if (const auto & meshRenderer = obj->getComponent<MeshRenderer>())
         {
             shaderProgram->Use();
@@ -149,8 +120,7 @@ void Scene::RenderGeometryPass() const
             meshRenderer->Render(shaderProgram.get());
         }
     }
-
-     DrawGrid(10.0f, 1.0f);
+    DrawGrid(10.0f, 1.0f);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -183,7 +153,7 @@ void Scene::RenderLightingPass() const
 
    // lightingShader->setVec3("viewPos", m_Camera->getPosition());
 
-    static bool isMessagePrinted = false; // Static variable to track if the message was printed
+    static bool isMessagePrinted = false;
 
     auto dirLights = lightManager->getDirectionalLights();
     bool test = false;
@@ -204,6 +174,7 @@ void Scene::RenderLightingPass() const
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
     glBindVertexArray(0);
 }
 
@@ -235,6 +206,7 @@ void Scene::RenderFinalPass() const
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -332,28 +304,31 @@ void Scene::DrawGrid(float gridSize, float gridStep) const {
         gridVertices.push_back({{gridSize, 0.0f, i}});
     }
 
-    GLuint gridVBO;
-    glGenBuffers(1, &gridVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
-    glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(Vertex), gridVertices.data(), GL_STATIC_DRAW);
-
     shaderProgram->Use();
     shaderProgram->setVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
 
     glm::mat4 model = gridTransform.getModelMatrix();
     shaderProgram->setMat4("model", model);
 
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) nullptr);
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), static_cast<void*>(nullptr));
+    GLuint gridVAO;
+    glGenVertexArrays(1, &gridVAO);
+    glBindVertexArray(gridVAO);
 
+    GLuint gridVBO;
+    glGenBuffers(1, &gridVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
+    glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(Vertex), gridVertices.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) nullptr);
+
+    glBindVertexArray(gridVAO);
     glDrawArrays(GL_LINES, 0, gridVertices.size());
 
-    glDisableVertexAttribArray(0);
-
+    glDeleteVertexArrays(1, &gridVAO);
     glDeleteBuffers(1, &gridVBO);
 }
+
 
 void Scene::setupSky() {
     float skyboxVertices[] = {
@@ -543,4 +518,36 @@ void Scene::checkFramebufferStatus()
     } else {
        // std::cout << "[Scene] Framebuffer is complete." << std::endl;
     }
+}
+
+
+void Scene::initFullscreenQuad()
+{
+    if (quadVAO != 0)
+        return;
+
+    float quadVertices[] = {
+        // positions (2D)  // texcoords (flipped V)
+        -1.0f,  1.0f,    0.0f, 0.0f,  // bottom left
+        -1.0f, -1.0f,    0.0f, 1.0f,  // top left
+         1.0f, -1.0f,    1.0f, 1.0f,  // top right
+        -1.0f,  1.0f,    0.0f, 0.0f,  // bottom left
+         1.0f, -1.0f,    1.0f, 1.0f,  // top right
+         1.0f,  1.0f,    1.0f, 0.0f   // bottom right
+    };
+
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+    // pos attribute (vec2)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+    // texcoord attribute (vec2)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }

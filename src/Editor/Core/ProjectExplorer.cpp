@@ -1,8 +1,8 @@
 #include "ProjectExplorer.h"
+
 #include "AssetManager.h"
 #include "SelectionManager.h"
 #include "imgui.h"
-#include <algorithm>
 #include <thread>
 #include "IconsFontAwesome6Brands.h"
 #include "DragAndDropPayload.h"
@@ -14,29 +14,6 @@
 #include "stb_image.h"
 
 
-GLuint loadTexture(const std::string& filePath) {
-    int width, height, channels;
-    unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &channels, 4);
-    if (!data) {
-        std::cerr << "Failed to load texture: " << filePath << std::endl;
-        return 0;
-    }
-
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(data);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    return textureID;
-}
-
 ProjectExplorer::ProjectExplorer()
     : folderIcon("[Folder]"),
       shaderIcon("[Shader]"),
@@ -44,110 +21,75 @@ ProjectExplorer::ProjectExplorer()
       shadersLoaded(false),
       clickedInsideSelectable(false) {
 
+    std::string path = SOURCE_DIR "/ROOT/";
+
+    std::thread scanThread([path] {
+       auto scannedRoot = std::make_shared<AssetItem>("Root", AssetType::Folder, path);
+       scannedRoot->ScanDirectory(path);
+       AssetManager::getInstance().setRootFolder(scannedRoot);
+   });
+    scanThread.detach();
+
 }
 
 ProjectExplorer::~ProjectExplorer() = default;
 
 void ProjectExplorer::renderProjectExplorer() {
     ImGui::Begin("Project Explorer");
+
     auto sharedRootFolder = AssetManager::getInstance().getRootFolder();
-
-    if (!shadersLoaded) {
-       // loadShadersFromDirectory();
-        shadersLoaded = true;
+    if (!sharedRootFolder) {
+        ImGui::Text("No assets found!");
+        ImGui::End();
+        return;
     }
 
-    float windowWidth = ImGui::GetContentRegionAvail().x;
-    float windowHeight = ImGui::GetContentRegionAvail().y;
-    float leftPanelWidth = windowWidth * 0.2f;
+    float windowWidth   = ImGui::GetContentRegionAvail().x;
+    float windowHeight  = ImGui::GetContentRegionAvail().y;
+    float leftPanelWidth = 250.0f;
 
-    ImGui::BeginChild("LeftPanel", ImVec2(leftPanelWidth, windowHeight), true);
-    {
-        //std::lock_guard<std::mutex> lock(AssetManager::getInstance().assetMutex);
-        if (sharedRootFolder) {
-            rootFolder = sharedRootFolder;
-            RenderFolderTree(sharedRootFolder);
-        } else {
-            ImGui::Text("Root folder is no longer valid.");
-        }
-    }
+    ImGui::BeginChild("TreePanel", ImVec2(leftPanelWidth, windowHeight), true, ImGuiWindowFlags_HorizontalScrollbar);
+    RenderFolderTree(sharedRootFolder);
     ImGui::EndChild();
 
     ImGui::SameLine();
 
-    ImGui::BeginChild("ContentArea", ImVec2(0, windowHeight), true);
+    ImGui::BeginChild("ContentPanel", ImVec2(0, windowHeight), true, ImGuiWindowFlags_HorizontalScrollbar);
     {
-      //  std::lock_guard<std::mutex> lock(AssetManager::getInstance().assetMutex);
-        auto selectedFolder = SelectionManager::getInstance().getSelectedFolder();
-        auto folderToRender = selectedFolder ? selectedFolder : sharedRootFolder;
-
-        if (!folderToRender) {
-            ImGui::Text("No folder to render.");
-        } else {
+        const auto selectedFolder = SelectionManager::getInstance().getSelectedFolder();
+        const auto folderToRender = selectedFolder ? selectedFolder : sharedRootFolder;
+        if (folderToRender) {
             RenderContentArea(folderToRender);
+        } else {
+            ImGui::Text("No folder selected.");
         }
-
     }
     ImGui::EndChild();
+
     ImGui::End();
-
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !clickedInsideSelectable && ImGui::IsWindowHovered()) {
-        SelectionManager::getInstance().clearSelection();
-    }
-
-    clickedInsideSelectable = false;
 }
 
 void ProjectExplorer::RenderFolderTree(const std::shared_ptr<AssetItem>& folder) {
     if (!folder || folder->getType() != AssetType::Folder) return;
 
-    if (folder->getUUIDStr().empty()) {
-        std::cerr << "[ProjectExplorer] Folder has empty UUID: " << folder->getName() << std::endl;
-        return;
-    }
-
     ImGui::PushID(folder->getUUIDStr().c_str());
 
-    if (folderIcon.empty()) {
-        folderIcon = "[Folder]";
-    }
+    bool hasChildren = !folder->getChildren().empty();
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
-    std::string folderName = folder->getName().empty() ? "[Unnamed Folder]" : folder->getName();
-
-    std::string nodeLabel = folderIcon + " " + folderName;
-
-    ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (SelectionManager::getInstance().getSelectedFolder() == folder) {
-        nodeFlags |= ImGuiTreeNodeFlags_Selected;
+        flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    bool nodeOpen = ImGui::TreeNodeEx(nodeLabel.c_str(), nodeFlags);
+    const bool node_open = ImGui::TreeNodeEx(folder->getUUIDStr().c_str(), flags, "%s %s",
+        ICON_FA_FOLDER, folder->getName().c_str());
 
-    if (ImGui::IsItemClicked()) {
-        SelectionManager::getInstance().selectFolder(folder);
-        clickedInsideSelectable = true;
-    }
-
-    if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Create Shader")) {
-            createShaderPopupOpen = true;
-            targetFolderForCreation = folder;
-        }
-        if (ImGui::MenuItem("Create New Folder")) {
-            createFolderPopupOpen = false;
-            HandleFolderPopups(folder);
-        }
-        if (ImGui::MenuItem("Create Material")) {
-            createMaterialPopupOpen = true;
-            targetFolderForCreation = folder;
-        }
-        ImGui::EndPopup();
-    }
-
-    if (nodeOpen) {
-        for (const auto& child : folder->getChildren()) {
-            if (child->getType() == AssetType::Folder) {
-                RenderFolderTree(child);
+    if (node_open) {
+        if (hasChildren) {
+            for (const auto& child : folder->getChildren()) {
+                if (child->getType() == AssetType::Folder) {
+                    RenderFolderTree(child);
+                }
             }
         }
         ImGui::TreePop();
@@ -155,39 +97,9 @@ void ProjectExplorer::RenderFolderTree(const std::shared_ptr<AssetItem>& folder)
 
     ImGui::PopID();
 }
-std::vector<std::string> ProjectExplorer::SplitTextIntoLines(const std::string& text, float maxWidth, const ImFont* font) {
-    std::vector<std::string> lines;
-    std::istringstream iss(text);
-    std::string word, currentLine;
-
-    const ImFont* usedFont = font ? font : ImGui::GetFont();
-
-    while (iss >> word) {
-        std::string testLine = currentLine.empty() ? word : currentLine + " " + word;
-        float lineWidth = usedFont->CalcTextSizeA(usedFont->FontSize, FLT_MAX, 0.0f, testLine.c_str()).x;
-
-        if (lineWidth > maxWidth && !currentLine.empty()) {
-            lines.push_back(currentLine);
-            currentLine = word;
-        } else {
-            currentLine = testLine;
-        }
-    }
-    if (!currentLine.empty()) {
-        lines.push_back(currentLine);
-    }
-    return lines;
-}
-void ProjectExplorer::initializeTextures() {
-    shaderIconTexture = loadTexture(SOURCE_DIR "/src/data/gui/shaderIcon.png");
-    if (shaderIconTexture == 0) {
-        std::cerr << "Failed to load shader icon texture!" << std::endl;
-    }
-}
-
 
 void ProjectExplorer::RenderContentArea(const std::shared_ptr<AssetItem>& folder) {
-    if (!folder || shaderIconTexture == 0) return;
+   // if (!folder || shaderIconTexture == 0) return;
 
     int maxVisibleItems = 50;
     int currentVisibleCount = 0;
@@ -202,10 +114,6 @@ void ProjectExplorer::RenderContentArea(const std::shared_ptr<AssetItem>& folder
         ImGui::Text("No shaders available.");
         return;
     }
-
-    ImGui::Text("Shaders:");
-    ImGui::Separator();
-    if (shaderIconTexture == 0) return;
 
     ImGui::BeginChild("ProjectExplorerContent", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
     int id = 0;
@@ -362,6 +270,31 @@ void ProjectExplorer::RenderAssetItemAsIcon(const std::shared_ptr<AssetItem>& it
     */
     ImGui::EndGroup();
 }
+std::vector<std::string> ProjectExplorer::SplitTextIntoLines(const std::string& text, float maxWidth, const ImFont* font) {
+    std::vector<std::string> lines;
+    std::istringstream iss(text);
+    std::string word, currentLine;
+
+    const ImFont* usedFont = font ? font : ImGui::GetFont();
+
+    while (iss >> word) {
+        std::string testLine = currentLine.empty() ? word : currentLine + " " + word;
+        float lineWidth = usedFont->CalcTextSizeA(usedFont->FontSize, FLT_MAX, 0.0f, testLine.c_str()).x;
+
+        if (lineWidth > maxWidth && !currentLine.empty()) {
+            lines.push_back(currentLine);
+            currentLine = word;
+        } else {
+            currentLine = testLine;
+        }
+    }
+    if (!currentLine.empty()) {
+        lines.push_back(currentLine);
+    }
+    return lines;
+}
+
+
 
 void ProjectExplorer::HandleFolderPopups(const std::shared_ptr<AssetItem>& folder) {
     if (ImGui::BeginPopupModal("Create New Folder", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -397,5 +330,35 @@ const char* ProjectExplorer::GetAssetIcon(const AssetType & type) {
             return !folderIcon.empty() ? folderIcon.c_str() : "[Folder]";
         default:
             return "[Asset]";
+    }
+}
+
+
+GLuint ProjectExplorer::loadTexture(const std::string& filePath) {
+    int width, height, channels;
+    unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &channels, 4);
+    if (!data) {
+        std::cerr << "Failed to load texture: " << filePath << std::endl;
+        return 0;
+    }
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    return textureID;
+}
+void ProjectExplorer::initializeTextures() {
+    shaderIconTexture = loadTexture(SOURCE_DIR "/src/data/gui/shaderIcon.png");
+    if (shaderIconTexture == 0) {
+        std::cerr << "Failed to load shader icon texture!" << std::endl;
     }
 }

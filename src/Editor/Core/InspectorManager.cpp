@@ -13,7 +13,7 @@
 #include "Collider.h"
 #include "DragAndDropPayload.h"
 #include "SelectionManager.h"
-
+#include "imgui.h"
 
 void InspectorManager::renderInspector() {
     auto& selectionManager = SelectionManager::getInstance();

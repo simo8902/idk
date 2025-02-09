@@ -12,12 +12,13 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
 
+
 add_definitions(-DSOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     if (WIN32)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined -g -O0 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
+       # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined -g -O0 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+       # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
     elseif (UNIX)
         # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined -g -O0 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
         # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
@@ -44,11 +45,6 @@ if(Boost_FOUND)
 else ()
     message(FATAL_ERROR "Boost not found")
 endif ()
-
-
-#GLFW
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GLFW3 REQUIRED glfw3)
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/src/Engine/Core
@@ -99,9 +95,6 @@ set(HEADER_FILES
         ${PROJECT_SOURCE_DIR}/src/Engine/Lighting/Light.h
 
         # Utilities
-        ${PROJECT_SOURCE_DIR}/src/Engine/Utilities/CameraManager.h
-        ${PROJECT_SOURCE_DIR}/src/Engine/Utilities/DragAndDropPayload.h
-        ${PROJECT_SOURCE_DIR}/src/Engine/Utilities/Logger.h
         ${PROJECT_SOURCE_DIR}/src/Engine/Utilities/Transform.h
 
         # ========================== Editor ==========================
@@ -112,11 +105,9 @@ set(HEADER_FILES
 
         ${PROJECT_SOURCE_DIR}/src/Editor/Utilities/SelectionManager.h
 )
-
 set(SOURCE_FILES
         # Core
         ${PROJECT_SOURCE_DIR}/src/Engine/Core/AssetManager.cpp
-        ${PROJECT_SOURCE_DIR}/src/Engine/Core/AssetItem.cpp
         ${PROJECT_SOURCE_DIR}/src/Engine/Core/Initialization.cpp
 
         # Rendering
@@ -139,14 +130,20 @@ set(SOURCE_FILES
 
         ${PROJECT_SOURCE_DIR}/src/Editor/Utilities/SelectionManager.cpp
         src/Engine/Utilities/Profiler.h
-        src/Engine/Utilities/Tracker.h
-        src/Engine/Core/AssetItem.cpp
-       # src/Engine/Rendering/ShaderManager.cpp
+        # src/Engine/Rendering/ShaderManager.cpp
        # src/Engine/Rendering/ShaderManager.h
         src/Engine/Physics/Capsule.h
         src/Engine/Rendering/Shader.cpp
         src/Engine/Rendering/Shader.h
+        src/Engine/Rendering/ShaderManager.cpp
+        src/Engine/Rendering/ShaderManager.h
 )
+
+# GLFW 3
+set(GLFW_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/glfw/include")
+set(GLFW_LIBRARY "${CMAKE_SOURCE_DIR}/external/glfw/lib/libglfw3.a")
+
+include_directories(${GLFW_INCLUDE_DIR})
 
 set(ICONS_FONT_AWESOME_6_DIR ${CMAKE_SOURCE_DIR}/external/fontawesome)
 
@@ -155,12 +152,10 @@ set(GLAD_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external/glad/include)
 set(GLAD_SOURCE ${CMAKE_SOURCE_DIR}/external/glad/src/glad.c
         src/Engine/Utilities/FPSCounter.cpp
         src/Engine/Utilities/FPSCounter.h
-        src/Engine/Utilities/ThreadSafeQueue.h
-        src/Engine/Utilities/ShaderData.h)
+)
 
 add_library(glad ${GLAD_SOURCE})
 include_directories(${GLAD_INCLUDE_DIR})
-
 
 
 # ImGuizmo
@@ -171,7 +166,6 @@ set(IMGUI_PATH ${CMAKE_SOURCE_DIR}/external/imgui)
 
 #GLM
 set(GLM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external/glm/include)
-
 
 # STB_IMAGE
 set(STB_IMAGE_DIR ${CMAKE_SOURCE_DIR}/external/stb_image)
@@ -205,34 +199,52 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/Editor/Utilities
 )
 
-
+##############################
+# System packages
+##############################
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 
+
+add_library(libData SHARED src/libdata/libData.cpp)
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
+
 add_executable(idk_core main.cpp ${SOURCE_FILES})
 
-target_link_libraries(idk_core
+link_directories("${PROJECT_SOURCE_DIR}/cmake-build-debug")
+
+target_link_libraries(libData
         PRIVATE
         glad
         ImGui
-        glfw
+        ${GLFW_LIBRARY}
         Boost::filesystem
         Boost::system
         Threads::Threads
         OpenGL::GL
 )
-target_include_directories(idk_core PRIVATE ${GLFW3_INCLUDE_DIRS})
 
-target_include_directories(idk_core PRIVATE
-        "${CMAKE_SOURCE_DIR}/external/glad/include"
+target_link_libraries(idk_core
+        PRIVATE
+        glad
+        ImGui
+        ${GLFW_LIBRARY}
+        Boost::filesystem
+        Boost::system
+        Threads::Threads
+        OpenGL::GL
+        libData
 )
+
+target_include_directories(idk_core PUBLIC "${GLFW3_INCLUDE_DIR}")
+
 if (UNIX)
     target_link_libraries(idk_core
             PRIVATE
-            GLX
-            OpenGL
+            opengl32 gdi32
     )
 endif()
+
 
 if (MSVC)
     target_compile_options(idk_core PRIVATE /W4 /EHsc /std:c++20)

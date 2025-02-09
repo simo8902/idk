@@ -9,6 +9,8 @@
 #include <fstream>
 #include <future>
 
+#include "ShaderManager.h"
+
 namespace fs = std::filesystem;
 
 AssetManager& AssetManager::getInstance() {
@@ -34,10 +36,9 @@ AssetManager::AssetManager()
     try {
         validatePaths();
 
-       // scanPredefinedShaders();
-       // scanRuntimeShaders();
+        populateShadersFromShaderManager();
 
-        scanThread_ = std::thread(&AssetManager::scanUserAssetsLoop, this);
+     //   scanThread_ = std::thread(&AssetManager::scanUserAssetsLoop, this);
 
     } catch (const std::exception& e) {
         std::cerr << "[AssetManager] Initialization error: " << e.what() << std::endl;
@@ -48,6 +49,14 @@ AssetManager::AssetManager()
 AssetManager::~AssetManager() {
     running_ = false;
     if (scanThread_.joinable()) scanThread_.join();
+}
+void AssetManager::populateShadersFromShaderManager() {
+    const auto& shaderMap = ShaderManager::Instance().getShaders();
+    for (const auto& [shaderName, shader] : shaderMap) {
+        if (shader) {
+            shaders[shaderName] = shader;
+        }
+    }
 }
 
 void AssetManager::scanUserAssetsLoop() {
@@ -60,13 +69,13 @@ void AssetManager::scanUserAssetsLoop() {
 void AssetManager::scanRuntimeShaders() {
     std::cout << "[AssetManager] Scanning runtime shaders directory: " << runtimeShadersPath
               << " in thread " << std::this_thread::get_id() << std::endl;
-    scanDirectory(runtimeShadersPath, false);
+    // scanDirectory(runtimeShadersPath, false);
 }
 
 void AssetManager::scanPredefinedShaders() {
     std::cout << "[AssetManager] Scanning predefined shaders directory: " << engineShadersPath
               << " in thread " << std::this_thread::get_id() << std::endl;
-    scanDirectory(engineShadersPath, true);
+   // scanDirectory(engineShadersPath, true);
 }
 
 void AssetManager::validatePaths() {
@@ -88,84 +97,13 @@ const std::shared_ptr<AssetItem> & AssetManager::getRootFolder() const {
     return rootFolder;
 }
 
+void AssetManager::setRootFolder(std::shared_ptr<AssetItem> root) {
+    rootFolder = root;
+}
+
+
 const std::unordered_map<std::string, std::shared_ptr<Shader>> & AssetManager::getShaders() const {
     return shaders;
-}
-
-void AssetManager::scanDirectory(const std::string& directory, bool isPredefined) {
-    std::unordered_map<std::string, std::pair<std::string, std::string>> shaderPairs;
-    std::vector<std::string> singleShaders;
-
-    fs::path normDir = fs::path(directory).lexically_normal();
-    if (!fs::exists(normDir) || !fs::is_directory(normDir)) {
-        std::cerr << "[AssetManager::scanDirectory] Invalid directory: " << directory
-                  << " in thread " << std::this_thread::get_id() << "." << std::endl;
-        return;
-    }
-
-    for (const auto& entry : fs::directory_iterator(normDir)) {
-        if (entry.is_regular_file()) {
-            std::string filename = entry.path().filename().string();
-            fs::path filePath = entry.path();
-            std::string extension = filePath.extension().string();
-            if (extension == ".glsl") {
-                singleShaders.push_back(filePath.string());
-                std::cout << "[AssetManager::scanDirectory] Found single shader: " << filename
-                          << " in thread " << std::this_thread::get_id() << "." << std::endl;
-            } else if (extension == ".vert" || extension == ".frag") {
-                std::string baseName = filePath.stem().string();
-                std::string shaderType = extension.substr(1);
-                std::transform(shaderType.begin(), shaderType.end(), shaderType.begin(), ::tolower);
-                if (shaderType == "vert") {
-                    shaderPairs[baseName].first = filePath.string();
-                } else if (shaderType == "frag") {
-                    shaderPairs[baseName].second = filePath.string();
-                }
-                std::cout << "[AssetManager::scanDirectory] Found " << shaderType
-                          << " shader: " << filename << ", base name: " << baseName
-                          << " in thread " << std::this_thread::get_id() << "." << std::endl;
-            }
-        }
-    }
-
-    if (isPredefined) {
-        for (const auto& pair : shaderPairs) {
-            if (!pair.second.first.empty() && !pair.second.second.empty()) {
-                {
-                    std::lock_guard<std::mutex> lock(scannedShadersMutex_);
-                    if (scannedShaders_.find(pair.first) != scannedShaders_.end()) continue;
-                    scannedShaders_.insert(pair.first);
-                }
-                std::ifstream vertexFile(pair.second.first);
-                std::ifstream fragmentFile(pair.second.second);
-                if (!vertexFile.is_open() || !fragmentFile.is_open()) continue;
-                std::stringstream vertexStream, fragmentStream;
-                vertexStream << vertexFile.rdbuf();
-                fragmentStream << fragmentFile.rdbuf();
-                ShaderData shaderData{ pair.first, vertexStream.str(), fragmentStream.str() };
-                loadShaderData(shaderData);
-            }
-        }
-
-        for (const std::string& shaderPath : singleShaders) {
-            std::string name = fs::path(shaderPath).stem().string();
-            {
-                std::lock_guard<std::mutex> lock(scannedShadersMutex_);
-                if (scannedShaders_.find(name) != scannedShaders_.end()) continue;
-                scannedShaders_.insert(name);
-            }
-            std::ifstream shaderFile(shaderPath);
-            if (!shaderFile.is_open()) continue;
-            std::stringstream shaderStream;
-            shaderStream << shaderFile.rdbuf();
-            ShaderData shaderData{ name, shaderStream.str(), shaderStream.str() };
-            loadShaderData(shaderData);
-        }
-    }
-}
-
-
-void AssetManager::loadShaderData(const ShaderData& shaderData) {
 }
 
 void AssetManager::setRootPath(const std::string& path) {

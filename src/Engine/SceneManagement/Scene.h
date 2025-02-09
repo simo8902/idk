@@ -60,6 +60,8 @@ public:
     void initFinalFramebuffer();
 
 private:
+    std::vector<Vertex> gridVertices;
+
     GLuint lightingFramebuffer;
     GLuint rboDepth;
     int width, height;
@@ -68,6 +70,8 @@ private:
 
     GLuint skyboxTexture;
     GLuint skyVAO, skyVBO;
+    mutable GLuint gridVAO;
+    mutable GLuint gridVBO;
 
     std::shared_ptr<Renderer> renderer;
     std::shared_ptr<Shader> shaderProgram;

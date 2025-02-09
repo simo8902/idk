@@ -28,8 +28,10 @@ public:
         const auto & meshRenderer = addComponent<MeshRenderer>(meshFilter);
         capsuleMesh->CreateCapsule(1.0f, 2.0f);
         meshFilter->setMesh(capsuleMesh);
-        const auto & collider = addComponent<CapsuleCollider>(capsuleTransform->getPosition(), 1.0f, 2.0f);
         capsuleTransform->setPosition(glm::vec3(0.00f, 1.65f, 0.0f));
+
+        const auto & collider = addComponent<CapsuleCollider>(capsuleTransform->getPosition(), 1.0f, 2.0f);
+
 
     }
 

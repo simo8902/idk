@@ -2,8 +2,8 @@
 // Created by Simeon on 4/8/2024.
 //
 
-#ifndef LUPUSFIRE_CORE_PROJECTEXPLORER_H
-#define LUPUSFIRE_CORE_PROJECTEXPLORER_H
+#ifndef CORE_PROJECTEXPLORER_H
+#define CORE_PROJECTEXPLORER_H
 
 #include <string>
 #include <memory>
@@ -33,6 +33,7 @@ private:
     std::string AbbreviateText(const std::string& text, float maxWidth, float fontScale );
     void handleContextMenu();
     std::vector<std::string> SplitTextIntoLines(const std::string& text, float maxWidth, const ImFont* font);
+    GLuint loadTexture(const std::string& filePath);
 
     void RenderAssetIcon(const std::shared_ptr<AssetItem>& asset, const ImVec2& itemSize, float iconSize);
     void RenderFolderIcon(const std::shared_ptr<AssetItem>& folder, float iconSize);
@@ -47,7 +48,7 @@ private:
     std::string shaderIcon;
     std::string materialIcon;
 
-    std::weak_ptr<AssetItem> rootFolder;
+    std::shared_ptr<AssetItem> rootFolder;
     std::shared_ptr<AssetItem> selectedFolder;
     std::shared_ptr<AssetItem> selectedAsset;
     std::shared_ptr<AssetItem> selectedShader;
@@ -56,6 +57,9 @@ private:
     bool createShaderPopupOpen = false;
     bool createMaterialPopupOpen = false;
     GLuint shaderIconTexture = 0;
+    bool m_showHiddenItems = false;
+    float m_thumbnailSize = 64.0f;
+    ImGuiTextFilter m_nameFilter;
 
     std::shared_ptr<AssetItem> targetFolderForCreation;
     std::unordered_set<std::string> existingShadersReported;

@@ -2,4 +2,4 @@
 cmake-build-debug/
 bin/
 idkbuild/
-
+src/libdata/

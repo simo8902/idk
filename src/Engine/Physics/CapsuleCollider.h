@@ -18,7 +18,7 @@ public:
         : m_position(position), radius(r), height(h)
     {
         capsuleCollider = this;
-        wireframeScale = 1.05f;
+        wireframeScale = 1.15f;
         updateModelMatrix();
 
     }
@@ -156,63 +156,87 @@ private:
         constexpr int segments = 16;
         constexpr int rings = 8;
 
+        std::vector<glm::vec3> vertices;
+
         for (int i = 0; i < rings; ++i) {
             float lat0 = (isTop ? 0.0f : -0.5f) * glm::pi<float>() + glm::pi<float>() * i / (2 * rings);
             float lat1 = (isTop ? 0.0f : -0.5f) * glm::pi<float>() + glm::pi<float>() * (i + 1) / (2 * rings);
 
-            float y0 = sin(lat0) * radius;
-            float xzr0 = cos(lat0) * radius;
-            float y1 = sin(lat1) * radius;
-            float xzr1 = cos(lat1) * radius;
-
-            glBegin(GL_LINE_LOOP);
             for (int j = 0; j <= segments; ++j) {
                 float lng = 2 * glm::pi<float>() * j / segments;
                 float x = cos(lng), z = sin(lng);
 
-                glm::vec3 point = center + glm::vec3(x * xzr0, y0, z * xzr0);
-                glm::vec4 v0 = transformMatrix * glm::vec4(point, 1.0f);
-                glVertex3f(v0.x, v0.y, v0.z);
+                float y0 = sin(lat0) * radius;
+                float xzr0 = cos(lat0) * radius;
+                vertices.emplace_back(center.x + x * xzr0, center.y + y0, center.z + z * xzr0);
+
+                float y1 = sin(lat1) * radius;
+                float xzr1 = cos(lat1) * radius;
+                vertices.emplace_back(center.x + x * xzr1, center.y + y1, center.z + z * xzr1);
             }
-            glEnd();
         }
 
         for (int j = 0; j <= segments; ++j) {
             float lng = 2 * glm::pi<float>() * j / segments;
             float x = cos(lng), z = sin(lng);
 
-            glBegin(GL_LINE_STRIP);
             for (int i = 0; i <= rings; ++i) {
                 float lat = (isTop ? 0.0f : -0.5f) * glm::pi<float>() + glm::pi<float>() * i / (2 * rings);
                 float y = sin(lat) * radius;
                 float xzr = cos(lat) * radius;
-
-                glm::vec3 point = center + glm::vec3(x * xzr, y, z * xzr);
-                glm::vec4 v = transformMatrix * glm::vec4(point, 1.0f);
-                glVertex3f(v.x, v.y, v.z);
+                vertices.emplace_back(center.x + x * xzr, center.y + y, center.z + z * xzr);
             }
-            glEnd();
         }
+
+        GLuint VAO, VBO;
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glDrawArrays(GL_LINES, 0, vertices.size());
+
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
     }
+
 
     static void drawWireframeCapsule(const glm::mat4 &transformMatrix, float radius, float height) {
         constexpr int segments = 16;
+
+        std::vector<glm::vec3> vertices;
         glm::vec3 base(0.0f, -height / 2.0f, 0.0f);
         glm::vec3 top(0.0f, height / 2.0f, 0.0f);
 
-        glBegin(GL_LINES);
         for (int i = 0; i <= segments; ++i) {
             float theta = 2.0f * glm::pi<float>() * i / segments;
             float x = radius * cos(theta);
             float z = radius * sin(theta);
 
-            glm::vec4 vBase = transformMatrix * glm::vec4(base.x + x, base.y, base.z + z, 1.0f);
-            glm::vec4 vTop = transformMatrix * glm::vec4(top.x + x, top.y, top.z + z, 1.0f);
-
-            glVertex3f(vBase.x, vBase.y, vBase.z);
-            glVertex3f(vTop.x, vTop.y, vTop.z);
+            vertices.emplace_back(base.x + x, base.y, base.z + z);
+            vertices.emplace_back(top.x + x, top.y, top.z + z);
         }
-        glEnd();
+
+        GLuint VAO, VBO;
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glDrawArrays(GL_LINES, 0, vertices.size());
+
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
 
         drawWireframeHemisphere(transformMatrix, base, radius, false);
         drawWireframeHemisphere(transformMatrix, top, radius, true);

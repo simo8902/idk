@@ -6,7 +6,6 @@
 #define MESHFILTER_H
 
 #include "Component.h"
-#include "Logger.h"
 #include "Mesh.h"
 
 class MeshFilter final : public Component {
@@ -27,15 +26,7 @@ public:
     std::shared_ptr<Mesh> getMesh() const {
         return mesh;
     }
-    void clearMesh() {
-        if (mesh) {
-            logger.Log("[DEBUG] Mesh is valid, proceeding to clear.\n");
-            mesh.reset();
-            logger.Log( "[DEBUG] Cleared mesh from MeshFilter.\n");
-        } else {
-            logger.Log("[DEBUG] No mesh to clear.\n");
-        }
-    }
+    void clearMesh() {}
 
     void UpdateMesh() const{
         if (mesh) {
