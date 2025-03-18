@@ -61,3 +61,17 @@
 - Added Profiler
 - Some changes in the Project explorer
 - and few more
+
+# Update 0.0.62 - 03/../2025
+- Better support for the rendering, including easy switch between deferred and forward
+- Integrated better mechanism for the gameobjects, including Entity class
+- Optimized file structure for the external libraries, less size
+- Modified of my private property of libData
+- Modification of the layout of the engine
+- Support for GCC 11.2.0 and less for Windows 7. Decreased the CMake version to 3.17.3 for latest support of GCC for Windows 7
+- Custom assertion, enchanted error logs
+- Simplified CMakeLists
+- Some performance optimizations
+- Better project explorer handling both file explorer and visual assets from hierarchy
+
+ # TODO: ADD SUPPORT FOR MSBUILD VISUAL STUDIO 22 INCLUDING EASY COMPILATION WITHOUT CMAKE
