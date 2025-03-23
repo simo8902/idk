@@ -7,13 +7,24 @@
 
 #include <vector>
 #include <memory>
+#include <iostream>
 
 class Component {
 public:
-    virtual ~Component(){};
+    explicit Component(const std::string& name)
+    : m_Name(name)
+    {
+        // std::cerr << "Component Name: " << m_Name << std::endl;
+    }
+
+    virtual ~Component()= default;
 
     virtual const std::string& getName() const {
         return m_Name;
+    }
+    virtual std::string getType() const {
+        // return typeid(*this).name(); //RTTI
+        return "BASE::Component";
     }
 
     virtual void setName(const std::string& newName) {

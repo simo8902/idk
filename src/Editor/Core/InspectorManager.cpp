@@ -16,10 +16,22 @@
 #include "imgui.h"
 
 void InspectorManager::renderInspector() {
+  //  std::cerr << "InspectorManager::renderInspector()" << std::endl;
+
     auto& selectionManager = SelectionManager::getInstance();
 
-    if (selectionManager.selectedComponent) {
-        renderComponentObjectsInspector(selectionManager.selectedComponent);
+    if (!selectionManager.getSelectedObject()) {
+        ImGui::Text("No object selected.");
+        return;
+    }
+
+    // if (selectionManager.selectedComponent) {
+    //     renderComponentObjectsInspector(selectionManager.selectedComponent);
+
+    if (selectionManager.getSelectedEntity()) {
+        renderEntityInspector(selectionManager.getSelectedEntity());
+    }else if (selectionManager.selectedGameObject){
+        renderGameObjectInspector(selectionManager.selectedGameObject);
     } else if (selectionManager.selectedLight) {
         renderLightInspector(selectionManager.selectedLight);
     } else if (selectionManager.selectedCamera) {
@@ -72,7 +84,7 @@ void InspectorManager::renderComponentObjectsInspector(const std::shared_ptr<Com
         if (auto meshFilter = std::dynamic_pointer_cast<MeshFilter>(component)) {
             if (!displayedComponents.contains("MeshFilter")) {
                 if (ImGui::CollapsingHeader("Mesh Filter", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    if (meshFilter->mesh) {
+                    if (meshFilter->getMesh()) {
                         ImGui::Text("Mesh: %s", meshFilter->getName().c_str());
                     } else {
                         ImGui::Text("No mesh assigned.");
@@ -117,18 +129,224 @@ void InspectorManager::renderComponentObjectsInspector(const std::shared_ptr<Com
         } else if (auto collider = std::dynamic_pointer_cast<Collider>(component)) {
             if (displayedComponents.find("Collider") == displayedComponents.end()) {
                 if (ImGui::CollapsingHeader("Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::Text("Collider Type: %s", typeid(*collider).name());
+                  //  ImGui::Text("Collider Type: %s", typeid(*collider).name());
                 }
                 displayedComponents.insert("Collider");
             }
         } else {
+            /*
             std::string componentName = typeid(*component).name();
             if (displayedComponents.find(componentName) == displayedComponents.end()) {
                 if (ImGui::CollapsingHeader(componentName.c_str())) {
                     ImGui::Text("Component details go here.");
                 }
                 displayedComponents.insert(componentName);
+            }*/
+        }
+    }
+}
+
+void InspectorManager::renderGameObjectInspector(const std::shared_ptr<GameObject> &gameobject)
+{
+    if (!gameobject) return;
+
+    static char nameBuffer[256];
+    strncpy(nameBuffer, gameobject->getName().c_str(), sizeof(nameBuffer));
+    nameBuffer[sizeof(nameBuffer) - 1] = '\0';
+    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+        gameobject->setName(std::string(nameBuffer));
+    }
+
+    auto transform = gameobject->getComponent<Transform>();
+    if (transform) {
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (glm::vec3 position = transform->getPosition(); ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+                transform->setPosition(position);
             }
+
+            if (glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->getRotation())); ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f)) {
+                glm::vec3 radians = glm::radians(rotation);
+                transform->setRotation(glm::quat(radians));
+            }
+
+            if (glm::vec3 scale = transform->getScale(); ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1f)) {
+                transform->setScale(scale);
+            }
+        }
+    }
+
+    const auto& components = gameobject->getComponents();
+    std::unordered_set<std::string> displayedComponents;
+
+    for (const auto& component : components) {
+        if (std::dynamic_pointer_cast<Transform>(component)) {
+            continue;
+        }
+
+        if (auto meshFilter = std::dynamic_pointer_cast<MeshFilter>(component)) {
+            if (!displayedComponents.contains("MeshFilter")) {
+                if (ImGui::CollapsingHeader("Mesh Filter", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    if (meshFilter->getMesh()) {
+                        ImGui::Text("Mesh: %s", meshFilter->getName().c_str());
+                    } else {
+                        ImGui::Text("No mesh assigned.");
+                    }
+                }
+                displayedComponents.insert("MeshFilter");
+            }
+        }
+        else if (auto meshRenderer = std::dynamic_pointer_cast<MeshRenderer>(component)) {
+            if (!displayedComponents.contains("MeshRenderer")) {
+                if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    /*
+                    if (meshRenderer->getMaterial()) {
+                        ImGui::Text("Material: %s", meshRenderer->getMaterial()->getName().c_str());
+                    } else {
+                        ImGui::Text("No material assigned.");
+                    }*/
+
+                    ImGui::Text("Drag and drop a material here to assign.");
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_PAYLOAD")) {
+                            const char* materialUUIDCStr = static_cast<const char*>(payload->Data);
+                            std::string materialUUID(materialUUIDCStr);
+
+                            // std::shared_ptr<Material> newMaterial = AssetManager::getInstance().getMaterialByUUID(materialUUID);
+
+                            /*
+                            if (newMaterial) {
+                                meshRenderer->setMaterial(newMaterial);
+                              //  std::cout << "Assigned material: " << newMaterial->getName() << " to MeshRenderer." << std::endl;
+                            } else {
+                                std::cerr << "Material not found: " << materialUUID << std::endl;
+                            }*/
+                        }
+                        ImGui::EndDragDropTarget();
+
+                    }
+                }
+                displayedComponents.insert("MeshRenderer");
+            }
+        } else if (auto collider = std::dynamic_pointer_cast<Collider>(component)) {
+            if (displayedComponents.find("Collider") == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader("Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+                  //  ImGui::Text("Collider Type: %s", typeid(*collider).name());
+                }
+                displayedComponents.insert("Collider");
+            }
+        } else {
+            /*
+            std::string componentName = typeid(*component).name();
+            if (displayedComponents.find(componentName) == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader(componentName.c_str())) {
+                    ImGui::Text("Component details go here.");
+                }
+                displayedComponents.insert(componentName);
+            }*/
+        }
+    }
+}
+
+void InspectorManager::renderEntityInspector(const std::shared_ptr<Entity> &entities) {
+      if (!entities) return;
+
+    static char nameBuffer[256];
+    strncpy(nameBuffer, entities->getName().c_str(), sizeof(nameBuffer));
+    nameBuffer[sizeof(nameBuffer) - 1] = '\0';
+    if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+        entities->setName(std::string(nameBuffer));
+    }
+
+    auto transform = entities->getComponent<Transform>();
+    if (transform) {
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (glm::vec3 position = transform->getPosition(); ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f)) {
+                transform->setPosition(position);
+            }
+
+            if (glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->getRotation())); ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f)) {
+                glm::vec3 radians = glm::radians(rotation);
+                transform->setRotation(glm::quat(radians));
+            }
+
+            if (glm::vec3 scale = transform->getScale(); ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1f)) {
+                transform->setScale(scale);
+            }
+        }
+    }else {
+        std::cerr << "transform not found\n";
+    }
+
+    const auto& components = entities->getComponents();
+    std::unordered_set<std::string> displayedComponents;
+
+    for (const auto& component : components) {
+        if (std::dynamic_pointer_cast<Transform>(component)) {
+            continue;
+        }
+
+        if (auto meshFilter = std::dynamic_pointer_cast<MeshFilter>(component)) {
+            if (!displayedComponents.contains("MeshFilter")) {
+                if (ImGui::CollapsingHeader("Mesh Filter", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    if (meshFilter->getMesh()) {
+                        ImGui::Text("Mesh: %s", meshFilter->getName().c_str());
+                    } else {
+                        ImGui::Text("No mesh assigned.");
+                    }
+                }
+                displayedComponents.insert("MeshFilter");
+            }
+        }
+        else if (auto meshRenderer = std::dynamic_pointer_cast<MeshRenderer>(component)) {
+            if (!displayedComponents.contains("MeshRenderer")) {
+                if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    /*
+                    if (meshRenderer->getMaterial()) {
+                        ImGui::Text("Material: %s", meshRenderer->getMaterial()->getName().c_str());
+                    } else {
+                        ImGui::Text("No material assigned.");
+                    }*/
+
+                    ImGui::Text("Drag and drop a material here to assign.");
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_PAYLOAD")) {
+                            const char* materialUUIDCStr = static_cast<const char*>(payload->Data);
+                            std::string materialUUID(materialUUIDCStr);
+
+                            // std::shared_ptr<Material> newMaterial = AssetManager::getInstance().getMaterialByUUID(materialUUID);
+
+                            /*
+                            if (newMaterial) {
+                                meshRenderer->setMaterial(newMaterial);
+                              //  std::cout << "Assigned material: " << newMaterial->getName() << " to MeshRenderer." << std::endl;
+                            } else {
+                                std::cerr << "Material not found: " << materialUUID << std::endl;
+                            }*/
+                        }
+                        ImGui::EndDragDropTarget();
+
+                    }
+                }
+                displayedComponents.insert("MeshRenderer");
+            }
+        } else if (auto collider = std::dynamic_pointer_cast<Collider>(component)) {
+            if (displayedComponents.find("Collider") == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader("Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+                  //  ImGui::Text("Collider Type: %s", typeid(*collider).name());
+                }
+                displayedComponents.insert("Collider");
+            }
+        } else {
+            /*
+            std::string componentName = typeid(*component).name();
+            if (displayedComponents.find(componentName) == displayedComponents.end()) {
+                if (ImGui::CollapsingHeader(componentName.c_str())) {
+                    ImGui::Text("Component details go here.");
+                }
+                displayedComponents.insert(componentName);
+            }*/
         }
     }
 }
@@ -374,7 +592,6 @@ if (shader) {
 
 ImGui::End();
 }
-
 
 void InspectorManager::renderTransformComponent(const std::shared_ptr<Transform>& transform) {
     if (!transform) return;

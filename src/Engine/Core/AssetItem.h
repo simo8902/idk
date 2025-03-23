@@ -14,6 +14,11 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include "SceneManager.h"
+#include <mutex>
+
+#include "Entity.h"
+
 namespace fs = std::filesystem;
 
 enum class AssetType {
@@ -24,12 +29,25 @@ enum class AssetType {
     Material = 4,
     Mesh = 5,
     File = 6,
+    GameObject = 7,
+    Entity = 8,
     Unknown = -1
 };
-class AssetItem : public std::enable_shared_from_this<AssetItem> {
+class AssetItem : public std::enable_shared_from_this<AssetItem>
+{
 public:
-    AssetItem(const std::string& name, AssetType type, const std::string& path)
-        : name_(name), type_(type), path_(path), uuid_(boost::uuids::random_generator()()) {}
+    AssetItem(const std::string& name, const AssetType type, const std::string& path, bool isVirtual = false)
+        : isVirtual_(isVirtual), name_(name), type_(type), path_(path),
+            uuid_(boost::uuids::random_generator()()) {
+
+        std::cerr << "ASSETITEM(): Name::" << name
+                  << " Type::" << static_cast<int>(type)
+                  << " Virtual::" << (isVirtual ? "Yes" : "No") << std::endl;
+
+    }
+    virtual ~AssetItem() {}
+
+    bool isVirtual() const { return isVirtual_; }
 
     const std::string& getUUIDStr() const {
         if (uuidStr_.empty()) {
@@ -38,60 +56,124 @@ public:
         return uuidStr_;
     }
 
-    ~AssetItem() {}
+    std::shared_ptr<AssetItem> getChildByName(const std::string& name) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        std::cerr << "Looking for child: " << name << " in " << getName() << std::endl;
+        for (const auto& child : children) {
+            std::cerr << "Checking child: " << child->getName() << std::endl;
+            if (!child) {
+                std::cerr << "WARNING: Null child in " << getName() << std::endl;
+                continue;
+            }
+
+            if (child->getName() == name) {
+                std::cerr << "Found child: " << child->getName() << std::endl;
+                return child;
+            }
+        }
+
+        /*
+        if (name == "Scene") {
+            std::cerr << "Creating new Scene folder" << std::endl;
+            auto sceneFolder = std::make_shared<AssetItem>("Scene", AssetType::Folder, "", true);
+            children.push_back(sceneFolder);
+            return sceneFolder;
+        }*/
+
+        std::cerr << "Child not found: " << name << std::endl;
+        return nullptr;
+    }
+
+    void PopulateVirtualChildren() {
+       // if (!isVirtual_ || isScanned) return;
+
+        if (!isVirtual_) return;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (isScanned) return; // Already scanned?
+            isScanned = true;
+            children.clear();
+        }
+
+        /*
+        if (name_ == "Scene") {
+            for (const auto& obj : SceneManager::getInstance().getRootObjects()) {
+                auto child = std::make_shared<AssetItem>(obj->getName(), AssetType::GameObject, "", true);
+                child->setGameObject(obj);
+                addChild(child); // addChild() should lock internally.
+                std::cerr << "Added GameObject: " << obj->getName() << " (Virtual)" << std::endl;
+            }
+        }*/
+        if (name_ == "ROOT") {
+            for (const auto& obj : SceneManager::getInstance().getRootObjects()) {
+                auto entity = std::make_shared<Entity>(obj);
+                auto child = std::make_shared<AssetItem>(obj->getName(), AssetType::Entity, "", true);
+                child->setEntityObject(entity);
+                addChild(child);
+                std::cerr << "Added Entity: " << obj->getName() << " directly to ROOT (Virtual)" << std::endl;
+            }
+        } else
+        if (type_ == AssetType::GameObject) {
+            if (auto obj = gameObject_.lock()) {
+                for (const auto& childObj : obj->getChildren()) {
+                    auto child = std::make_shared<AssetItem>(childObj->getName(), AssetType::GameObject, "", true);
+                    child->setGameObject(childObj);
+                    addChild(child);
+                    std::cerr << "Added child GameObject: " << childObj->getName() << " (Virtual)" << std::endl;
+                }
+            }
+        }else if (type_ == AssetType::Entity) {
+            if (const auto &obj = entities.lock()) {
+                for (const auto& childObj : obj->getChildren()) {
+                    auto child = std::make_shared<AssetItem>(childObj->getName(), AssetType::Entity, "", true);
+                    child->setEntityObject(childObj);
+                    addChild(child);
+                    std::cerr << "Added child EntityObject: " << childObj->getName() << " (Virtual)" << std::endl;
+                }
+            }
+        }
+    }
+
 
     void ScanDirectory(const std::string &directoryPath)
     {
-        if (isScanned) return;
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        if (isScanned || isVirtual_) return; // Skip virtual items.
         isScanned = true;
 
-        // Clear any existing children.
-        children.clear();
+        // Instead of clearing everything, remove only filesystem-related children:
+        auto it = std::remove_if(children.begin(), children.end(),
+            [](const std::shared_ptr<AssetItem>& child) {
+                return !child->isVirtual();
+            });
+        children.erase(it, children.end());
 
-        std::cout << "[ScanDirectory] Scanning directory: " << directoryPath << std::endl;
-
-        // Check if the directory exists and is indeed a directory.
-        if (!fs::exists(directoryPath) || !fs::is_directory(directoryPath))
-        {
-            std::cout << "[ScanDirectory] ERROR: '" << directoryPath << "' does not exist or is not a directory." << std::endl;
+        if (!fs::exists(directoryPath) || !fs::is_directory(directoryPath)) {
+            std::cerr << "Directory does not exist or is not a directory: " << directoryPath << std::endl;
             return;
         }
 
-        // Iterate over each entry in the directory.
-        for (const auto &entry : fs::directory_iterator(directoryPath))
-        {
+        for (const auto& entry : fs::directory_iterator(directoryPath)) {
             std::string name = entry.path().filename().string();
             std::string fullPath = entry.path().string();
 
-            if (entry.is_directory())
-            {
-                std::cout << "[ScanDirectory] Found directory: " << fullPath << std::endl;
-
-                // Create a new AssetItem for the folder.
+            if (entry.is_directory()) {
                 auto childFolder = std::make_shared<AssetItem>(name, AssetType::Folder, fullPath);
-
-                // Recursively scan the subdirectory.
+                // safe to call ScanDirectory recursively; each call will lock its own instance's mutex.
                 childFolder->ScanDirectory(fullPath);
-
-                // Add the scanned folder to the children.
                 children.push_back(childFolder);
-                std::cout << "[ScanDirectory] Added folder: " << fullPath << std::endl;
-            }
-            else if (entry.is_regular_file())
-            {
-                std::cout << "[ScanDirectory] Found file: " << fullPath << std::endl;
-
-                // Determine the asset type based on file extension if needed.
-                // Here we simply use AssetType::File for all files.
-                AssetType type = AssetType::File;  // Modify this logic for shaders, materials, etc.
+                std::cerr << "Added folder: " << fullPath << std::endl;
+            } else if (entry.is_regular_file()) {
+                AssetType type = AssetType::File;
+                std::string ext = entry.path().extension().string();
+                if (ext == ".glsl" || ext == ".shader") type = AssetType::Shader;
+                else if (ext == ".material") type = AssetType::Material;
+                else if (ext == ".obj" || ext == ".fbx") type = AssetType::Mesh;
 
                 auto childFile = std::make_shared<AssetItem>(name, type, fullPath);
                 children.push_back(childFile);
-                std::cout << "[ScanDirectory] Added file: " << fullPath << std::endl;
-            }
-            else
-            {
-                std::cout << "[ScanDirectory] Skipped non-regular entry: " << fullPath << std::endl;
+                std::cerr << "Added file: " << fullPath << std::endl;
             }
         }
     }
@@ -110,19 +192,57 @@ public:
                   << std::endl;
     }
 
-    const std::string& getName() const { return name_; }
+    virtual const std::string& getName() const {
+        if (isVirtual_ && type_ == AssetType::GameObject) {
+            if (const auto& obj = gameObject_.lock())
+                return obj->getName();
+        }else if (isVirtual_ && type_ == AssetType::Entity) {
+            if (const auto& ent = entities.lock())
+                return ent->getName();
+        }
+        return name_;
+    }
+
     AssetType getType() const { return type_; }
     const std::string& getPath() const { return path_; }
 
+    // Thread-safe addChild
     void addChild(const std::shared_ptr<AssetItem>& child) {
+        std::lock_guard<std::mutex> lock(mutex_);
         if (children.size() < MAX_CHILDREN) {
+            std::cerr << "Child added: " << child->getName()
+                << " to " << this->getName()
+                << " (Parent Virtual::" << (this->isVirtual() ? "Yes" : "No")
+                << ", Child Virtual::" << (child->isVirtual() ? "Yes" : "No") << ")"
+                << std::endl;
+
             children.push_back(child);
             child->parent_ = shared_from_this();
         }
     }
 
+    // Thread-safe getChildren
+    std::vector<std::shared_ptr<AssetItem>> getChildrenSafe() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return children; // returning a copy so the caller can iterate safely
+    }
     const std::vector<std::shared_ptr<AssetItem>>& getChildren() const { return children; }
     std::shared_ptr<AssetItem> getParent() const { return parent_.lock(); }
+
+    void setGameObject(const std::shared_ptr<GameObject>& obj) {
+        gameObject_ = obj;
+    }
+
+    void setEntityObject(const std::shared_ptr<Entity>& obj) {
+        entities = obj;
+    }
+
+    std::shared_ptr<GameObject> getGameObject() const {
+        return gameObject_.lock();
+    }
+    std::shared_ptr<Entity> getEntity() const {
+        return entities.lock();
+    }
 
     void clearChildren() {
         for (auto& child : children) {
@@ -131,19 +251,24 @@ public:
         }
         children.clear();
     }
+    bool isScanned = false;
 
 private:
+    bool isVirtual_ = false;
+    std::weak_ptr<GameObject> gameObject_;
+    std::weak_ptr<Entity> entities;
+    mutable std::mutex mutex_;
+
     std::string name_;
     AssetType type_;
     std::string path_;
     boost::uuids::uuid uuid_;
     mutable std::string uuidStr_;
-    bool isScanned = false;
 
-    std::vector<std::shared_ptr<AssetItem>> children; // Ensure consistent naming
+    std::vector<std::shared_ptr<AssetItem>> children;
     std::weak_ptr<AssetItem> parent_;
 
-    static const int MAX_CHILDREN = 1024;
+    static constexpr int MAX_CHILDREN = 1024;
 };
 
 #endif //ASSETITEM_H

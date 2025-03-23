@@ -13,7 +13,8 @@
 class MeshRenderer final : public Component{
 public:
     explicit MeshRenderer(const std::shared_ptr<MeshFilter> &meshFilter)
-         : meshFilter(meshFilter) {
+        : Component("MeshRenderer"), meshFilter(meshFilter)
+    {
     }
 
     void Render(const Shader* shader) const

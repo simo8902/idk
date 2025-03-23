@@ -30,10 +30,23 @@ public:
 
     std::shared_ptr<Shader> GetShader(const std::string& name);
     const auto& getShaders() const { return shaders; }
+    ShaderManager(const ShaderManager&) = delete;
+    ShaderManager& operator=(const ShaderManager&) = delete;
+
+    std::shared_ptr<Shader> getShaderProgram() const { return shaderProgram; }
+    std::shared_ptr<Shader> getLightShader() const { return lightShader; }
+    std::shared_ptr<Shader> getFinalPassShader() const { return finalPassShader; }
+    std::shared_ptr<Shader> getSkyShader() const { return skyShader; }
 
 private:
     ShaderManager();
     ~ShaderManager();
+
+    std::shared_ptr<Shader> shaderProgram;
+    std::shared_ptr<Shader> lightShader;
+    std::shared_ptr<Shader> finalPassShader;
+    std::shared_ptr<Shader> skyShader;
+
 
     std::unordered_map<std::string, std::shared_ptr<Shader>> shaders;
     std::vector<std::filesystem::path> searchPaths;

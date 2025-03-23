@@ -8,26 +8,32 @@
 #include "MeshFilter.h"
 #include "MeshRenderer.h"
 #include "SphereCollider.h"
-#include "Component.h"
 
-class Sphere final : public Component {
+class Sphere final : public GameObject {
 public:
-    explicit Sphere(const std::string& name): name(name){}
+    explicit Sphere(const std::string& name)
+        : GameObject(name) {}
+
     ~Sphere() override {}
 
-    const std::string & getName() const override {
-        return name;
+    GameObjectType getType() const override {
+        return GameObjectType::Sphere;
     }
 
     void addComponents() {
-        const auto & sphereMesh = std::make_shared<Mesh>("Sphere");
-        const auto & sphereTransform = addComponent<Transform>();
-        const auto & meshFilter = addComponent<MeshFilter>("SPHERE_MESH");
-        const auto & meshRenderer = addComponent<MeshRenderer>(meshFilter);
-        const auto & sphereCollider = addComponent<SphereCollider>(sphereTransform->getPosition(), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
-        sphereMesh->CreateSphere(1.0f, 32, 16);
+        const auto & sphereMesh = std::make_shared<Mesh>("SphereMesh");
+        const auto & sphereTransform = getComponent<Transform>();
+        if (sphereTransform) {
+            sphereTransform->setPosition(glm::vec3(4.25f, 1.5f, 0.0f));
+        }
+
+        sphereMesh->CreateMesh(MeshType::Sphere);
+
+        auto meshFilter = addComponent<MeshFilter>();
         meshFilter->setMesh(sphereMesh);
-        sphereTransform->setPosition(glm::vec3(-2.50f, 1.65f, 0.0f));
+
+        auto meshRenderer = addComponent<MeshRenderer>(meshFilter);
+        const auto & sphereCollider = addComponent<SphereCollider>(sphereTransform->getPosition(), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
     }
 
 private:

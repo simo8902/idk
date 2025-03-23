@@ -131,6 +131,10 @@
 #define ICON_FA_DELICIOUS "\xef\x86\xa5"	// U+f1a5
 #define ICON_FA_DEPLOYDOG "\xef\x8e\x8e"	// U+f38e
 #define ICON_FA_DESKPRO "\xef\x8e\x8f"	// U+f38f
+#define ICON_FA_EYE "\xef\x81\xae"	// U+f06e
+#define ICON_FA_EYE_DROPPER "\xef\x87\xbb"	// U+f1fb
+#define ICON_FA_EYE_LOW_VISION "\xef\x8a\xa8"	// U+f2a8
+#define ICON_FA_EYE_SLASH "\xef\x81\xb0"	// U+f070
 #define ICON_FA_DEV "\xef\x9b\x8c"	// U+f6cc
 #define ICON_FA_DEVIANTART "\xef\x86\xbd"	// U+f1bd
 #define ICON_FA_DHL "\xef\x9e\x90"	// U+f790

@@ -10,14 +10,18 @@
 #include "gtx/string_cast.hpp"
 #include "glad/glad.h"
 
-class BoxCollider : public Collider {
+class BoxCollider final : public Collider {
 public:
-    BoxCollider(const glm::vec3& position, const glm::vec3& min, const glm::vec3& max)
-            : m_position(position), m_worldMin(min), m_worldMax(max)  {
+    BoxCollider(const glm::vec3& position, const glm::vec3& min, const glm::vec3& max, const std::string& name = "BoxCollider")
+            : Collider(name), m_worldMin(min), m_worldMax(max), m_position(position)  {
         collider = this;
         updateModelMatrix();
+        setupBuffers();
     }
 
+    ~BoxCollider() override {
+        cleanupBuffers();
+    }
     const glm::vec3& getPosition() const { return m_position; }
     const glm::vec3& getMin() const { return m_worldMin; }
     const glm::vec3& getMax() const { return m_worldMax; }
@@ -87,59 +91,66 @@ public:
 
     void Draw(Shader& wireframe) override  {
         if (collider) {
-            glm::vec3 min = collider->getMin();
-            glm::vec3 max = collider->getMax();
-
-            float vertices[] = {
-                    min.x, min.y, min.z,
-                    max.x, min.y, min.z,
-                    max.x, max.y, min.z,
-                    min.x, max.y, min.z,
-                    min.x, min.y, max.z,
-                    max.x, min.y, max.z,
-                    max.x, max.y, max.z,
-                    min.x, max.y, max.z
-            };
-
-            unsigned int indices[] = {
-                    0, 1, 1, 2, 2, 3, 3, 0, // Front face
-                    4, 5, 5, 6, 6, 7, 7, 4, // Back face
-                    0, 4, 1, 5, 2, 6, 3, 7  // Sides
-            };
-            glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
-            glGenBuffers(1, &EBO);
-
-            glBindVertexArray(VAO);
-
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
-            glEnableVertexAttribArray(0);
-
-            // std::cerr << "Debug: " << getName() << " has a BoxCollider component." << std::endl;
-
             glBindVertexArray(VAO);
 
             glm::vec3 wireframeColor = glm::vec3(0.0f, 1.0f, 0.0f);
             wireframe.setVec3("m_wireframeColor", wireframeColor);
 
-            //  GLint colorLocation = glGetUniformLocation(programID, "w_Color");
-            // glUniform3f(colorLocation, 1.0f, 0.0f, 0.0f);
-
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
 
 private:
+    void setupBuffers() {
+        glm::vec3 min = m_worldMin;
+        glm::vec3 max = m_worldMax;
+
+        float vertices[] = {
+            min.x, min.y, min.z,
+            max.x, min.y, min.z,
+            max.x, max.y, min.z,
+            min.x, max.y, min.z,
+            min.x, min.y, max.z,
+            max.x, min.y, max.z,
+            max.x, max.y, max.z,
+            min.x, max.y, max.z
+        };
+
+        unsigned int indices[] = {
+            0, 1, 1, 2, 2, 3, 3, 0, // Front face
+            4, 5, 5, 6, 6, 7, 7, 4, // Back face
+            0, 4, 1, 5, 2, 6, 3, 7  // Sides
+        };
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glBindVertexArray(0);
+    }
+
+    void cleanupBuffers() const {
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+
     BoxCollider* collider;
     GLuint VAO, VBO, EBO;
 };
 
-#endif //NAV2SFM Core_BOX_COLLIDER_H
+
+#endif

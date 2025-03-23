@@ -11,6 +11,9 @@
 
 class Collider : public Component {
 public:
+    explicit Collider(const std::string& name)
+     : Component(name) {}
+
     virtual bool intersectsRay(const Ray& ray, const glm::mat4& transformMatrix, float disnce) = 0;
     virtual void Draw(Shader& wireframe) = 0 ;
 };

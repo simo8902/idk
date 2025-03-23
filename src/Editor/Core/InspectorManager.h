@@ -21,8 +21,9 @@ public:
 
 private:
     void renderComponentObjectsInspector(const std::shared_ptr<Component>& componentObj);
+    void renderGameObjectInspector(const std::shared_ptr<GameObject> &gameobjects);
+    void renderEntityInspector(const std::shared_ptr<Entity> &entities);
 
-    void renderGameObjectInspector(const std::shared_ptr<GameObject>& gameObject);
     void renderLightInspector(const std::shared_ptr<Light>& light);
     void renderCameraInspector(const std::shared_ptr<Camera>& camera);
     void renderMeshInspector(const std::shared_ptr<Mesh>& mesh);

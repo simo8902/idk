@@ -61,3 +61,4 @@
 - Added Profiler
 - Some changes in the Project explorer
 - and few more
+- Compiled GLFW and boost for the Windows!

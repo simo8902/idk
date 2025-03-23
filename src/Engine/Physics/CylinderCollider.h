@@ -15,8 +15,9 @@
 
 class CylinderCollider final : public Collider {
 public:
-    CylinderCollider(const glm::vec3& pos, const float h, const float r)
-        : position(pos), height(h), radius(r) {
+    CylinderCollider(const glm::vec3& pos, const float h, const float r, const std::string& name = "CylinderdCollider")
+        : Collider(name), position(pos), height(h), radius(r)
+    {
         generateVertices();
         setupMesh();
         updateModelMatrix();

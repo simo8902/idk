@@ -5,77 +5,56 @@
 #ifndef Core_SCENE_H
 #define Core_SCENE_H
 
+#include "AssetItem.h"
+#include "Camera.h"
+#include "Entity.h"
 #include "LightManager.h"
-#include "Renderer.h"
 #include "GameObject.h"
 
 class Scene {
 public:
-    Scene(const std::shared_ptr<Shader> & shaderProgram, const std::shared_ptr<Shader> & lightingShader, const std::shared_ptr<Shader> & finalPassShader,
-        const std::shared_ptr<Camera> & camera, const std::shared_ptr<LightManager> & lightManager);
+    Scene(const std::shared_ptr<Camera> & camera);
     ~Scene();
 
-    static std::vector<std::shared_ptr<GameObject>> objects;
-    static std::vector<std::shared_ptr<Component>> components;
+    std::vector<std::shared_ptr<Entity>> components;
 
-    static std::vector<std::shared_ptr<Light>> lights;
-    static void createTemporalObject();
+    const std::vector<std::shared_ptr<Entity>>& getComponents() const;
 
-    static void createObjects();
+    void createObjects();
 
     void setCamera(const std::shared_ptr<Camera> & cam) {
         m_Camera = cam;
     }
 
-    void setShader(std::shared_ptr<Shader> shader) {
-        shaderProgram = shader;
-    }
-
-    static void checkFramebufferStatus();
     void DrawGrid(float gridSize, float gridStep) const;
 
     void setupSky();
-    void renderSky() const;
-    void setRenderer(const std::shared_ptr<Renderer> &renderer);
+    void renderSky();
+    static std::vector<std::shared_ptr<Light>> lights;
 
-    void updateViewportFramebuffer(int viewportWidth, int viewportHeight);
+    std::shared_ptr<LightManager> getLightManager() const {
+        return lightManager;
+    }
 
-    void RenderGeometryPass() const;
-    void RenderLightingPass() const;
-
-    GLuint getLightingTexture() const;
-    GLuint gPosition;
-    GLuint gAlbedoSpec;
-    GLuint gNormal;
-    GLuint gBuffer;
-
-    std::shared_ptr<Shader> lightingShader;
-    void initFullscreenQuad();
-    void RenderQuad() const;
-    GLuint lightingTexture;
-    GLuint finalPassTexture;
-    void RenderFinalPass() const;
-    GLuint finalFramebuffer;
-
-    void initFinalFramebuffer();
+    std::shared_ptr<AssetItem> CreateGameObjectAssetItem(const std::shared_ptr<GameObject>& obj) {
+        if (!obj) {
+            std::cerr << "CreateGameObjectAssetItem: GameObject is null!" << std::endl;
+            return nullptr;
+        }
+        auto assetItem = std::make_shared<AssetItem>(obj->getName(), AssetType::GameObject, "", true);
+        if (!assetItem) {
+            std::cerr << "CreateGameObjectAssetItem: Failed to create AssetItem!" << std::endl;
+            return nullptr;
+        }
+        assetItem->setGameObject(obj);
+        std::cerr << "Created GameObject AssetItem: " << assetItem->getName() << std::endl;
+        return assetItem;
+    }
 
 private:
-    std::vector<Vertex> gridVertices;
-
-    GLuint lightingFramebuffer;
-    GLuint rboDepth;
-    int width, height;
-    GLuint quadVAO{};
-    GLuint quadVBO{};
-
     GLuint skyboxTexture;
     GLuint skyVAO, skyVBO;
-    mutable GLuint gridVAO;
-    mutable GLuint gridVBO;
 
-    std::shared_ptr<Renderer> renderer;
-    std::shared_ptr<Shader> shaderProgram;
-    std::shared_ptr<Shader> skyShader;
     std::shared_ptr<Shader> finalPassShader;
 
     Transform gridTransform;

@@ -53,9 +53,6 @@ public:
     }
     bool isMainThread() const;
 
-    const std::shared_ptr<AssetItem> & getRootFolder() const;
-    void setRootFolder(std::shared_ptr<AssetItem> root);
-
     void scanUserAssetsLoop();
     void scanRuntimeShaders();
     void scanPredefinedShaders();
@@ -63,10 +60,45 @@ public:
 
     void loadShaderData(const ShaderData& shaderData);
     void populateShadersFromShaderManager();
+    std::shared_ptr<AssetItem> getRootAsset() {
+        return rootAsset;
+    }
+
+    // Loads assets from the specified directory by scanning it and building the asset tree.
+    void loadAssetsFromDirectory(const std::string& directoryPath) {
+        // Create a new root asset. "Root" is the display name for the root folder.
+        rootAsset = std::make_shared<AssetItem>("Root", AssetType::Folder, directoryPath);
+        rootAsset->ScanDirectory(directoryPath);
+
+        // Optionally, set the selected asset to the root after loading.
+        selectedAsset = rootAsset;
+    }
+    void initializeRoot();
+
+    std::shared_ptr<AssetItem> getRootFolder() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return rootFolder;
+    }
+
+    void setRootFolder(const std::shared_ptr<AssetItem>& root);
+
+    void registerVirtualAsset(const std::shared_ptr<AssetItem>& asset) {
+        std::lock_guard<std::mutex> lock(virtualAssetsMutex);
+        virtualAssets.push_back(asset);
+    }
+
+    std::vector<std::weak_ptr<AssetItem>> getVirtualAssets() const {
+        std::lock_guard<std::mutex> lock(virtualAssetsMutex);
+        return virtualAssets;
+    }
 
 private:
+    std::vector<std::weak_ptr<AssetItem>> virtualAssets;
+    mutable std::mutex virtualAssetsMutex;
+
     std::unordered_set<std::string> scannedShaders_;
     mutable std::mutex scannedShadersMutex_;
+    std::mutex mutex_;
 
     std::thread scanThread_;
     std::atomic<bool> running_;
@@ -87,6 +119,10 @@ private:
     std::string rootPath;
     std::thread::id mainThreadId;
 
+    // The root of the asset tree.
+    std::shared_ptr<AssetItem> rootAsset;
+    // The currently selected asset.
+    std::shared_ptr<AssetItem> selectedAsset;
 };
 
 #endif //ASSETMANAGER_H

@@ -10,7 +10,7 @@
 #include <boost/uuid/detail/endian.hpp>
 #include <boost/uuid/detail/hash_mix.hpp>
 #include <boost/uuid/detail/config.hpp>
-#include <boost/type_traits/integral_constant.hpp> // for Serialization support
+// #include <boost/type_traits/integral_constant.hpp> // for Serialization support
 #include <boost/config.hpp>
 #include <boost/config/workaround.hpp>
 #include <array>
@@ -369,16 +369,17 @@ inline std::size_t hash_value( uuid const& u ) noexcept
 
 // BOOST_CLASS_IMPLEMENTATION(boost::uuids::uuid, boost::serialization::primitive_type)
 
+/*
 namespace boost
 {
 namespace serialization
 {
 
-template<class T> struct implementation_level_impl;
-template<> struct implementation_level_impl<const uuids::uuid>: boost::integral_constant<int, 1> {};
+ template<class T> struct implementation_level_impl;
+ template<> struct implementation_level_impl<const uuids::uuid>: boost::integral_constant<int, 1> {};
 
 } // namespace serialization
-} // namespace boost
+} // namespace boost*/
 
 // std::hash support
 

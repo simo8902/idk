@@ -12,6 +12,8 @@
 #include <ctime>
 
 Shader::Shader(const char* path, bool isCombined) : isCombined(isCombined) {
+  //  std::cerr << "SHADER_COMBINED()" << std::endl;
+
     if (isCombined) {
         auto [vertexCode, fragmentCode] = parseCombinedShader(path);
         compileAndLink(vertexCode, fragmentCode);
@@ -21,6 +23,8 @@ Shader::Shader(const char* path, bool isCombined) : isCombined(isCombined) {
 
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath) : isCombined(false) {
+   // std::cerr << "PAIRED_SHADER()" << std::endl;
+
     if (!std::filesystem::exists(vertexPath)) {
         throw std::runtime_error("Vertex shader file does not exist: " + std::string(vertexPath));
     }
@@ -67,16 +71,15 @@ std::pair<std::string, std::string> Shader::parseCombinedShader(const std::strin
     while (std::getline(file, line)) {
         if (line.find("#type vertex") != std::string::npos) {
             isVertex = true;
-            isFragment = false; // Reset fragment flag
+            isFragment = false;
             continue; // Skip this line
         }
         if (line.find("#type fragment") != std::string::npos) {
             isFragment = true;
-            isVertex = false; // Reset vertex flag
+            isVertex = false;
             continue; // Skip this line
         }
 
-        // Append code to the appropriate string
         if (isVertex) {
             vertexCode += line + "\n";
         } else if (isFragment) {
@@ -257,7 +260,6 @@ std::string Shader::readFile(const std::string& path) {
 }
 
 
-// Uniform setters remain similar but could benefit from caching
 void Shader::Use() const {
     glUseProgram(shaderProgram);
 }

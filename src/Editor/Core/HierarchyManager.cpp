@@ -3,7 +3,7 @@
 //
 
 #include "HierarchyManager.h"
-#include "Renderer.h"
+#include "../../Engine/Rendering/Renderer/Renderer.h"
 #include "Scene.h"
 #include "LightManager.h"
 #include "SelectionManager.h"
@@ -14,75 +14,73 @@
 #include <imgui.h>
 #include <iostream>
 
-void HierarchyManager::setRenderer(Renderer* renderer) {
-    this->renderer = renderer;
+const std::vector<std::shared_ptr<Entity>> HierarchyManager::m_emptyVector = {};
+
+void HierarchyManager::initialize(Renderer* renderer, std::shared_ptr<Scene> scene) {
+    m_renderer = renderer;
+    m_scene = scene;
 }
 
-void HierarchyManager::setScene(const std::shared_ptr<Scene> & scene) {
-    this->scene = scene;
-}
+void HierarchyManager::renderHierarchyContent() {
+    if (!m_scene || !m_renderer) return;
 
-void HierarchyManager::setLightManager(const std::shared_ptr<LightManager>& lightManager) {
-    this->lightManager = lightManager;
-}
-
-void HierarchyManager::renderHierarchy() const {
-
-    if (renderer == nullptr) {
-        std::cerr << "Renderer is null\n";
-    } else if (scene == nullptr) {
-        std::cerr << "Scene is null\n";
-    } else {
-       // renderer->RenderContextMenu();
-
-        for (size_t i = 0; i < scene->components.size(); ++i) {
-            auto& object = scene->components[i];
-
-            if (object->getName().empty()) {
-                object->setName("Object " + std::to_string(i));
-            }
-
-            if (const bool &isSelected = (SelectionManager::getInstance().getSelectedComponent() == object);
-                ImGui::Selectable((object->getName() + "##" + std::to_string(i)).c_str(), isSelected))
-            {
-                SelectionManager::getInstance().selectComponent(object);
-            }
-        }
-
-        /*
-        const std::shared_ptr<Camera> & camera = renderer->getCamera();
-        if (camera != nullptr) {
-            bool isSelected = SelectionManager::getInstance().selectedCamera == camera;
-
-            if (ImGui::Selectable(camera->getName().c_str(), isSelected)) {
-                //SelectionManager::getInstance().selectCamera(camera);
-            }
-        }*/
-
-        /*
-        if (lightManager) {
-            const auto& lights = lightManager->getDirectionalLights();
-
-            for (size_t i = 0; i < lights.size(); ++i) {
-                std::shared_ptr<DirectionalLight> light = lights[i];
-
-                if (light) {
-                    bool isSelected = SelectionManager::getInstance().selectedLight == light;
-                    if (ImGui::Selectable(light->getName().c_str(), isSelected)) {
-                        SelectionManager::getInstance().selectLight(light);
-                    }
-                } else {
-                    std::cerr << "DirectionalLight at index " << i << " is null\n";
-                }
-            }
-        } else {
-            std::cerr << "LightManager is null\n";
-        }*/
+    size_t index = 0;
+    for (const auto& entity : getEntities()) {
+        renderEntityRow(entity, index++);
     }
 
-    if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
-        if (!ImGui::IsAnyItemHovered()) {
-            SelectionManager::getInstance().clearSelection();
-        }
+    handleSelectionClear();
+}
+
+void HierarchyManager::renderEntityRow(const std::shared_ptr<Entity>& entity, size_t index) {
+    if (!entity) return;
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+
+    const std::string label = entity->getName().empty()
+        ? "Entity " + std::to_string(index)
+        : entity->getName();
+
+    const std::string selectableID = label + "##" + std::to_string(index);
+
+    const bool isSelected = (m_selectedEntity == entity);
+
+    if (ImGui::Selectable(selectableID.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns)) {
+        selectEntity(entity);
     }
+
+    ImGui::TableSetColumnIndex(1);
+    ImGui::Text("%s", entity->getType().c_str());
+
+    ImGui::TableSetColumnIndex(2);
+    ImGui::Text("%s", entity->isVisible() ? "Visible" : "Hidden");
+}
+
+void HierarchyManager::handleSelectionClear() {
+    if (ImGui::IsWindowHovered() &&
+        ImGui::IsMouseClicked(0) &&
+        !ImGui::IsAnyItemHovered()) {
+        clearSelection();
+        }
+}
+
+void HierarchyManager::selectEntity(const std::shared_ptr<Entity>& entity) {
+    if (!entity) return;
+
+    m_selectedEntity = entity;
+    SelectionManager::getInstance().select(entity);
+    std::cout << "Selected Entity: " << entity->getName() << std::endl;
+}
+
+std::shared_ptr<Entity> HierarchyManager::getSelectedEntity() const {
+    return m_selectedEntity;
+}
+
+void HierarchyManager::clearSelection() {
+    m_selectedEntity.reset();
+}
+
+const std::vector<std::shared_ptr<Entity>>& HierarchyManager::getEntities() const {
+    return m_scene ? m_scene->getComponents() : m_emptyVector;
 }

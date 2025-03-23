@@ -1,0 +1,6 @@
+C:\Users\SIMEON\AppData\Local\Programs\CLion\bin\cmake\win\x64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=C:/msys64/clang64/bin/ninja.exe -DCMAKE_C_COMPILER=C:/msys64/clang64/bin/clang.exe -DCMAKE_CXX_COMPILER=C:/msys64/clang64/bin/clang++.exe -G Ninja -S C:\Users\SIMEON\Documents\idk -B C:\Users\SIMEON\Documents\idk\cmake-build-debug
+-- Including Win32 support
+-- Boost found!
+-- Configuring done (0.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: C:/Users/SIMEON/Documents/idk/cmake-build-debug

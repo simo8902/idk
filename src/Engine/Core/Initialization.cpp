@@ -5,26 +5,36 @@
 #include "Initialization.h"
 
 #include <IconsFontAwesome6Brands.h>
+
+#include "libData.h"
+#include "ShaderManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#include "LightManager.h"
-#include "Shader.h"
-#include "AssetManager.h"
-#include "ShaderManager.h"
-#include "boost/uuid.hpp"
-namespace fs = std::filesystem;
 
 #define LIBDATA_API
 extern "C" LIBDATA_API void imguieffects();
 extern ImGuiContext* g_ImGuiContext;
 
+namespace fs = std::filesystem;
+
+
 Initialization::Initialization()
-    : scene(nullptr), lightManager(nullptr), m_Window(nullptr), m_Renderer(nullptr) {
+    : m_Window(nullptr), m_Renderer(nullptr), scene(nullptr)
+{
     try {
+       // std::cerr << "Initialization::Initialization()" << std::endl;
+
+        const fs::path engineDir = SOURCE_DIR;
+        if (!fs::exists(engineDir))
+        {
+            IDK_ASSERT(false, "Engine's dir doesn't exist.");
+        }
+        current_path(engineDir);
+
         m_Window = createWindow();
 
         cameraInit();
-        init();
+        initializeImGui(m_Window);
 
         g_ImGuiContext = ImGui::GetCurrentContext();
         if (g_ImGuiContext) {
@@ -39,110 +49,23 @@ Initialization::Initialization()
 
         glfwSetWindowUserPointer(m_Window, this);
 
-        {
-            PROFILE_SCOPE("SCENE");
-            scene = std::make_shared<Scene>(shaderProgram, lightShader, finalPassShader, m_MainCamera, lightManager);
-        }
+        // std::shared_ptr<DeferredRenderer> deferredRenderer = std::make_shared<DeferredRenderer>(scene, m_MainCamera, m_Window, "Deferred");
+        // std::shared_ptr<ForwardRenderer> forwardRenderer = std::make_shared<ForwardRenderer>(scene, m_MainCamera, m_Window, "Forward");
 
-        {
-            PROFILE_SCOPE("RENDERER");
-            m_Renderer = std::make_shared<Renderer>(scene, m_MainCamera, m_Window);
-        }
-    } catch (const std::exception &e) {
+        scene = std::make_shared<Scene>(m_MainCamera);
+        m_Renderer = std::make_shared<Renderer>(scene, m_MainCamera, m_Window, "deferred");
+    }catch (const std::exception &e) {
         std::cerr << "[Init] Exception caught in constructor: " << e.what()
                 << " in thread " << std::this_thread::get_id() << std::endl;
-        throw;
+
+        IDK_ASSERT(false, e.what());
     }
 }
 
 Initialization::~Initialization(){
-    const char* ini_path = ImGui::GetIO().IniFilename;
-    if (ini_path) {
-      //  std::cout << "[ImGui] Attempting to save settings to: " << ini_path << "\n";
-        if (std::filesystem::exists(ini_path)) {
-            auto ftime = std::filesystem::last_write_time(ini_path);
-            auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
-      //      std::cout << " - Existing file last modified: "
-      //                << std::chrono::system_clock::to_time_t(system_time) << "\n";
-        }
-    }
-
-    ImGui::SaveIniSettingsToDisk(ini_path);
-   // std::cout << "[ImGui] Settings saved (destructor)\n";
-
-    if (ini_path && std::filesystem::exists(ini_path)) {
-      //  std::cout << " - New file size: "
-      //            << std::filesystem::file_size(ini_path) << " bytes\n";
-
-        auto ftime = std::filesystem::last_write_time(ini_path);
-        auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
-
-    //    std::cout << " - New last modified: " << std::chrono::system_clock::to_time_t(system_time) << "\n";
-    }
-
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-    if (ini_path) {
-    //    std::cout << "[ImGui] Post-destruction file status: "
-    //              << (std::filesystem::exists(ini_path) ? "Exists" : "Missing")  << "\n";
-    }
-}
-
-GLFWwindow* Initialization::createWindow() {
-    {
-        PROFILE_SCOPE("GLFW Initialization");
-        if (!glfwInit()) {
-            std::cerr << "Failed to initialize GLFW" << std::endl;
-            throw std::runtime_error("Failed to initialize GLFW");
-        }
-    }
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-        PROFILE_SCOPE("GLFW Window Creation");
-        GLFWwindow* window = glfwCreateWindow(1280, 720, "idk", nullptr, nullptr);
-        if (!window) {
-            std::cerr << "Failed to create GLFW window" << std::endl;
-            glfwTerminate();
-            throw std::runtime_error("Failed to create GLFW window");
-        }
-
-    glfwMakeContextCurrent(window);
-
-    glfwSwapInterval(0);
-
-    {
-        PROFILE_SCOPE("Load OpenGL with GLAD");
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            std::cerr << "Failed to initialize GLAD" << std::endl;
-            glfwDestroyWindow(window);
-            glfwTerminate();
-            throw std::runtime_error("Failed to initialize GLAD");
-        }
-    }
-
-    {
-        PROFILE_SCOPE("Store Main Thread ID");
-        mainThreadId = std::this_thread::get_id();
-        std::cout << "[main] Main thread ID: " << mainThreadId << "." << std::endl;
-    }
-
-    return window;
-}
-std::shared_ptr<LightManager> Initialization::getLightManager() const {
-    return lightManager;
-}
-
-const std::shared_ptr<Scene> & Initialization::getScene() const {
-    return scene;
-}
-
-GLFWwindow * Initialization::getWindow() const {
-    return m_Window;
 }
 
 void Initialization::cameraInit() {
@@ -160,27 +83,86 @@ void Initialization::cameraInit() {
     m_MainCamera = std::make_shared<Camera>(name, position, forward, up, yaw, pitch, moveSpeed, mouseSensitivity, fov, nearPlane, farPlane);
 }
 
-void Initialization::initializeImGui(GLFWwindow *window){
-    IMGUI_CHECKVERSION();
+GLFWwindow* Initialization::createWindow() {
+    {
+        PROFILE_SCOPE("GLFW Initialization");
+        if (!glfwInit()) {
+            IDK_ASSERT(false, "GLFW Initialization");
+        }
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    PROFILE_SCOPE("GLFW Window Creation");
+    GLFWwindow* window = nullptr;
+    window = glfwCreateWindow(1280, 720, "idk", nullptr, nullptr);
+    if (!window) {
+        IDK_ASSERT(false, "GLFW Creation Failed.");
+    }
+
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
+    {
+        PROFILE_SCOPE("Load OpenGL with GLAD");
+        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+        {
+            IDK_ASSERT(false, "Failed to init GLAD.");
+        }
+    }
+
+    {
+        PROFILE_SCOPE("Store Main Thread ID");
+        mainThreadId = std::this_thread::get_id();
+        std::cout << "[main] Main thread ID: " << mainThreadId << "." << std::endl;
+    }
+
+    return window;
+}
+
+GLFWwindow * Initialization::getWindow() const {
+    return m_Window;
+}
+
+
+void Initialization::initializeImGui(GLFWwindow *window) const {
+    glfwMakeContextCurrent(window);
+
+    IDK_ASSERT(ImGui::GetCurrentContext() == nullptr, "Imgui is already initialized.");
+
+    if (ImGui::GetCurrentContext()) {
+        std::cerr << "ImGui is already initialized." << std::endl;
+        return;
+    }
+
     ImGui::CreateContext();
-    ImGui::SetCurrentContext(ImGui::GetCurrentContext());
+    IDK_ASSERT(ImGui::GetCurrentContext() != nullptr, "Failed to create Imgui context.");
+
+  //  g_ImGuiContext = ImGui::GetCurrentContext();
+
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
 
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
+    IMGUI_CHECKVERSION();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
+
+  //  imguieffects();
 
     io.Fonts->Clear();
 
     const auto &fontPath = SOURCE_DIR "/src/data/fonts/CascadiaCode-Bold.ttf";
     const ImFont* primaryFont = io.Fonts->AddFontFromFileTTF(fontPath, 17.0f);
+    IDK_ASSERT(primaryFont, "Failed to load primary font.");
+
+    /*
     if (primaryFont) {
        // std::cout << "Successfully loaded primary font: " << fontPath << std::endl;
     } else {
         std::cerr << "Failed to load primary font: " << fontPath << std::endl;
-    }
+    }*/
 
     static constexpr ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
@@ -190,14 +172,20 @@ void Initialization::initializeImGui(GLFWwindow *window){
 
     const auto fontAwesomePath = SOURCE_DIR "/src/data/fonts/Font Awesome 6 Free-Solid-900.otf";
     const ImFont* fontAwesome = io.Fonts->AddFontFromFileTTF(fontAwesomePath, 17.0f, &config, icons_ranges);
+    IDK_ASSERT(fontAwesome, "Failed to load FontAwesome font.");
+
+    /*
     if (fontAwesome) {
        // std::cout << "Successfully loaded FontAwesome: " << fontAwesomePath << std::endl;
     } else {
         std::cerr << "Failed to load FontAwesome: " << fontAwesomePath << std::endl;
-    }
+    }*/
 
+    io.Fonts->Build();
+    ImGui_ImplOpenGL3_CreateFontsTexture();
 
     io.IniFilename = SOURCE_DIR "/src/imgui.ini";
+
    // std::cout << "[ImGui] Configuring settings file: " << io.IniFilename << "\n";
 
     if (std::filesystem::exists(io.IniFilename)) {
@@ -205,21 +193,23 @@ void Initialization::initializeImGui(GLFWwindow *window){
     //    std::cout << " - Size: " << std::filesystem::file_size(io.IniFilename) << " bytes\n";
 
         // Convert last write time to system_clock::time_point
-        auto ftime = std::filesystem::last_write_time(io.IniFilename);
-        auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+      //  auto ftime = std::filesystem::last_write_time(io.IniFilename);
+      //  auto system_time = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
 
      //   std::cout << " - Last modified: " << std::chrono::system_clock::to_time_t(system_time) << "\n";
 
      //   std::cout << "[ImGui] Settings loaded successfully\n";
     } else {
-        std::cout << "[ImGui] No existing settings file found\n";
+        //std::cout << "[ImGui] No existing settings file found\n";
     }
 
     if (std::filesystem::exists(io.IniFilename)) {
         ImGui::LoadIniSettingsFromDisk(io.IniFilename);
-        if (io.Fonts->IsBuilt()) {
-            ImGui_ImplOpenGL3_CreateFontsTexture();
-        }
+        IDK_ASSERT(io.Fonts->IsBuilt(), "Failed to build fonts after loading settings.");
+        ImGui_ImplOpenGL3_CreateFontsTexture();
+    }else
+    {
+        std::cout << "[ImGui] No existing settings file found\n";
     }
 }
 
@@ -227,68 +217,10 @@ bool Initialization::ShouldClose() const {
     return glfwWindowShouldClose(m_Window);
 }
 
-void Initialization::init()
-{
-  //  std::cout << "[Initialization] Starting Initialization in thread "
-  //        << std::this_thread::get_id() << std::endl;
-
-    const fs::path engineDir = SOURCE_DIR;
-    if (!fs::exists(engineDir))
-    {
-        std::cerr << "[Initialization] Engine directory does not exist: " << engineDir << std::endl;
-        throw std::runtime_error("Engine directory does not exist.");
-    }
-    current_path(engineDir);
-
-    initializeImGui(m_Window);
-
-    shaderProgram = std::make_shared<Shader>(
-               SOURCE_DIR "/src/shaders/basic.vert",
-               SOURCE_DIR "/src/shaders/basic.frag"
-           );
-
-    lightShader = std::make_shared<Shader>(
-       SOURCE_DIR "/src/shaders/lightShader.vert",
-       SOURCE_DIR "/src/shaders/lightShader.frag"
-   );
-
-    finalPassShader = std::make_shared<Shader>(
-        SOURCE_DIR "/src/shaders/finalPass.vert",
-        SOURCE_DIR "/src/shaders/finalPass.frag"
-    );
-
-    if (!shaderProgram || !lightShader || !finalPassShader) {
-        throw std::runtime_error("Failed to load one or more shaders");
-    }
-
-    lightManager = std::make_shared<LightManager>();
-
-    glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
-    const auto& directionalLight = std::make_shared<DirectionalLight>(
-        "Main Light",
-        lightDirection,
-        glm::vec3(0.9f, 0.9f, 0.9f),  // Ambient
-        glm::vec3(1.0f, 1.0f, 1.0f),  // Diffuse
-        glm::vec3(1.0f, 1.0f, 1.0f)   // Specular
-    );
-    directionalLight->updateDirectionFromRotation();
-
-    lightManager->addDirectionalLight(directionalLight);
-
- //   std::cout << "[INIT] Light manager: " << (lightManager ? "valid" : "null") << std::endl;
-//    std::cout << "[INIT] Camera: " << (m_MainCamera ? "valid" : "null") << std::endl;
-}
-
 void Initialization::runMainLoop() const {
     while (!ShouldClose()) {
-        if (!glfwGetCurrentContext()) {
-            std::cerr << "No OpenGL context current!" << std::endl;
-            break;
-        }
         if (m_Renderer != nullptr){
             m_Renderer->render();
-        }else{
-            std::cerr << "m_Renderer is null\n";
         }
     }
 }

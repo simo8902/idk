@@ -6,26 +6,33 @@
 #define CYLINDER_H
 
 #include "CylinderCollider.h"
+#include "GameObject.h"
 
-class Cylinder final : public Component {
+class Cylinder final : public GameObject {
 public:
-    explicit Cylinder(const std::string &name): name(name){}
+    explicit Cylinder(const std::string &name): GameObject(std::move(name))
+    {}
+
     ~Cylinder() override = default;
 
-    const std::string & getName() const override {
-        return name;
+    GameObjectType getType() const override {
+        return GameObjectType::Cylinder;
     }
-
     void addComponents() {
-        const auto & cylinderMesh = std::make_shared<Mesh>("Cylinder");
-        const auto & cylinderTransform = addComponent<Transform>();
+        const auto & cylinderMesh = std::make_shared<Mesh>("CylinderMesh");
+        const auto & cylinderTransform = getComponent<Transform>();
+        if (cylinderTransform) {
+            cylinderTransform->setPosition(glm::vec3(2.0f, 1.5f, 0.0f));
+        }
 
-        const auto & meshFilter = addComponent<MeshFilter>("CYLINDER_MESH");
+        cylinderMesh->CreateMesh(MeshType::Cylinder);
+
+        const auto & meshFilter = addComponent<MeshFilter>();
+        meshFilter->setMesh(cylinderMesh);
+
         const auto & meshRenderer = addComponent<MeshRenderer>(meshFilter);
         const auto & cylinderCollider = addComponent<CylinderCollider>(cylinderTransform->getPosition(), 2.0f, 0.5f);
         cylinderMesh->CreateCylinder(0.5f, 0.5f, 2.0f, 30);
-        meshFilter->setMesh(cylinderMesh);
-        cylinderTransform->setPosition(glm::vec3(2.00f, 1.65f, 0.0f));
     }
 
 private:

@@ -18,8 +18,9 @@ struct SphereColVertex {
 
 class SphereCollider final : public Collider {
 public:
-    SphereCollider(const glm::vec3 & position, float radius, glm::vec3 center)
-    : m_position(position) , m_radius(radius), m_center(center){
+    SphereCollider(const glm::vec3 & position, float radius, glm::vec3 center, const std::string& name = "SphereCollider")
+        : Collider(name), m_position(position), m_radius(radius), m_center(center)
+    {
         sphereCollider = this;
         updateModelMatrix();
         SetupMesh(m_radius, 128);

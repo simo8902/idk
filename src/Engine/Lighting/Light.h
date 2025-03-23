@@ -17,6 +17,8 @@ class Light : public std::enable_shared_from_this<Light> {
 public:
     Light(const std::string& name)
         : name(name) {
+        std::cerr << "LIGHT()" << std::endl;
+
         transform = std::make_shared<Transform>();
         addComponent(transform);
     }

@@ -22,19 +22,36 @@ Mesh::Mesh(const Mesh& other, const std::string& newName)
     }
 }
 
+
 Mesh::Mesh(const std::vector<float>& vertices, const std::string& name)
-: AssetItem(std::filesystem::path(name).stem().string(), AssetType::Mesh, std::filesystem::path(name).parent_path().string()),
-      VAO(0), VBO(0), EBO(0),
-      vertices(vertices)
-{
-    if (!vertices.empty()) {
+    : AssetItem(std::filesystem::path(name).stem().string(), AssetType::Mesh, std::filesystem::path(name).parent_path().string()),
+      VAO(0), VBO(0), EBO(0) {
+
+    if (!vertices.empty() && vertices.size() % 6 == 0) {
+        size_t numVertices = vertices.size() / 6;
+        this->vertices.reserve(numVertices);
+
+        for (size_t i = 0; i < numVertices; ++i) {
+            size_t baseIndex = i * 6;
+            glm::vec3 pos(vertices[baseIndex], vertices[baseIndex + 1], vertices[baseIndex + 2]);
+            glm::vec3 norm(vertices[baseIndex + 3], vertices[baseIndex + 4], vertices[baseIndex + 5]);
+            this->vertices.push_back({pos, norm});
+        }
+
         SetupMesh();
+    } else {
+        std::cerr << "Warning: Invalid vertex data provided." << std::endl;
     }
 }
 
 Mesh::Mesh(const std::string &name)
-    : AssetItem(std::filesystem::path(name).stem().string(), AssetType::Mesh, std::filesystem::path(name).parent_path().string()),
-      VAO(0), VBO(0), EBO(0) {}
+    : AssetItem(name, AssetType::Mesh, ""),
+      name(name),
+      VAO(0), VBO(0), EBO(0),
+      vertices(),
+      indices() {
+   // std::cerr << "Mesh single param called for obj: " << name << std::endl;
+}
 
 Mesh::~Mesh() {
     if (VAO) {
@@ -70,7 +87,7 @@ void Mesh::SetupMesh() {
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
     if (!indices.empty()) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -78,16 +95,41 @@ void Mesh::SetupMesh() {
     }
 
     // Positions
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
     // Normals
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-}
 
+
+    std::cout << "Mesh is setup for object (" << name << ")" << std::endl;
+}
+void Mesh::CreateMesh(MeshType type) {
+    vertices.clear();
+    indices.clear();
+
+    switch (type) {
+        case MeshType::Cube:
+            CreateCube();
+        break;
+        case MeshType::Capsule:
+            CreateCapsule(1.0f, 2.0f);
+        break;
+        case MeshType::Sphere:
+            CreateSphere(1.0f, 20, 20);
+        break;
+        case MeshType::Cylinder:
+            CreateCylinder(0.5f, 0.5f, 2.0f, 30);
+        break;
+        default:
+            break;
+    }
+
+    SetupMesh();
+}
 void Mesh::Draw(const Shader& shader) const
 {
     shader.Use();
@@ -97,9 +139,8 @@ void Mesh::Draw(const Shader& shader) const
     if (!indices.empty()) {
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 6));
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size()));
     }
-
     glBindVertexArray(0);
 
  //   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -109,7 +150,6 @@ void Mesh::CreateSphere(float radius, int stacks, int sectors) {
     vertices.clear();
     indices.clear();
 
-    float x, y, z, nx, ny, nz;
     float stackStep = glm::pi<float>() / stacks;
     float sectorStep = 2 * glm::pi<float>() / sectors;
     float stackAngle, sectorAngle;
@@ -117,26 +157,18 @@ void Mesh::CreateSphere(float radius, int stacks, int sectors) {
     // Generate vertices
     for (int i = 0; i <= stacks; ++i) {
         stackAngle = glm::pi<float>() / 2 - i * stackStep; // from pi/2 to -pi/2
-        y = radius * sin(stackAngle);
+        float y = radius * sin(stackAngle);
         float xy = radius * cos(stackAngle); // r * cos(theta)
 
         for (int j = 0; j <= sectors; ++j) {
             sectorAngle = j * sectorStep; // from 0 to 2pi
 
-            x = xy * cos(sectorAngle);
-            z = xy * sin(sectorAngle);
-            nx = x / radius;
-            ny = y / radius;
-            nz = z / radius;
+            float x = xy * cos(sectorAngle);
+            float z = xy * sin(sectorAngle);
+            glm::vec3 normal(x, y, z);
+            normal = glm::normalize(normal);
 
-            // Position
-            vertices.push_back(x);
-            vertices.push_back(y);
-            vertices.push_back(z);
-            // Normal
-            vertices.push_back(nx);
-            vertices.push_back(ny);
-            vertices.push_back(nz);
+            vertices.push_back({glm::vec3(x, y, z), normal});
         }
     }
 
@@ -161,8 +193,6 @@ void Mesh::CreateSphere(float radius, int stacks, int sectors) {
         }
     }
 
-    SetupMesh();
-
     std::cout << "[Sphere] Total triangles: " << (indices.size()/3)
             << " Total indices: " << indices.size() << std::endl;
 }
@@ -181,22 +211,10 @@ void Mesh::CreateCylinder(float m_baseRadius, float m_topRadius, float m_height,
         float z = sin(sectorAngle);
 
         // Position (base)
-        vertices.push_back(x * m_baseRadius);
-        vertices.push_back(-m_height / 2.0f);
-        vertices.push_back(z * m_baseRadius);
-        // Normal
-        vertices.push_back(x);
-        vertices.push_back(0.0f);
-        vertices.push_back(z);
+        vertices.push_back({glm::vec3(x * m_baseRadius, -m_height / 2.0f, z * m_baseRadius), glm::vec3(x, 0.0f, z)});
 
         // Position (top)
-        vertices.push_back(x * m_topRadius);
-        vertices.push_back(m_height / 2.0f);
-        vertices.push_back(z * m_topRadius);
-        // Normal
-        vertices.push_back(x);
-        vertices.push_back(0.0f);
-        vertices.push_back(z);
+        vertices.push_back({glm::vec3(x * m_topRadius, m_height / 2.0f, z * m_topRadius), glm::vec3(x, 0.0f, z)});
     }
 
     // Indices for the side
@@ -218,24 +236,12 @@ void Mesh::CreateCylinder(float m_baseRadius, float m_topRadius, float m_height,
     }
 
     // Base center vertex
-    unsigned int baseCenterIndex = static_cast<unsigned int>(vertices.size() / 6);
-    vertices.push_back(0.0f);
-    vertices.push_back(-m_height / 2.0f);
-    vertices.push_back(0.0f);
-    // normal
-    vertices.push_back(0.0f);
-    vertices.push_back(-1.0f);
-    vertices.push_back(0.0f);
+    unsigned int baseCenterIndex = static_cast<unsigned int>(vertices.size());
+    vertices.push_back({glm::vec3(0.0f, -m_height / 2.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)});
 
     // Top center vertex
-    unsigned int topCenterIndex = static_cast<unsigned int>(vertices.size() / 6);
-    vertices.push_back(0.0f);
-    vertices.push_back(m_height / 2.0f);
-    vertices.push_back(0.0f);
-    // Normal
-    vertices.push_back(0.0f);
-    vertices.push_back(1.0f);
-    vertices.push_back(0.0f);
+    unsigned int topCenterIndex = static_cast<unsigned int>(vertices.size());
+    vertices.push_back({glm::vec3(0.0f, m_height / 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)});
 
     // Indices for the base
     for (int i = 0; i < m_sectors; ++i) {
@@ -258,25 +264,17 @@ void Mesh::CreateCylinder(float m_baseRadius, float m_topRadius, float m_height,
     std::cout << "[Cylinder] triangles: " << (indices.size()/3)
           << " indices: " << indices.size() << std::endl;
 
-    SetupMesh();
 }
+
 void Mesh::CreateCapsule(const float& radius, const float& height) {
     vertices.clear();
     indices.clear();
 
-    constexpr int SLICES = 32;
+       constexpr int SLICES = 32;
     constexpr int STACKS = 16;
     const float halfHeight = height * 0.5f;
 
-    std::vector<glm::vec3> positions;
-    std::vector<glm::vec3> normals;
-
-    auto addVertex = [&](float x, float y, float z, float nx, float ny, float nz) {
-        positions.emplace_back(x, y, z);
-        normals.emplace_back(nx, ny, nz);
-    };
-
-    // Top hemisphere
+    // Generate vertices for the top hemisphere
     for (int stack = 0; stack <= STACKS / 2; ++stack) {
         float phi = glm::pi<float>() * stack / (STACKS / 2);
         float y = radius * cos(phi);
@@ -286,22 +284,26 @@ void Mesh::CreateCapsule(const float& radius, const float& height) {
             float theta = glm::two_pi<float>() * slice / SLICES;
             float x = r * cos(theta);
             float z = r * sin(theta);
-            addVertex(x, y + halfHeight, z, x / radius, y / radius, z / radius);
+            glm::vec3 normal(x, y, z);
+            normal = glm::normalize(normal);
+            vertices.push_back({glm::vec3(x, y + halfHeight, z), normal});
         }
     }
 
-    // Cylinder
+    // Generate vertices for the cylinder
     for (int i = 0; i <= 1; ++i) {
         float y = halfHeight * (1 - 2 * i);
         for (int slice = 0; slice <= SLICES; ++slice) {
             float theta = glm::two_pi<float>() * slice / SLICES;
             float x = radius * cos(theta);
             float z = radius * sin(theta);
-            addVertex(x, y, z, x / radius, 0.0f, z / radius);
+            glm::vec3 normal(x, 0.0f, z);
+            normal = glm::normalize(normal);
+            vertices.push_back({glm::vec3(x, y, z), normal});
         }
     }
 
-    // Bottom hemisphere
+    // Generate vertices for the bottom hemisphere
     for (int stack = 0; stack <= STACKS / 2; ++stack) {
         float phi = glm::pi<float>() * stack / (STACKS / 2);
         float y = radius * cos(phi);
@@ -311,11 +313,13 @@ void Mesh::CreateCapsule(const float& radius, const float& height) {
             float theta = glm::two_pi<float>() * slice / SLICES;
             float x = r * cos(theta);
             float z = r * sin(theta);
-            addVertex(x, -y - halfHeight, z, x / radius, -y / radius, z / radius);
+            glm::vec3 normal(x, -y, z);
+            normal = glm::normalize(normal);
+            vertices.push_back({glm::vec3(x, -y - halfHeight, z), normal});
         }
     }
 
-    // Indices for top hemisphere
+    // Generate indices for the top hemisphere
     int vertsPerRing = SLICES + 1;
     for (int stack = 0; stack < STACKS / 2; ++stack) {
         for (int slice = 0; slice < SLICES; ++slice) {
@@ -334,7 +338,7 @@ void Mesh::CreateCapsule(const float& radius, const float& height) {
         }
     }
 
-    // Indices for cylinder
+    // Generate indices for the cylinder
     int offset = (STACKS / 2 + 1) * vertsPerRing;
     for (int slice = 0; slice < SLICES; ++slice) {
         int current = offset + slice;
@@ -351,7 +355,7 @@ void Mesh::CreateCapsule(const float& radius, const float& height) {
         indices.push_back(below);
     }
 
-    // Indices for bottom hemisphere
+    // Generate indices for the bottom hemisphere
     offset = (STACKS / 2 + 1 + 2) * vertsPerRing;
     for (int stack = 0; stack < STACKS / 2; ++stack) {
         for (int slice = 0; slice < SLICES; ++slice) {
@@ -370,118 +374,100 @@ void Mesh::CreateCapsule(const float& radius, const float& height) {
         }
     }
 
-    // Flatten the vertices and normals
-    vertices.reserve(positions.size() * 6);
-    for (size_t i = 0; i < positions.size(); ++i) {
-        vertices.push_back(positions[i].x);
-        vertices.push_back(positions[i].y);
-        vertices.push_back(positions[i].z);
-        vertices.push_back(normals[i].x);
-        vertices.push_back(normals[i].y);
-        vertices.push_back(normals[i].z);
-    }
-
-    SetupMesh();
-
-    std::cout << "[Capsule] Vertices: " << positions.size()
-            << ", Triangles: " << indices.size()/3 << "\n";
-
+    std::cout << "[Capsule] Total triangles: " << (indices.size() / 3)
+              << " Total indices: " << indices.size() << std::endl;
 }
 
-Mesh Mesh::CreateCube()
-{
-    Mesh cube("Cube");
+void Mesh::CreateCube() {
+    vertices.clear();
+    indices.clear();
 
-    cube.vertices.reserve(24 * 6); // each of the 24 vertices has 6 floats (pos+normal)
-    cube.indices.reserve(36);
+    vertices.reserve(24); // 24 vertices (6 faces * 4 vertices per face)
+    indices.reserve(36); // 36 indices (6 faces * 2 triangles per face * 3 indices per triangle)
 
-    auto addVertex = [&](float px, float py, float pz, float nx, float ny, float nz)
-    {
-        cube.vertices.push_back(px);
-        cube.vertices.push_back(py);
-        cube.vertices.push_back(pz);
-        cube.vertices.push_back(nx);
-        cube.vertices.push_back(ny);
-        cube.vertices.push_back(nz);
+    auto addVertex = [&](const glm::vec3& pos, const glm::vec3& normal) {
+        vertices.push_back({pos, normal});
     };
 
-    auto addFace = [&](float x0, float y0, float z0,
-                       float x1, float y1, float z1,
-                       float x2, float y2, float z2,
-                       float x3, float y3, float z3,
-                       float nx, float ny, float nz)
-    {
-        int startIndex = static_cast<int>( cube.vertices.size() / 6 );
+    auto addFace = [&](const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, const glm::vec3& normal) {
+        int startIndex = static_cast<int>(vertices.size());
 
-        addVertex(x0,y0,z0, nx,ny,nz);
-        addVertex(x1,y1,z1, nx,ny,nz);
-        addVertex(x2,y2,z2, nx,ny,nz);
-        addVertex(x3,y3,z3, nx,ny,nz);
+        addVertex(v0, normal);
+        addVertex(v1, normal);
+        addVertex(v2, normal);
+        addVertex(v3, normal);
 
-        cube.indices.push_back(startIndex + 0);
-        cube.indices.push_back(startIndex + 1);
-        cube.indices.push_back(startIndex + 2);
+        indices.push_back(startIndex + 0);
+        indices.push_back(startIndex + 1);
+        indices.push_back(startIndex + 2);
 
-        cube.indices.push_back(startIndex + 2);
-        cube.indices.push_back(startIndex + 3);
-        cube.indices.push_back(startIndex + 0);
+        indices.push_back(startIndex + 0);
+        indices.push_back(startIndex + 2);
+        indices.push_back(startIndex + 3);
     };
 
     // +Z face (front)
     addFace(
-        -0.5f, -0.5f, +0.5f,
-         0.5f, -0.5f, +0.5f,
-         0.5f,  0.5f, +0.5f,
-        -0.5f,  0.5f, +0.5f,
-         0.0f,  0.0f, +1.0f
+        glm::vec3(-0.5f, -0.5f, +0.5f),
+        glm::vec3(+0.5f, -0.5f, +0.5f),
+        glm::vec3(+0.5f, +0.5f, +0.5f),
+        glm::vec3(-0.5f, +0.5f, +0.5f),
+        glm::vec3(0.0f, 0.0f, +1.0f)
     );
+
     // -Z face (back)
     addFace(
-         0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.0f,  0.0f, -1.0f
+        glm::vec3(+0.5f, -0.5f, -0.5f),
+        glm::vec3(-0.5f, -0.5f, -0.5f),
+        glm::vec3(-0.5f, +0.5f, -0.5f),
+        glm::vec3(+0.5f, +0.5f, -0.5f),
+        glm::vec3(0.0f, 0.0f, -1.0f)
     );
+
     // +X face (right)
     addFace(
-        +0.5f, -0.5f, +0.5f,
-        +0.5f, -0.5f, -0.5f,
-        +0.5f,  0.5f, -0.5f,
-        +0.5f,  0.5f, +0.5f,
-        +1.0f,  0.0f,  0.0f
+        glm::vec3(+0.5f, -0.5f, +0.5f),
+        glm::vec3(+0.5f, -0.5f, -0.5f),
+        glm::vec3(+0.5f, +0.5f, -0.5f),
+        glm::vec3(+0.5f, +0.5f, +0.5f),
+        glm::vec3(+1.0f, 0.0f, 0.0f)
     );
+
     // -X face (left)
     addFace(
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, +0.5f,
-        -0.5f,  0.5f, +0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -1.0f,  0.0f,  0.0f
+        glm::vec3(-0.5f, -0.5f, -0.5f),
+        glm::vec3(-0.5f, -0.5f, +0.5f),
+        glm::vec3(-0.5f, +0.5f, +0.5f),
+        glm::vec3(-0.5f, +0.5f, -0.5f),
+        glm::vec3(-1.0f, 0.0f, 0.0f)
     );
+
     // +Y face (top)
     addFace(
-        -0.5f, +0.5f, +0.5f,
-         0.5f, +0.5f, +0.5f,
-         0.5f, +0.5f, -0.5f,
-        -0.5f, +0.5f, -0.5f,
-         0.0f, +1.0f,  0.0f
+        glm::vec3(-0.5f, +0.5f, +0.5f),
+        glm::vec3(+0.5f, +0.5f, +0.5f),
+        glm::vec3(+0.5f, +0.5f, -0.5f),
+        glm::vec3(-0.5f, +0.5f, -0.5f),
+        glm::vec3(0.0f, +1.0f, 0.0f)
     );
+
     // -Y face (bottom)
     addFace(
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, +0.5f,
-        -0.5f, -0.5f, +0.5f,
-         0.0f, -1.0f,  0.0f
+        glm::vec3(-0.5f, -0.5f, -0.5f),
+        glm::vec3(+0.5f, -0.5f, -0.5f),
+        glm::vec3(+0.5f, -0.5f, +0.5f),
+        glm::vec3(-0.5f, -0.5f, +0.5f),
+        glm::vec3(0.0f, -1.0f, 0.0f)
     );
 
-    cube.SetupMesh();
 
-    std::cout << "[Cube] vertices: " << (cube.vertices.size()/6)
-              << ", indices: " << cube.indices.size()
-              << ", triangles: " << (cube.indices.size()/3)
+    std::cout << "[Cube] vertices: " << (vertices.size()/6)
+              << ", indices: " << indices.size()
+              << ", triangles: " << (indices.size()/3)
               << std::endl;
 
-    return cube;
+    std::cerr << "Init done for Cube\n";
+
+    SetupMesh();
+    std::cout << "VAO: " << VAO << ", VBO: " << VBO << ", EBO: " << EBO << std::endl;
 }

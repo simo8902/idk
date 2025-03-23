@@ -1,0 +1,1 @@
+set(GLM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external/glm/include)

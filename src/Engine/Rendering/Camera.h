@@ -37,6 +37,8 @@ public:
           m_nearPlane(nearPlane),
           m_farPlane(farPlane)
     {
+        std::cerr << "CAMERA()" << std::endl;
+
         m_yaw = glm::degrees(atan2(m_forwardVec.z, m_forwardVec.x));
         m_pitch = glm::degrees(asin(m_forwardVec.y));
 

@@ -19,10 +19,27 @@ AssetManager& AssetManager::getInstance() {
 }
 
 AssetManager::AssetManager()
-    : running_(true), engineShadersPath(fs::absolute(fs::path(SOURCE_DIR) / "src/shaders").string()),
-    runtimeShadersPath(fs::absolute(fs::path(SOURCE_DIR) / "ROOT" / "shaders").string()),
-    sourcePath(fs::absolute(SOURCE_DIR).string()),
-    rootFolder(std::make_shared<AssetItem>("ROOT", AssetType::Folder, (fs::path(SOURCE_DIR) / "ROOT").string())) {
+{
+
+    rootFolder = std::make_shared<AssetItem>("ROOT", AssetType::Folder, "", false); // Filesystem folder
+    auto sceneFolder = std::make_shared<AssetItem>("Scene", AssetType::Folder, "", true); // Virtual folder
+
+    rootFolder->addChild(sceneFolder);
+
+    std::cerr << "Created ROOT folder: " << rootFolder->getName()
+              << " (Virtual: " << rootFolder->isVirtual() << ")" << std::endl;
+    std::cerr << "Added Scene folder: " << sceneFolder->getName()
+              << " (Virtual: " << sceneFolder->isVirtual() << ")" << std::endl;
+
+    std::cout << "AssetManager::{rootfolder} " << rootFolder->getName() << std::endl;
+
+    auto retrievedSceneFolder = rootFolder->getChildByName("Scene");
+    if (retrievedSceneFolder) {
+       // std::cerr << "Retrieved Scene folder: " << retrievedSceneFolder->getName() << std::endl;
+    } else {
+        std::cerr << "Failed to retrieve Scene folder" << std::endl;
+    }
+    if (!rootFolder) std::cout << "rootFolder is nullptr!" << std::endl;
 
     /*
     std::cout << "[AssetManager] Initializing AssetManager with:\n"
@@ -34,9 +51,9 @@ AssetManager::AssetManager()
     std::cout << "rootFolder use_count: " << rootFolder.use_count() << std::endl;*/
 
     try {
-        validatePaths();
+      //  validatePaths();
 
-        populateShadersFromShaderManager();
+       // populateShadersFromShaderManager();
 
      //   scanThread_ = std::thread(&AssetManager::scanUserAssetsLoop, this);
 
@@ -45,18 +62,25 @@ AssetManager::AssetManager()
         throw;
     }
 }
-
+void AssetManager::initializeRoot() {
+    /*
+    std::lock_guard<std::mutex> lock(rootMutex);
+    if (!rootFolder->isScanned) {
+        rootFolder->ScanDirectory(rootFolder->getPath());
+    }*/
+}
 AssetManager::~AssetManager() {
     running_ = false;
     if (scanThread_.joinable()) scanThread_.join();
 }
 void AssetManager::populateShadersFromShaderManager() {
+    /*
     const auto& shaderMap = ShaderManager::Instance().getShaders();
     for (const auto& [shaderName, shader] : shaderMap) {
         if (shader) {
             shaders[shaderName] = shader;
         }
-    }
+    }*/
 }
 
 void AssetManager::scanUserAssetsLoop() {
@@ -93,14 +117,11 @@ void AssetManager::validatePaths() {
     }
 }
 
-const std::shared_ptr<AssetItem> & AssetManager::getRootFolder() const {
-    return rootFolder;
-}
 
-void AssetManager::setRootFolder(std::shared_ptr<AssetItem> root) {
+void AssetManager::setRootFolder(const std::shared_ptr<AssetItem>& root) {
+    std::lock_guard<std::mutex> lock(mutex_);
     rootFolder = root;
 }
-
 
 const std::unordered_map<std::string, std::shared_ptr<Shader>> & AssetManager::getShaders() const {
     return shaders;

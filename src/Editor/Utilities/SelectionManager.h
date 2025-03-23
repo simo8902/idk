@@ -8,6 +8,8 @@
 #include <Component.h>
 #include <memory>
 #include "AssetItem.h"
+#include "Entity.h"
+#include "SelectionEvent.h"
 
 class Mesh;
 class Material;
@@ -20,19 +22,28 @@ class SelectionManager {
 public:
     static SelectionManager& getInstance();
 
+    void select(const std::shared_ptr<Entity>& object);
+    void deselect();
+    void clearSelection();
+    std::shared_ptr<Entity> getSelectedObject() const;
+    void registerListener(std::function<void(const SelectionEvent&)> listener);
+
     void selectMesh(const std::shared_ptr<Mesh>& mesh);
     void selectMaterial(const std::shared_ptr<Material>& material);
     void selectLight(const std::shared_ptr<Light>& light);
     void selectCamera(const std::shared_ptr<Camera>& camera);
     void selectShader(const std::shared_ptr<Shader>& shader);
     void selectFolder(const std::shared_ptr<AssetItem>& folder);
+    void selectGameObject(const std::shared_ptr<GameObject> & gameobject);
 
-    void clearSelection();
+    void selectVirtualAsset(const std::shared_ptr<AssetItem>& asset);
 
     std::shared_ptr<Material> getSelectedMaterial() const;
     std::shared_ptr<Mesh> getSelectedMesh() const;
     std::shared_ptr<Shader> getSelectedShader() const;
     std::shared_ptr<AssetItem> getSelectedFolder() const;
+    std::shared_ptr<GameObject> getSelectedGameObject() const;
+    std::shared_ptr<Entity> getSelectedEntity() const;
 
     std::shared_ptr<Mesh> selectedMesh;
     std::shared_ptr<Material> selectedMaterial;
@@ -42,8 +53,9 @@ public:
     std::shared_ptr<Shader> selectedShader;
     std::shared_ptr<AssetItem> selectedFolder;
 
-    void selectComponent(const std::shared_ptr<Component>& component);
-    std::shared_ptr<Component> getSelectedComponent() const;
+    void selectComponent(const std::shared_ptr<Entity>& component);
+    const std::shared_ptr<Entity>& getSelectedComponent();
+    std::shared_ptr<Entity> selectedComponent;
 
     bool isItemSelected(const std::shared_ptr<AssetItem>& item) const {
         if (!item) return false;
@@ -68,12 +80,20 @@ public:
 
     void clearSelections() {}
 
-    std::shared_ptr<Component> selectedComponent;
 private:
     SelectionManager() = default;
     SelectionManager(const SelectionManager&) = delete;
     SelectionManager& operator=(const SelectionManager&) = delete;
 
+    std::shared_ptr<Entity> selectedEntity;
+    std::vector<std::function<void(const SelectionEvent&)>> listeners;
+    void clearSpecificSelections();
+
+    void notifySelectionChange(const SelectionEvent& event) {
+        for (auto& listener : listeners) {
+            listener(event);
+        }
+    }
 };
 
 

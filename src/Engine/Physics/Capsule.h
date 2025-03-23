@@ -10,34 +10,45 @@
 #include <string>
 #include <memory>
 
-class Capsule final : public Component {
+#include "Selectable.h"
+
+class Capsule final : public GameObject, public Selectable  {
 public:
-    explicit Capsule(const std::string& name) : name(name) {}
+    explicit Capsule(const std::string& name):GameObject(name){}
     ~Capsule() override {}
 
-    const std::string & getName() const override {
+    std::string getName() const override {
         return name;
     }
 
+    void select() override {
+        std::cout << "Capsule selected: " << name << std::endl;
+    }
+
+    void deselect() override {
+        std::cout << "Capsule deselected: " << name << std::endl;
+    }
+
+    GameObjectType getType() const override {
+        return GameObjectType::Capsule;
+    }
     void addComponents() {
         const auto & capsuleMesh = std::make_shared<Mesh>("Capsule");
-        const auto & capsuleTransform = addComponent<Transform>();
+        const auto & capsuleTransform = getComponent<Transform>();
+        if (capsuleTransform) {
+            capsuleTransform->setPosition(glm::vec3(-2.5f, 1.5f, 0.0f));
+        }
+        capsuleMesh->CreateMesh(MeshType::Capsule);
 
-        const auto & meshFilter = addComponent<MeshFilter>("CAPSULE_MESH");
+        const auto & meshFilter = addComponent<MeshFilter>();
+        meshFilter->setMesh(capsuleMesh);
 
         const auto & meshRenderer = addComponent<MeshRenderer>(meshFilter);
-        capsuleMesh->CreateCapsule(1.0f, 2.0f);
-        meshFilter->setMesh(capsuleMesh);
-        capsuleTransform->setPosition(glm::vec3(0.00f, 1.65f, 0.0f));
-
         const auto & collider = addComponent<CapsuleCollider>(capsuleTransform->getPosition(), 1.0f, 2.0f);
-
-
     }
 
 private:
     std::string name;
-    std::vector<std::weak_ptr<Component>> components;
 };
 
 #endif //CAPSULE_H

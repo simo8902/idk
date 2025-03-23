@@ -14,13 +14,12 @@
 
 class CapsuleCollider final : public Collider {
 public:
-    CapsuleCollider(const glm::vec3 &position, const float & r, const float & h)
-        : m_position(position), radius(r), height(h)
+    CapsuleCollider(const glm::vec3 &position, const float & r, const float & h, const std::string& name = "CapsuleCollider")
+        : Collider(name), m_position(position), radius(r), height(h)
     {
         capsuleCollider = this;
         wireframeScale = 1.15f;
         updateModelMatrix();
-
     }
 
     ~CapsuleCollider() override {}

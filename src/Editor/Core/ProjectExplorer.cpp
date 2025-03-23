@@ -11,25 +11,21 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
+#include "MeshRenderer.h"
+#include "SceneManager.h"
 #include "stb_image.h"
+#include "Light.h"
+#include "Camera.h"
 
-
-ProjectExplorer::ProjectExplorer()
-    : folderIcon("[Folder]"),
-      shaderIcon("[Shader]"),
-      materialIcon("[Material]"),
-      shadersLoaded(false),
-      clickedInsideSelectable(false) {
-
-    std::string path = SOURCE_DIR "/ROOT/";
-
-    std::thread scanThread([path] {
-       auto scannedRoot = std::make_shared<AssetItem>("Root", AssetType::Folder, path);
-       scannedRoot->ScanDirectory(path);
-       AssetManager::getInstance().setRootFolder(scannedRoot);
-   });
-    scanThread.detach();
-
+ProjectExplorer::ProjectExplorer(){
+    std::thread([this] {
+        rootFolder = AssetManager::getInstance().getRootFolder();
+        if(rootFolder)
+        {
+            // Make sure the path is correct (SOURCE_DIR/ROOT) if that's where your assets are.
+            rootFolder->ScanDirectory((fs::path(SOURCE_DIR) / "ROOT").string());
+        }
+    }).detach();
 }
 
 ProjectExplorer::~ProjectExplorer() = default;
@@ -70,84 +66,156 @@ void ProjectExplorer::renderProjectExplorer() {
 }
 
 void ProjectExplorer::RenderFolderTree(const std::shared_ptr<AssetItem>& folder) {
-    if (!folder || folder->getType() != AssetType::Folder) return;
+    if (!folder) return;
+  //  std::cerr << "Rendering folder: " << folder->getName()
+  //            << " (Virtual: " << folder->isVirtual() << ")" << std::endl;
 
-    ImGui::PushID(folder->getUUIDStr().c_str());
-
-    bool hasChildren = !folder->getChildren().empty();
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-
-    if (SelectionManager::getInstance().getSelectedFolder() == folder) {
-        flags |= ImGuiTreeNodeFlags_Selected;
+    if (folder->getType() != AssetType::Folder) {
+        return;
     }
 
-    const bool node_open = ImGui::TreeNodeEx(folder->getUUIDStr().c_str(), flags, "%s %s",
-        ICON_FA_FOLDER, folder->getName().c_str());
+    auto children = folder->getChildrenSafe();
 
-    if (node_open) {
-        if (hasChildren) {
-            for (const auto& child : folder->getChildren()) {
-                if (child->getType() == AssetType::Folder) {
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+                               ImGuiTreeNodeFlags_SpanAvailWidth |
+                               (folder->getChildren().empty() ? ImGuiTreeNodeFlags_Leaf : 0);
+
+    bool nodeOpen = ImGui::TreeNodeEx(folder->getName().c_str(), flags, "%s %s",
+        (folder->getType() == AssetType::Folder) ? ICON_FA_FOLDER : ICON_FA_JS,
+        folder->getName().c_str());
+
+    if (ImGui::IsItemClicked()) {
+        SelectionManager::getInstance().selectFolder(folder);
+    }
+
+    if (nodeOpen) {
+        if (!folder->isScanned && !folder->isVirtual()) {
+            folder->ScanDirectory(folder->getPath());
+        }
+
+        /*
+        if (!folder->isScanned) {
+            if (folder->isVirtual()) {
+                std::cerr << "Virtual folder: " << folder->getName() << std::endl;
+                folder->PopulateVirtualChildren();
+            } else {
+             //   folder->ScanDirectory(folder->getPath());
+            }
+        }*/
+
+        for (const auto& child : children) {
+            if (child->getType() == AssetType::Folder ||
+                child->getType() == AssetType::GameObject||
+                child->getType() == AssetType::Entity) {
                     RenderFolderTree(child);
                 }
-            }
         }
         ImGui::TreePop();
+    }
+}
+
+void ProjectExplorer::RenderContentArea(const std::shared_ptr<AssetItem>& folder) {
+    if (!folder) return;
+
+    const float iconSize = 80.0f;
+    const float padding = 10.0f;
+    const int itemsPerRow = static_cast<int>(ImGui::GetContentRegionAvail().x / (iconSize + padding));
+
+    ImGui::BeginChild("ContentArea");
+    if (ImGui::BeginTable("##ContentTable", itemsPerRow)) {
+        for (const auto& child : folder->getChildren()) {
+
+            ImGui::TableNextColumn();
+            if (child->getType() == AssetType::GameObject) {
+               // std::cerr << "ContentArea GameObject: " << child->getGameObject()->getName() << std::endl;
+               // RenderGameObject(child->getGameObject(), iconSize);
+            }else if (child->getType() == AssetType::Entity) {
+                if (!printLog) {
+                    std::cerr << "ContentArea EntityObjs: " << child->getEntity()->getName() << std::endl;
+                    printLog = true;
+                }
+                RenderGameObject(child->getEntity(), iconSize);
+            }
+            else {
+                RenderAssetItem(child, iconSize);
+            }
+        }
+
+        /*
+        // Then render the GameObjects from the scene (only once, outside the folder structure)
+        for (const auto& obj : SceneManager::getInstance().getAllObjects()) {
+            ImGui::TableNextColumn();
+            RenderGameObject(obj, iconSize);
+        }
+        for (const auto& weakVirtualAsset : AssetManager::getInstance().getVirtualAssets()) {
+            if (auto virtualAsset = weakVirtualAsset.lock()) {
+                ImGui::TableNextColumn();
+                RenderAssetItem(virtualAsset, iconSize);
+                itemCount++;
+            }
+        }*/
+
+        ImGui::EndTable();
+    }
+
+    ImGui::EndChild();
+}
+
+void ProjectExplorer::RenderAssetItem(const std::shared_ptr<AssetItem>& asset, float iconSize) {
+    ImGui::PushID(asset->getUUIDStr().c_str());
+
+    const char* icon = "[File]";
+    if (asset->getType() == AssetType::Folder) icon = ICON_FA_FOLDER;
+    else if (asset->getType() == AssetType::Shader) icon = "[Code]";
+    else if (asset->getType() == AssetType::Mesh) icon = "[Cube]";
+
+    if (asset->isVirtual()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(100, 255, 100, 255));
+    }
+
+    ImGui::Button((std::string(icon) + "##" + asset->getName()).c_str(), ImVec2(iconSize, iconSize));
+
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+        SelectionManager::getInstance().selectFolder(asset);
+    }
+
+    if (ImGui::BeginDragDropSource()) {
+        ImGui::SetDragDropPayload("ASSET_ITEM", &asset, sizeof(asset));
+        ImGui::Text("%s %s", icon, asset->getName().c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    ImGui::TextWrapped("%s", asset->getName().c_str());
+
+    if (asset->isVirtual()) {
+        ImGui::PopStyleColor();
     }
 
     ImGui::PopID();
 }
 
-void ProjectExplorer::RenderContentArea(const std::shared_ptr<AssetItem>& folder) {
-   // if (!folder || shaderIconTexture == 0) return;
+void ProjectExplorer::RenderGameObject(const std::shared_ptr<Entity>& entity, float iconSize) {
+    if (!entity) return;
 
-    int maxVisibleItems = 50;
-    int currentVisibleCount = 0;
+    ImGui::PushID(entity->getName().c_str());
 
-    const float iconSize = 48.0f;
-    const float padding = 10.0f;
-    const int itemsPerRow = 7;
-    int itemCount = 0;
+    const char* icon = "[Object]";
 
-    const auto& shaderMap = AssetManager::getInstance().getShaders();
-    if (shaderMap.empty()) {
-        ImGui::Text("No shaders available.");
-        return;
+    if (entity->hasComponent<Light>()) icon = "[Light]";
+    if (entity->hasComponent<Camera>()) icon = "[Camera]";
+    if (entity->hasComponent<MeshRenderer>()) icon = "[Mesh]";
+
+    if (ImGui::Button((std::string(icon) + "##" + entity->getName()).c_str(), ImVec2(iconSize, iconSize))) {
+        SelectionManager::getInstance().select(entity);
     }
 
-    ImGui::BeginChild("ProjectExplorerContent", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-    int id = 0;
-
-    for (const auto& [shaderName, shader] : shaderMap) {
-        if (!shader || currentVisibleCount >= maxVisibleItems) continue;
-        currentVisibleCount++;
-
-        ImGui::PushID(id++);
-
-        ImGui::BeginGroup();
-
-        ImGui::Image(reinterpret_cast<ImTextureID>(shaderIconTexture), ImVec2(iconSize, iconSize));
-
-        ImGui::Dummy(ImVec2(0.0f, 5.0f));
-
-        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + iconSize);
-
-        ImGui::TextWrapped("%s", shaderName.c_str());
-
-        ImGui::PopTextWrapPos();
-
-        ImGui::EndGroup();
-
-        itemCount++;
-        if (itemCount % itemsPerRow != 0) {
-            ImGui::SameLine(0.0f, padding);
-        }
-
-        ImGui::PopID();
+    if (ImGui::IsItemClicked()) {
+        SelectionManager::getInstance().select(entity);
     }
 
+    ImGui::TextWrapped("%s", entity->getName().c_str());
 
-    ImGui::EndChild();
+    ImGui::PopID();
 }
 
 void ProjectExplorer::RenderAssetItemAsIcon(const std::shared_ptr<AssetItem>& item, const float & iconSize) {

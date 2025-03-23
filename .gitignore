@@ -1,4 +1,6 @@
 .idea/
+.git/
+.github/
 cmake-build-debug/
 bin/
 idkbuild/

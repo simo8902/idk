@@ -8,11 +8,12 @@
 #include "Component.h"
 #include "gtx/matrix_decompose.hpp"
 
-class Transform : public Component {
+class Transform final : public Component {
 public:
-    Transform()
-        : modelMatrix(glm::mat4(1.0f)), position(),
-          rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)), m_scale(glm::vec3(1.0f)) {
+    explicit Transform()
+        : Component("Transform"), modelMatrix(glm::mat4(1.0f)), position(),
+          rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)), m_scale(glm::vec3(1.0f))
+    {
     }
 
 

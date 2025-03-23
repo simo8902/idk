@@ -10,32 +10,40 @@
 
 class MeshFilter final : public Component {
 public:
-    explicit MeshFilter(const std::string & name) : name(name){}
+    explicit MeshFilter() : Component("MeshFilter")
+    {}
+
     ~MeshFilter() override = default;
 
-    const std::string & getName() const override { return name; }
+    const std::string & getName() const override {
+        return name;
+    }
     void setName(const std::string &newName) override {
         name = newName;
     }
 
     void setMesh(const std::shared_ptr<Mesh>& mesh) {
         this->mesh = mesh;
-        UpdateMesh();
+        if(mesh) {
+            name = mesh->getName();
+        }
+       // UpdateMesh();
     }
 
-    std::shared_ptr<Mesh> getMesh() const {
+    const std::shared_ptr<Mesh> &getMesh() const {
         return mesh;
     }
     void clearMesh() {}
 
-    void UpdateMesh() const{
+    void UpdateMesh(){
         if (mesh) {
             mesh->SetupMesh();
         }
     }
-    std::shared_ptr<Mesh> mesh;
 
 private:
+    std::shared_ptr<Mesh> mesh;
+
     std::string name;
     std::weak_ptr<GameObject> m_owner;
 };

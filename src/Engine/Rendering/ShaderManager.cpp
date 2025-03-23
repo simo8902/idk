@@ -12,6 +12,30 @@
 #include <fstream>
 
 ShaderManager::ShaderManager() {
+    std::cerr << "ShaderManager()" << std::endl;
+
+    shaderProgram = std::make_shared<Shader>(
+               SOURCE_DIR "/src/shaders/basic.vert",
+               SOURCE_DIR "/src/shaders/basic.frag"
+           );
+
+    lightShader = std::make_shared<Shader>(
+       SOURCE_DIR "/src/shaders/lightShader.vert",
+       SOURCE_DIR "/src/shaders/lightShader.frag"
+   );
+
+    finalPassShader = std::make_shared<Shader>(
+        SOURCE_DIR "/src/shaders/finalPass.vert",
+        SOURCE_DIR "/src/shaders/finalPass.frag"
+    );
+
+    skyShader = std::make_shared<Shader> (
+        SOURCE_DIR "/src/shaders/sky.vert",
+    SOURCE_DIR "/src/shaders/sky.frag"
+    );
+
+    std::cout << "ShaderManager initialized with 4 shaders." << std::endl;
+
     std::filesystem::path resourceShadersPath = SOURCE_DIR "/src/shaders/";
     std::filesystem::path shadersPath = SOURCE_DIR "/ROOT/shaders/";
 
@@ -74,6 +98,7 @@ void ShaderManager::UpdateFileMonitoring() {
 }
 
 void ShaderManager::ScanDirectory(const std::filesystem::path& directory) {
+
      namespace fs = std::filesystem;
 
   //  std::cout << "Scanning directory: " << fs::absolute(directory) << "\n";
@@ -140,28 +165,19 @@ void ShaderManager::LoadShader(const std::filesystem::path& path) {
         std::string baseName = path.stem().string(); // Base name without extension
         std::lock_guard<std::mutex> lock(shaderMutex);
 
-        // Check if shader is already loaded
         if (shaders.find(baseName) != shaders.end()) {
             ReloadShader(baseName);
             return;
         }
 
-        // Validate the shader file
         if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
             throw std::runtime_error("Shader file does not exist or is not a regular file: " + path.string());
         }
 
-        auto extension = path.extension().string();
-        std::filesystem::path vertPath;  // Declare vertPath
-        std::filesystem::path fragPath;  // Declare fragPath
+        if (auto extension = path.extension().string(); extension == ".frag" || extension == ".vert") {
+            std::filesystem::path vertPath = path.parent_path() / (baseName + ".vert");
+            std::filesystem::path fragPath = path.parent_path() / (baseName + ".frag");
 
-        // Handle separate vertex and fragment shaders
-        if (extension == ".frag" || extension == ".vert") {
-            // Determine corresponding shader paths
-            vertPath = path.parent_path() / (baseName + ".vert");
-            fragPath = path.parent_path() / (baseName + ".frag");
-
-            // Ensure both vertex and fragment shaders exist
             if (!std::filesystem::exists(vertPath)) {
                 throw std::runtime_error("Vertex shader file does not exist: " + vertPath.string());
             }
@@ -174,7 +190,6 @@ void ShaderManager::LoadShader(const std::filesystem::path& path) {
                       << " (Vertex: \"" << vertPath.string()
                       << "\", Fragment: \"" << fragPath.string() << "\")\n";*/
 
-            // Create and compile the combined shader
             auto shader = std::make_shared<Shader>(vertPath.string().c_str(), fragPath.string().c_str());
 
             if (shader->isValid()) {

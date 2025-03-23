@@ -21,6 +21,8 @@ public:
     DirectionalLight(const std::string& name, const glm::vec3& dir, const glm::vec3& amb,
           const glm::vec3& diff, const glm::vec3& spec)
         : Light(name), direction(glm::normalize(dir)), ambient(amb), diffuse(diff), specular(spec) {
+        std::cerr << "DIRLIGHT()" << std::endl;
+
     }
 
     void setUniforms(unsigned int shaderProgram) const override {
