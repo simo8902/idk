@@ -17,10 +17,6 @@ Make sure this:
 ### Steps  
 
 1. **Clone the repository**  
-   ```bash
-   git clone --recursive https://github.com/simo8902/glfw3.git
-   cd glfw3
-   ```
 2. **Create a build directory**  
    ```bash
    mkdir build
@@ -44,7 +40,3 @@ Make sure this:
      ```bash
      make -j$(nproc)
      ```
-5. **Install (Optional, requires admin/sudo)**  
-   ```bash
-   cmake --install .
-   ```
