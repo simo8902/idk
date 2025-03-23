@@ -6,28 +6,26 @@
 
 Simple 3D Game Engine based on a OpenGL - GLFW3, GLM, IMGUI (1.91.2)
 
-## 🔧 Compiling GLFW  
+## 🔧 Compiling my engine  
 
 ### Prerequisites  
-Make sure you have the following installed:  
+Make sure this:  
 - CMake from 3.27 to 3.30.5 max supported
 - A C++ compiler (GCC, Clang, LLVM) 
 - Git (to clone the repo)
 
-### Steps to Compile  
+### Steps  
 
 1. **Clone the repository**  
    ```bash
    git clone --recursive https://github.com/simo8902/glfw3.git
    cd glfw3
    ```
-
 2. **Create a build directory**  
    ```bash
    mkdir build
    cd build
    ```
-
 3. **Generate project files using CMake**  
    - **For Windows (MSVC)** unsupported  
      ```bash
@@ -37,7 +35,6 @@ Make sure you have the following installed:
      ```bash
      cmake .. -DCMAKE_BUILD_TYPE=Release
      ```
-
 4. **Build the library**  
    - **For Windows (MSVC)** unsupported
      ```bash
@@ -47,9 +44,7 @@ Make sure you have the following installed:
      ```bash
      make -j$(nproc)
      ```
-
 5. **Install (Optional, requires admin/sudo)**  
    ```bash
    cmake --install .
    ```
-
