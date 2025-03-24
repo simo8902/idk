@@ -6,37 +6,11 @@
 
 Simple 3D Game Engine based on a OpenGL - GLFW3, GLM, IMGUI (1.91.2)
 
-## 🔧 Compiling my engine  
-
 ### Prerequisites  
 Make sure this:  
 - CMake from 3.27 to 3.30.5 max supported
 - A C++ compiler (GCC, Clang, LLVM) 
 - Git (to clone the repo)
 
-### Steps  
-
-1. **Clone the repository**  
-2. **Create a build directory**  
-   ```bash
-   mkdir build
-   cd build
-   ```
-3. **Generate project files using CMake**  
-   - **For Windows (MSVC)** unsupported  
-     ```bash
-     cmake .. -G "Visual Studio 17 2022"
-     ```
-   - **For Linux/macOS (Makefile)** TBD
-     ```bash
-     cmake .. -DCMAKE_BUILD_TYPE=Release
-     ```
-4. **Build the library**  
-   - **For Windows (MSVC)** unsupported
-     ```bash
-     cmake --build . --config Release
-     ```
-   - **For Linux/macOS** TBD 
-     ```bash
-     make -j$(nproc)
-     ```
+make subdir and build from there
+cmake .. -DCMAKE_BUILD_TYPE=Debug 
