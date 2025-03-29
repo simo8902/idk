@@ -13,10 +13,13 @@
 
 class Entity final : public std::enable_shared_from_this<Entity>, public Selectable{
 public:
-    explicit Entity(std::shared_ptr<GameObject> gameObject) : gameObject(gameObject) {}
+    explicit Entity(const std::shared_ptr<GameObject>& gameObject) : gameObject(gameObject) {}
 
     std::string getName() const override {
-        return gameObject ? gameObject->getName() : "Unnamed Entity";
+        if (gameObject) {
+            return gameObject->getName();
+        }
+        return "Unnamed Entity";
     }
 
     void setName(const std::string& newName) {

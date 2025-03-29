@@ -10,6 +10,7 @@
 #include "ShaderManager.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "sqlite3.h"
 
 #define LIBDATA_API
 extern "C" LIBDATA_API void imguieffects();
@@ -104,7 +105,6 @@ GLFWwindow* Initialization::createWindow() {
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
-
     {
         PROFILE_SCOPE("Load OpenGL with GLAD");
         if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))

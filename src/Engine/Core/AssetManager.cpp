@@ -2,12 +2,10 @@
 #include <filesystem>
 #include <iostream>
 #include <algorithm>
-#include <cctype>
 #include <regex>
 #include <thread>
 #include <atomic>
 #include <fstream>
-#include <future>
 
 #include "ShaderManager.h"
 
@@ -26,14 +24,14 @@ AssetManager::AssetManager()
 
     rootFolder->addChild(sceneFolder);
 
-    std::cerr << "Created ROOT folder: " << rootFolder->getName()
+    std::cout << "Created ROOT folder: " << rootFolder->getName()
               << " (Virtual: " << rootFolder->isVirtual() << ")" << std::endl;
-    std::cerr << "Added Scene folder: " << sceneFolder->getName()
+    std::cout << "Added Scene folder: " << sceneFolder->getName()
               << " (Virtual: " << sceneFolder->isVirtual() << ")" << std::endl;
 
     std::cout << "AssetManager::{rootfolder} " << rootFolder->getName() << std::endl;
 
-    auto retrievedSceneFolder = rootFolder->getChildByName("Scene");
+    const auto & retrievedSceneFolder = rootFolder->getChildByName("Scene");
     if (retrievedSceneFolder) {
        // std::cerr << "Retrieved Scene folder: " << retrievedSceneFolder->getName() << std::endl;
     } else {

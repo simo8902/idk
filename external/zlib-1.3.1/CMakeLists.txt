@@ -1,0 +1,17 @@
+set(ZLIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(ZLIB_INCLUDE_DIR "${ZLIB_DIR}/include")
+set(ZLIB_LIBRARY_DIR "${ZLIB_DIR}/lib")
+
+if(EXISTS "${ZLIB_LIBRARY_DIR}/libz.a")
+    message(STATUS "Zlib library found at ${ZLIB_LIBRARY_DIR}/libz.a")
+else()
+    message(FATAL_ERROR "Zlib library not found in ${ZLIB_LIBRARY_DIR}")
+endif()
+
+if(EXISTS "${ZLIB_INCLUDE_DIR}/zlib.h")
+    message(STATUS "Zlib headers found at ${ZLIB_INCLUDE_DIR}")
+else()
+    message(FATAL_ERROR "Zlib headers not found in ${ZLIB_INCLUDE_DIR}")
+endif()
+target_include_directories(idk_core PRIVATE ${ZLIB_INCLUDE_DIR})
+target_link_libraries(idk_core PRIVATE ${ZLIB_LIBRARY_DIR}/libz.a)

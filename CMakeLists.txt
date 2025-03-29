@@ -53,9 +53,7 @@ file(GLOB_RECURSE PROJECT_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 
-add_executable(idk_core main.cpp ${PROJECT_SOURCES}
-        src/Editor/Utilities/Selectable.h
-        src/Editor/Utilities/SelectionEvent.h)
+add_executable(idk_core main.cpp ${PROJECT_SOURCES})
 
 link_directories("${PROJECT_SOURCE_DIR}/cmake-build-debug")
 
@@ -78,7 +76,6 @@ target_link_libraries(DATA
 )
 
 set(BOOST_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/boost/lib")
-
 set(REQUIRED_DLLS
         "C:/msys64/clang64/bin/libclang_rt.asan_dynamic-x86_64.dll"
         "C:/msys64/clang64/bin/libc++.dll"
@@ -100,6 +97,8 @@ add_subdirectory(external/boost)
 add_subdirectory(external/glm)
 add_subdirectory(external/imgui)
 add_subdirectory(external/ImGuizmo)
+add_subdirectory(external/sqlite3)
+add_subdirectory(external/zlib-1.3.1)
 
 target_include_directories(idk_core PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/external/stb_image
@@ -109,6 +108,7 @@ target_include_directories(idk_core PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/glfw3/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/imguizmo
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/zlib-1.3.1
         ${IMGUI_PATH}
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Rendering
@@ -130,6 +130,7 @@ target_link_libraries(idk_core PRIVATE glad glfw imgui ImGuizmo
         OpenGL::GL
         DATA
 )
+include_directories(${CMAKE_SOURCE_DIR}/external/pdf/)
 
 if (WIN32)
     target_link_libraries(idk_core PRIVATE

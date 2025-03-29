@@ -63,6 +63,7 @@ void renderSceneView();
     void renderEntityRow(const std::shared_ptr<Entity>& entity, size_t index) const;
 
 private:
+    bool showAssetManager;
     std::shared_ptr<IRenderDeferred> currentDeferred;
     std::shared_ptr<IRenderForward> currentForward;
 

@@ -466,7 +466,7 @@ void Mesh::CreateCube() {
               << ", triangles: " << (indices.size()/3)
               << std::endl;
 
-    std::cerr << "Init done for Cube\n";
+    // std::cerr << "Init done for Cube\n";
 
     SetupMesh();
     std::cout << "VAO: " << VAO << ", VBO: " << VBO << ", EBO: " << EBO << std::endl;

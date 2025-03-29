@@ -71,8 +71,22 @@ void Scene::createObjects() {
     const auto& capsuleEntity = std::make_shared<Entity>(capsule);
     components.emplace_back(capsuleEntity);
 
-    const auto& capsuleAsset = CreateGameObjectAssetItem(capsule);
-    SceneManager::getInstance().addObject(capsule);
+    //const auto& capsuleAsset = CreateGameObjectAssetItem(capsule);
+
+    auto capsuleEntAsset = std::make_shared<AssetItem>(capsule->getName(), AssetType::Entity, "", true);
+
+    capsuleEntAsset->setEntityObject(capsuleEntity);
+
+    //SceneManager::getInstance().addObject(capsule);
+    //SceneManager::getInstance().addObject(capsuleEntity);
+
+    if (rootFolder) {
+        rootFolder->addChild(capsuleEntAsset);
+        std::cerr << "[SCENE] Added Entity directly to ROOT: " << capsuleEntAsset->getName() << std::endl;
+    } else {
+        std::cerr << "[SCENE] Root folder not found!" << std::endl;
+        return;
+    }
 
     /*
     std::cerr << "Before getInstance()" << std::endl;
@@ -94,15 +108,6 @@ void Scene::createObjects() {
         return;
     }*/
 
-    if (rootFolder) {
-        rootFolder->addChild(capsuleAsset);
-        std::cerr << "Added GameObject directly to ROOT: " << capsuleAsset->getName() << std::endl;
-    } else {
-        std::cerr << "Root folder not found!" << std::endl;
-        return;
-    }
-
-
     // -----------------------------------------------------------------------------
     // CUBE
     // -----------------------------------------------------------------------------
@@ -113,14 +118,18 @@ void Scene::createObjects() {
     const auto&  cubeEntity = std::make_shared<Entity>(cube);
     components.emplace_back(cubeEntity);
 
-    const auto &cubeAsset = CreateGameObjectAssetItem(cube);
     SceneManager::getInstance().addObject(cube);
+    SceneManager::getInstance().addObject(cubeEntity);
+
+    auto cubeEntAsset = std::make_shared<AssetItem>(cube->getName(), AssetType::Entity, "", true);
+
+    cubeEntAsset->setEntityObject(cubeEntity);
 
     if (rootFolder) {
-        rootFolder->addChild(cubeAsset);
-        std::cerr << "Added GameObject directly to ROOT: " << cubeAsset->getName() << std::endl;
+        rootFolder->addChild(cubeEntAsset);
+        std::cerr << "[SCENE] Added GameObject directly to ROOT: " << cubeEntAsset->getName() << std::endl;
     } else {
-        std::cerr << "Root folder not found!" << std::endl;
+        std::cerr << "[SCENE] Root folder not found!" << std::endl;
         return;
     }
    
@@ -155,11 +164,15 @@ void Scene::createObjects() {
 
     const auto&  cylinderEntity = std::make_shared<Entity>(cylinder);
     components.emplace_back(cylinderEntity);
-    const auto &cylinderAsset = CreateGameObjectAssetItem(cylinder);
+    auto cylinderEntAsset = std::make_shared<AssetItem>(cylinder->getName(), AssetType::Entity, "", true);
+
     SceneManager::getInstance().addObject(cylinder);
+    SceneManager::getInstance().addObject(cylinderEntity);
+
+    cylinderEntAsset->setEntityObject(cylinderEntity);
 
     if (rootFolder) {
-        rootFolder->addChild(cylinderAsset);
+        rootFolder->addChild(cylinderEntAsset);
     }
 
     // -----------------------------------------------------------------------------

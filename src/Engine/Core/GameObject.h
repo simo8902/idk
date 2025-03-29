@@ -10,13 +10,8 @@
 #include <memory>
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
-#include "Shader.h"
 #include "Component.h"
-#include <unordered_map>
-#include <typeindex>
-#include <memory>
 #include "Transform.h"
-#include <algorithm>
 
 #include "Selectable.h"
 
@@ -33,7 +28,7 @@ class GameObject : public std::enable_shared_from_this<GameObject>  {
 public:
     explicit GameObject(const std::string& name)
         : m_name(name) {
-        std::cerr << "GO CREATED WITH NAME(): " << name << std::endl;
+        std::cout << "[GameObject.h] base class init with name: " << name << std::endl;
         addComponent<Transform>();
 
     }

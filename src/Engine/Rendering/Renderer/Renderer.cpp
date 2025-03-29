@@ -8,6 +8,7 @@
 #include <imgui_internal.h>
 #include <iostream>
 
+#include "assetparser.hpp"
 #include "DeferredRenderer.h"
 #include "Entity.h"
 #include "ForwardRenderer.h"
@@ -25,7 +26,8 @@ Renderer::Renderer(const std::shared_ptr<Scene>& scene, const std::shared_ptr<Ca
     & camera, GLFWwindow* window, const std::string& rendererType)
     :  m_Window(window),
     scene(scene),
-    m_Camera(camera)
+    m_Camera(camera),
+    showAssetManager(true)
 {
     myRenderer = this;
     HierarchyManager::getInstance().initialize(myRenderer, scene);
@@ -75,6 +77,7 @@ void Renderer::render() {
 
     processInput(m_Window);
     fpsCounter.update();
+    ShowAssetManagerUI(&showAssetManager);
 
     renderImGuiLayout();
 

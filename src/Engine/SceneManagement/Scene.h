@@ -10,6 +10,7 @@
 #include "Entity.h"
 #include "LightManager.h"
 #include "GameObject.h"
+#include "Shader.h"
 
 class Scene {
 public:
@@ -37,6 +38,7 @@ public:
     }
 
     std::shared_ptr<AssetItem> CreateGameObjectAssetItem(const std::shared_ptr<GameObject>& obj) {
+        /*
         if (!obj) {
             std::cerr << "CreateGameObjectAssetItem: GameObject is null!" << std::endl;
             return nullptr;
@@ -48,7 +50,8 @@ public:
         }
         assetItem->setGameObject(obj);
         std::cerr << "Created GameObject AssetItem: " << assetItem->getName() << std::endl;
-        return assetItem;
+        return assetItem;*/
+        return nullptr;
     }
 
 private:
