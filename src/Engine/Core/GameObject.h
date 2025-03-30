@@ -21,8 +21,21 @@ enum class GameObjectType {
     Light,
     Cylinder,
     Camera,
-    Sphere
+    Sphere,
+    Unknown
 };
+
+inline std::ostream& operator<<(std::ostream& os, const GameObjectType& type) {
+    switch (type) {
+        case GameObjectType::Cube: return os << "Cube";
+        case GameObjectType::Capsule: return os << "Capsule";
+        case GameObjectType::Light: return os << "Light";
+        case GameObjectType::Sphere: return os << "Sphere";
+        case GameObjectType::Cylinder: return os << "Cylinder";
+        case GameObjectType::Camera: return os << "Camera";
+        default: return os << "Unknown";
+    }
+}
 
 class GameObject : public std::enable_shared_from_this<GameObject>  {
 public:
@@ -132,6 +145,8 @@ private:
 
 protected:
     std::vector<std::shared_ptr<Component>> m_components;
+    friend std::ostream& operator <<(std::ostream& os, const GameObjectType& type);
+
 };
 
 

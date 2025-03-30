@@ -39,7 +39,7 @@ void renderSceneView();
     void SetupDockingLayout(const ImGuiID & dockspace_id);
     void renderEntityTree(const std::shared_ptr<Entity>& entity) const;
 
-    void ShaderDebugUI();
+    void ShaderDebugUI() const;
     void renderToolbar();
     void renderImGuiLayout();
     void renderHierarchy(const std::vector<std::shared_ptr<Entity>>& components) const;

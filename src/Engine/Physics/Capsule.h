@@ -33,7 +33,7 @@ public:
         return GameObjectType::Capsule;
     }
     void addComponents() {
-        const auto & capsuleMesh = std::make_shared<Mesh>("Capsule");
+        const auto & capsuleMesh = std::make_shared<Mesh>("CapsuleMesh");
         const auto & capsuleTransform = getComponent<Transform>();
         if (capsuleTransform) {
             capsuleTransform->setPosition(glm::vec3(-2.5f, 1.5f, 0.0f));

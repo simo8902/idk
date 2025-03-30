@@ -33,7 +33,7 @@ public:
     }
 
     void addComponents() {
-        const auto & cubeMesh = std::make_shared<Mesh>("CMesh");
+        const auto & cubeMesh = std::make_shared<Mesh>("CubeMesh");
         const auto & cubeTransform = getComponent<Transform>();
         if (cubeTransform) {
             cubeTransform->setPosition(glm::vec3(0.0f, 1.5f, 0.0f));

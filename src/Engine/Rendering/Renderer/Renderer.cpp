@@ -8,7 +8,6 @@
 #include <imgui_internal.h>
 #include <iostream>
 
-#include "assetparser.hpp"
 #include "DeferredRenderer.h"
 #include "Entity.h"
 #include "ForwardRenderer.h"
@@ -24,10 +23,10 @@ extern "C" LIBDATA_API void hierarchyeffects();
 
 Renderer::Renderer(const std::shared_ptr<Scene>& scene, const std::shared_ptr<Camera>
     & camera, GLFWwindow* window, const std::string& rendererType)
-    :  m_Window(window),
+    :  showAssetManager(true),
+    m_Window(window),
     scene(scene),
-    m_Camera(camera),
-    showAssetManager(true)
+    m_Camera(camera)
 {
     myRenderer = this;
     HierarchyManager::getInstance().initialize(myRenderer, scene);
@@ -77,7 +76,6 @@ void Renderer::render() {
 
     processInput(m_Window);
     fpsCounter.update();
-    ShowAssetManagerUI(&showAssetManager);
 
     renderImGuiLayout();
 
@@ -350,7 +348,7 @@ void Renderer::renderHierarchy(const std::vector<std::shared_ptr<Entity>>& compo
         ImGui::SetNextWindowDockID(m_HierarchyDockID, ImGuiCond_Always);
     }
 
-    const std::string& title2 = "   Hierarchy";
+    const std::string& title2 = "Hierarchy";
     if (ImGui::Begin(title2.c_str(), nullptr, ImGuiWindowFlags_NoCollapse)) {
 
         hierarchyeffects();
@@ -447,7 +445,7 @@ void Renderer::renderProjectExplorer() {
     }
     ImGui::End();
 }
-void Renderer::ShaderDebugUI() {
+void Renderer::ShaderDebugUI() const {
     ImGui::Begin("Shader Debug UI", nullptr, ImGuiWindowFlags_NoResize);
 
     if(ImGui::Button("Reload All")) {

@@ -53,7 +53,13 @@ file(GLOB_RECURSE PROJECT_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 
+list(REMOVE_ITEM PROJECT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utilities/assetparser.cpp")
+
 add_executable(idk_core main.cpp ${PROJECT_SOURCES})
+add_executable(CoreAssetExporter src/Engine/Utilities/assetparser.cpp)
+
+target_link_libraries(CoreAssetExporter PRIVATE imgui glad glfw z sqlite3)
+target_compile_definitions(CoreAssetExporter PRIVATE ASSET_EXPORTER)
 
 link_directories("${PROJECT_SOURCE_DIR}/cmake-build-debug")
 

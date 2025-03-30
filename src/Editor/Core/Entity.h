@@ -13,7 +13,10 @@
 
 class Entity final : public std::enable_shared_from_this<Entity>, public Selectable{
 public:
-    explicit Entity(const std::shared_ptr<GameObject>& gameObject) : gameObject(gameObject) {}
+    explicit Entity(const std::shared_ptr<GameObject>& gameObject) : gameObject(gameObject) {
+        // std::cerr << "Entities: " << gameObject->getName()
+        //     << " Type of: " << gameObject->getType() << std::endl;
+    }
 
     std::string getName() const override {
         if (gameObject) {
@@ -30,17 +33,14 @@ public:
 
     void select() override {
         if (gameObject) {
-            // Your custom logic for selection, if needed.
-            isSelected = true;  // Track selection state
+            isSelected = true;
             std::cout << "Entity selected: " << getName() << std::endl;
         }
     }
 
-    // Implement deselect method from Selectable interface
     void deselect() override {
         if (gameObject) {
-            // Your custom logic for deselection, if needed.
-            isSelected = false;  // Track deselection state
+            isSelected = false;
             std::cout << "Entity deselected: " << getName() << std::endl;
         }
     }
@@ -84,7 +84,6 @@ public:
 
     template<typename T>
     std::shared_ptr<T> getComponent() const {
-        // First, check the GameObject's components
         if (gameObject) {
             auto gameObjectComponent = gameObject->getComponent<T>();
             if (gameObjectComponent) return gameObjectComponent;
@@ -112,20 +111,16 @@ public:
     bool hasComponent() const {
         return gameObject->hasComponent<T>();
     }
-
 private:
-    std::string gameObjectTypeToString(GameObjectType type)const {
+    static std::string gameObjectTypeToString(GameObjectType type) {
         switch (type) {
-        case GameObjectType::Cube:
-            return "Cube";
-        case GameObjectType::Capsule:
-            return "Capsule";
-        case GameObjectType::Light:
-            return "Light";
-        case GameObjectType::Camera:
-            return "Camera";
-        default:
-            return "Unknown";
+            case GameObjectType::Cube: return "Cube";
+            case GameObjectType::Capsule: return "Capsule";
+            case GameObjectType::Light: return "Light";
+            case GameObjectType::Sphere: return "Sphere";
+            case GameObjectType::Cylinder: return "Cylinder";
+            case GameObjectType::Camera: return "Camera";
+            default: return "Unknown";
         }
     }
 

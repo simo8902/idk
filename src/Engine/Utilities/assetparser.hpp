@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <imgui.h>
 #include "portable-file-dialogs.h"
+#include <unordered_set>
 
 namespace fs = std::filesystem;
 
@@ -140,7 +141,7 @@ struct Asset {
     int size;
     int original_size;
 };
-void ProcessPackageFile(const fs::path& packagePath, const fs::path& outputDir) {
+inline void ProcessPackageFile(const fs::path& packagePath, const fs::path& outputDir) {
        AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Starting package processing: %s", packagePath.string().c_str());
 
     std::ifstream package(packagePath.string(), std::ios::binary | std::ios::ate);
@@ -458,346 +459,347 @@ inline bool addAsset(sqlite3* db, const std::string& assetName,
 }
 
 inline void ShowAssetManagerUI(bool* p_open) {
-    ImGui::Begin("Asset Manager", p_open);
+    if (ImGui::Begin("Asset Manager", p_open)) {
 
-    static std::vector<Asset> assets;
-    static std::vector<std::pair<std::string, std::string>> assetsToAdd;
+        static std::vector<Asset> assets;
+        static std::vector<std::pair<std::string, std::string>> assetsToAdd;
 
-    static char packageName[256] = "game";
-    static char outputDir[256] = "output/";
-    static bool useCustomDir = false;
-    static char newAssetPrefix[128] = "";
-    static char newAssetPath[256] = "";
+        static char packageName[256] = "game";
+        static char outputDir[256] = "output/";
+        static bool useCustomDir = false;
+        static char newAssetPrefix[128] = "";
+        static char newAssetPath[256] = "";
 
-    ImGui::Text("Package Configuration");
-    ImGui::InputText("Package Name", packageName, IM_ARRAYSIZE(packageName));
-    ImGui::Checkbox("Custom Output Directory", &useCustomDir);
-    if (useCustomDir) {
-        ImGui::InputText("Output Path", outputDir, IM_ARRAYSIZE(outputDir));
-    }
-
-    if (ImGui::Button("Initialize Package")) {
-        const fs::path dirPath = useCustomDir ? fs::path(outputDir) : fs::path();
-        if (!dirPath.empty() && !fs::create_directories(dirPath)) {
-            AddLog(ImVec4(1,0,0,1), "Failed to create directory: %s", dirPath.string().c_str());
-        } else {
-            currentDbPath = (dirPath / (std::string(packageName) + ".db")).string();
-            currentPackagePath = (dirPath / (std::string(packageName) + ".sassets")).string();
-
-            if (initDB(currentDbPath)) {
-                assets = loadAssets();
-                AddLog(ImVec4(0,1,0,1), "Created new package: %s", currentPackagePath.c_str());
-            }
+        ImGui::Text("Package Configuration");
+        ImGui::InputText("Package Name", packageName, IM_ARRAYSIZE(packageName));
+        ImGui::Checkbox("Custom Output Directory", &useCustomDir);
+        if (useCustomDir) {
+            ImGui::InputText("Output Path", outputDir, IM_ARRAYSIZE(outputDir));
         }
-    }
 
-    ImGui::Separator();
-
-    if (assets.empty()) {
-        ImGui::TextColored(ImVec4(1,0.5,0,1), "No assets loaded. Initialize a package and add assets first.");
-    }
-    else {
-        if (ImGui::BeginTable("Assets", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-            ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed, 40);
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 80);
-            ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 80);
-            ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100);
-            ImGui::TableHeadersRow();
-
-            for (const auto& asset : assets) {
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("%d", asset.id);
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%s", asset.name.c_str());
-                ImGui::TableSetColumnIndex(2);
-                ImGui::Text("%s", asset.type.c_str());
-                ImGui::TableSetColumnIndex(3);
-                ImGui::Text("%.2f KB", asset.size / 1024.0f);
-                ImGui::TableSetColumnIndex(4);
-
-                ImGui::PushID(asset.id);
-                if (ImGui::Button("Extract")) {
-                    const auto outPath = fs::path("extracted") / asset.name;
-                    if (!fs::exists(outPath.parent_path())) {
-                        fs::create_directories(outPath.parent_path());
-                    }
-                    if (extractAsset(currentPackagePath, asset.name, outPath.string())) {
-                        AddLog(ImVec4(0,1,0,1), "Extracted: %s", asset.name.c_str());
-                    } else {
-                        AddLog(ImVec4(1,0,0,1), "Failed to extract: %s", asset.name.c_str());
-                    }
-                }
-                ImGui::PopID();
-            }
-            ImGui::EndTable();
-        }
-    }
-
-    ImGui::Separator();
-
-    ImGui::Text("Add Assets");
-    ImGui::InputText("Asset Prefix", newAssetPrefix, IM_ARRAYSIZE(newAssetPrefix));
-    ImGui::InputText("File/Directory", newAssetPath, IM_ARRAYSIZE(newAssetPath));
-
-    if (ImGui::Button("Add Assets")) {
-        try {
-
-            std::unordered_set<std::string> allNames;
-
-            sqlite3* tempDb;
-            if (sqlite3_open(currentDbPath.c_str(), &tempDb) == SQLITE_OK) {
-                sqlite3_stmt* stmt;
-                sqlite3_prepare_v2(tempDb, "SELECT name FROM assets;", -1, &stmt, nullptr);
-                while (sqlite3_step(stmt) == SQLITE_ROW) {
-                    allNames.insert(
-                        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))
-                    );
-                }
-                sqlite3_finalize(stmt);
-                sqlite3_close(tempDb);
-            }
-
-            for (const auto& [name, path] : assetsToAdd) {
-                allNames.insert(name);
-            }
-
-            const fs::path sourcePath(newAssetPath);
-            if (!fs::exists(sourcePath)) {
-                AddLog(ImVec4(1,0,0,1), "Path not found: %s", newAssetPath);
-            } else if (fs::is_directory(sourcePath)) {
-                size_t count = 0;
-                for (const auto& entry : fs::recursive_directory_iterator(sourcePath)) {
-                    if (entry.is_regular_file()) {
-                        const auto relPath = fs::relative(entry.path(), sourcePath).generic_string();
-                        const auto assetName = std::string(newAssetPrefix) + "/" + relPath;
-                        assetsToAdd.emplace_back(assetName, entry.path().string());
-                        count++;
-                    }
-                }
-                AddLog(ImVec4(0,1,0,1), "Added %zu files from directory", count);
+        if (ImGui::Button("Initialize Package")) {
+            const fs::path dirPath = useCustomDir ? fs::path(outputDir) : fs::path();
+            if (!dirPath.empty() && !fs::create_directories(dirPath)) {
+                AddLog(ImVec4(1,0,0,1), "Failed to create directory: %s", dirPath.string().c_str());
             } else {
-                const std::string assetName = newAssetPrefix[0] ?
-                    std::string(newAssetPrefix) : sourcePath.filename().string();
-                assetsToAdd.emplace_back(assetName, sourcePath.string());
-                AddLog(ImVec4(0,1,0,1), "Added single file: %s", assetName.c_str());
-            }
-        } catch (const fs::filesystem_error& e) {
-            AddLog(ImVec4(1,0,0,1), "Filesystem error: %s", e.what());
-        }
-    }
+                currentDbPath = (dirPath / (std::string(packageName) + ".db")).string();
+                currentPackagePath = (dirPath / (std::string(packageName) + ".sassets")).string();
 
-    ImGui::Separator();
-    if (ImGui::Button("Build Package")) {
-        if (assetsToAdd.empty()) {
-            AddLog(ImVec4(1,1,0,1), "No assets to add!");
-        } else if (currentPackagePath.empty()) {
-            AddLog(ImVec4(1,0,0,1), "Initialize package first!");
-        } else {
-            sqlite3* db = nullptr;
-            std::string tmpPackage = currentPackagePath + ".tmp";
-            bool success = true;
-
-            try {
-                std::unordered_set<std::string> existingNames;
-                sqlite3_stmt* stmt;
-                sqlite3_prepare_v2(db, "SELECT name FROM assets;", -1, &stmt, nullptr);
-                while (sqlite3_step(stmt) == SQLITE_ROW) {
-                    existingNames.insert(
-                        reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))
-                    );
+                if (initDB(currentDbPath)) {
+                    assets = loadAssets();
+                    AddLog(ImVec4(0,1,0,1), "Created new package: %s", currentPackagePath.c_str());
                 }
-                sqlite3_finalize(stmt);
+            }
+        }
 
-                std::vector<std::pair<std::string, std::string>> filteredAssets;
-                std::unordered_set<std::string> newNames;
+        ImGui::Separator();
+
+        if (assets.empty()) {
+            ImGui::TextColored(ImVec4(1,0.5,0,1), "No assets loaded. Initialize a package and add assets first.");
+        }
+        else {
+            if (ImGui::BeginTable("Assets", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+                ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed, 40);
+                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 80);
+                ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 80);
+                ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100);
+                ImGui::TableHeadersRow();
+
+                for (const auto& asset : assets) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("%d", asset.id);
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::Text("%s", asset.name.c_str());
+                    ImGui::TableSetColumnIndex(2);
+                    ImGui::Text("%s", asset.type.c_str());
+                    ImGui::TableSetColumnIndex(3);
+                    ImGui::Text("%.2f KB", asset.size / 1024.0f);
+                    ImGui::TableSetColumnIndex(4);
+
+                    ImGui::PushID(asset.id);
+                    if (ImGui::Button("Extract")) {
+                        const auto outPath = fs::path("extracted") / asset.name;
+                        if (!fs::exists(outPath.parent_path())) {
+                            fs::create_directories(outPath.parent_path());
+                        }
+                        if (extractAsset(currentPackagePath, asset.name, outPath.string())) {
+                            AddLog(ImVec4(0,1,0,1), "Extracted: %s", asset.name.c_str());
+                        } else {
+                            AddLog(ImVec4(1,0,0,1), "Failed to extract: %s", asset.name.c_str());
+                        }
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::EndTable();
+            }
+        }
+
+        ImGui::Separator();
+
+        ImGui::Text("Add Assets");
+        ImGui::InputText("Asset Prefix", newAssetPrefix, IM_ARRAYSIZE(newAssetPrefix));
+        ImGui::InputText("File/Directory", newAssetPath, IM_ARRAYSIZE(newAssetPath));
+
+        if (ImGui::Button("Add Assets")) {
+            try {
+
+                std::unordered_set<std::string> allNames;
+
+                sqlite3* tempDb;
+                if (sqlite3_open(currentDbPath.c_str(), &tempDb) == SQLITE_OK) {
+                    sqlite3_stmt* stmt;
+                    sqlite3_prepare_v2(tempDb, "SELECT name FROM assets;", -1, &stmt, nullptr);
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        allNames.insert(
+                            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))
+                        );
+                    }
+                    sqlite3_finalize(stmt);
+                    sqlite3_close(tempDb);
+                }
 
                 for (const auto& [name, path] : assetsToAdd) {
-                    if (existingNames.count(name) || newNames.count(name)) {
-                        AddLog(ImVec4(1,0.5,0,1), "Skipping duplicate: %s", name.c_str());
-                    } else {
-                        filteredAssets.push_back({name, path});
-                        newNames.insert(name);
+                    allNames.insert(name);
+                }
+
+                const fs::path sourcePath(newAssetPath);
+                if (!fs::exists(sourcePath)) {
+                    AddLog(ImVec4(1,0,0,1), "Path not found: %s", newAssetPath);
+                } else if (fs::is_directory(sourcePath)) {
+                    size_t count = 0;
+                    for (const auto& entry : fs::recursive_directory_iterator(sourcePath)) {
+                        if (entry.is_regular_file()) {
+                            const auto relPath = fs::relative(entry.path(), sourcePath).generic_string();
+                            const auto assetName = std::string(newAssetPrefix) + "/" + relPath;
+                            assetsToAdd.emplace_back(assetName, entry.path().string());
+                            count++;
+                        }
                     }
+                    AddLog(ImVec4(0,1,0,1), "Added %zu files from directory", count);
+                } else {
+                    const std::string assetName = newAssetPrefix[0] ?
+                        std::string(newAssetPrefix) : sourcePath.filename().string();
+                    assetsToAdd.emplace_back(assetName, sourcePath.string());
+                    AddLog(ImVec4(0,1,0,1), "Added single file: %s", assetName.c_str());
                 }
-
-                assetsToAdd.swap(filteredAssets);
-
-                if (assetsToAdd.empty()) {
-                    throw std::runtime_error("No non-duplicate assets to add");
-                }
-                if (sqlite3_open(currentDbPath.c_str(), &db) != SQLITE_OK) {
-                    throw std::runtime_error(sqlite3_errmsg(db));
-                }
-
-                if (sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr) != SQLITE_OK) {
-                    throw std::runtime_error(sqlite3_errmsg(db));
-                }
-
-                {
-                    std::ofstream package(tmpPackage, std::ios::binary | std::ios::trunc);
-                    if (!package) {
-                        throw std::runtime_error("Failed to create temporary package file");
-                    }
-
-                    size_t totalEntriesSize = 0;
-                    for (const auto& [name, path] : assetsToAdd) {
-                        totalEntriesSize += sizeof(AssetEntry) + name.size();
-                    }
-
-                    uint64_t current_offset = sizeof(PackageHeader) + totalEntriesSize;
-
-                    std::vector<AssetEntry> entries;
-                    std::vector<std::string> names;
-                    std::vector<std::vector<Bytef>> compressedDataList;
-
-                    for (const auto& [name, path] : assetsToAdd) {
-                        std::ifstream file(path, std::ios::binary | std::ios::ate);
-                        size_t originalSize = file.tellg();
-                        file.seekg(0);
-                        std::vector<char> input(originalSize);
-                        file.read(input.data(), originalSize);
-
-                        auto compressed = compressData(input);
-                        compressedDataList.push_back(compressed);
-
-                        AssetEntry entry;
-                        entry.nameLength = static_cast<uint32_t>(name.size());
-                        entry.offset = current_offset;
-                        entry.compressedSize = static_cast<uint32_t>(compressed.size());
-                        entry.originalSize = static_cast<uint32_t>(originalSize);
-
-                        entries.push_back(entry);
-                        names.push_back(name);
-
-                        current_offset += compressed.size();
-                    }
-
-                    PackageHeader header;
-                    memcpy(header.magic, "SASS", 4);
-                    header.version = 1;
-                    header.assetCount = static_cast<uint32_t>(assetsToAdd.size());
-                    package.write(reinterpret_cast<const char*>(&header), sizeof(header));
-
-                    for (size_t i = 0; i < entries.size(); ++i) {
-                        package.write(reinterpret_cast<const char*>(&entries[i]), sizeof(AssetEntry));
-                        package.write(names[i].data(), names[i].size());
-                    }
-
-                    for (const auto& compressed : compressedDataList) {
-                        package.write(reinterpret_cast<const char*>(compressed.data()), compressed.size());
-                    }
-                }
-
-                if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, nullptr) != SQLITE_OK) {
-                    throw std::runtime_error(sqlite3_errmsg(db));
-                }
-
-                if (fs::exists(currentPackagePath)) {
-                    if (!fs::remove(currentPackagePath)) {
-                        throw std::runtime_error("Could not remove old package file");
-                    }
-                }
-
-#ifdef _WIN32
-                if (!MoveFileExA(tmpPackage.c_str(), currentPackagePath.c_str(), MOVEFILE_REPLACE_EXISTING)) {
-                    throw std::runtime_error("Failed to replace package file");
-                }
-#else
-                fs::rename(tmpPackage, currentPackagePath);
-#endif
-
-                size_t added_count = assetsToAdd.size();
-                assetsToAdd.clear();
-                AddLog(ImVec4(0,1,0,1), "Built package with %zu assets", added_count);
-            }
-            catch (const std::exception& e) {
-                success = false;
-                if (db) sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr);
-
-                if (fs::exists(tmpPackage)) {
-                    fs::remove(tmpPackage);
-                }
-
-                AddLog(ImVec4(1,0,0,1), "Build failed: %s", e.what());
-            }
-
-            if (db) {
-                sqlite3_close(db);
+            } catch (const fs::filesystem_error& e) {
+                AddLog(ImVec4(1,0,0,1), "Filesystem error: %s", e.what());
             }
         }
-    }
 
-    ImGui::Separator();
-    ImGui::Text("Logs");
-    ImGui::BeginChild("Logs", ImVec2(0, 150), true);
-    {
-        std::lock_guard<std::mutex> lock(logMutex);
-        const auto now = std::chrono::steady_clock::now();
-
-        for (auto it = logEntries.begin(); it != logEntries.end();) {
-            const float age = std::chrono::duration<float>(now - it->timestamp).count();
-
-            if (age > LOG_DISPLAY_TIME) {
-                it = logEntries.erase(it);
+        ImGui::Separator();
+        if (ImGui::Button("Build Package")) {
+            if (assetsToAdd.empty()) {
+                AddLog(ImVec4(1,1,0,1), "No assets to add!");
+            } else if (currentPackagePath.empty()) {
+                AddLog(ImVec4(1,0,0,1), "Initialize package first!");
             } else {
-                ImGui::PushStyleColor(ImGuiCol_Text, it->color);
-                ImGui::TextWrapped("[%.1fs] %s", LOG_DISPLAY_TIME - age, it->message.c_str());
-                ImGui::PopStyleColor();
-                ++it;
-            }
-        }
-    }
-    ImGui::EndChild();
+                sqlite3* db = nullptr;
+                std::string tmpPackage = currentPackagePath + ".tmp";
+                bool success = true;
 
-    if (ImGui::Button("Decompress .sassets")) {
-        try {
-            AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Opening file dialog...");
-            auto dialog = pfd::open_file(
-                "Select Asset Package",
-                "",
-                {"Asset Packages (.sassets)", "*.sassets"},
-                pfd::opt::none
-            );
+                try {
+                    std::unordered_set<std::string> existingNames;
+                    sqlite3_stmt* stmt;
+                    sqlite3_prepare_v2(db, "SELECT name FROM assets;", -1, &stmt, nullptr);
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        existingNames.insert(
+                            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0))
+                        );
+                    }
+                    sqlite3_finalize(stmt);
 
+                    std::vector<std::pair<std::string, std::string>> filteredAssets;
+                    std::unordered_set<std::string> newNames;
 
-            if (!dialog.result().empty()) {
-                const fs::path packagePath = dialog.result()[0];
-                AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Selected file: %s", packagePath.string().c_str());
+                    for (const auto& [name, path] : assetsToAdd) {
+                        if (existingNames.count(name) || newNames.count(name)) {
+                            AddLog(ImVec4(1,0.5,0,1), "Skipping duplicate: %s", name.c_str());
+                        } else {
+                            filteredAssets.push_back({name, path});
+                            newNames.insert(name);
+                        }
+                    }
 
-                if (!fs::exists(packagePath)) {
-                    throw std::runtime_error("File does not exist: " + packagePath.string());
-                }
+                    assetsToAdd.swap(filteredAssets);
 
-                fs::path outputDir = packagePath.parent_path() /
-                                   (packagePath.stem().string() + "_decompressed");
-                int counter = 1;
-                while (fs::exists(outputDir)) {
-                    outputDir = packagePath.parent_path() /
-                              (packagePath.stem().string() + "_decompressed_" + std::to_string(counter++));
-                }
+                    if (assetsToAdd.empty()) {
+                        throw std::runtime_error("No non-duplicate assets to add");
+                    }
+                    if (sqlite3_open(currentDbPath.c_str(), &db) != SQLITE_OK) {
+                        throw std::runtime_error(sqlite3_errmsg(db));
+                    }
 
-                AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Creating output directory: %s", outputDir.string().c_str());
-                fs::create_directories(outputDir);
+                    if (sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr) != SQLITE_OK) {
+                        throw std::runtime_error(sqlite3_errmsg(db));
+                    }
 
-                if (!fs::exists(outputDir)) {
-                    throw std::runtime_error("Failed to create output directory");
-                }
+                    {
+                        std::ofstream package(tmpPackage, std::ios::binary | std::ios::trunc);
+                        if (!package) {
+                            throw std::runtime_error("Failed to create temporary package file");
+                        }
 
-                AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Starting decompression...");
-                ProcessPackageFile(packagePath, outputDir);
-                AddLog(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Decompression completed successfully!");
+                        size_t totalEntriesSize = 0;
+                        for (const auto& [name, path] : assetsToAdd) {
+                            totalEntriesSize += sizeof(AssetEntry) + name.size();
+                        }
+
+                        uint64_t current_offset = sizeof(PackageHeader) + totalEntriesSize;
+
+                        std::vector<AssetEntry> entries;
+                        std::vector<std::string> names;
+                        std::vector<std::vector<Bytef>> compressedDataList;
+
+                        for (const auto& [name, path] : assetsToAdd) {
+                            std::ifstream file(path, std::ios::binary | std::ios::ate);
+                            size_t originalSize = file.tellg();
+                            file.seekg(0);
+                            std::vector<char> input(originalSize);
+                            file.read(input.data(), originalSize);
+
+                            auto compressed = compressData(input);
+                            compressedDataList.push_back(compressed);
+
+                            AssetEntry entry;
+                            entry.nameLength = static_cast<uint32_t>(name.size());
+                            entry.offset = current_offset;
+                            entry.compressedSize = static_cast<uint32_t>(compressed.size());
+                            entry.originalSize = static_cast<uint32_t>(originalSize);
+
+                            entries.push_back(entry);
+                            names.push_back(name);
+
+                            current_offset += compressed.size();
+                        }
+
+                        PackageHeader header;
+                        memcpy(header.magic, "SASS", 4);
+                        header.version = 1;
+                        header.assetCount = static_cast<uint32_t>(assetsToAdd.size());
+                        package.write(reinterpret_cast<const char*>(&header), sizeof(header));
+
+                        for (size_t i = 0; i < entries.size(); ++i) {
+                            package.write(reinterpret_cast<const char*>(&entries[i]), sizeof(AssetEntry));
+                            package.write(names[i].data(), names[i].size());
+                        }
+
+                        for (const auto& compressed : compressedDataList) {
+                            package.write(reinterpret_cast<const char*>(compressed.data()), compressed.size());
+                        }
+                    }
+
+                    if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, nullptr) != SQLITE_OK) {
+                        throw std::runtime_error(sqlite3_errmsg(db));
+                    }
+
+                    if (fs::exists(currentPackagePath)) {
+                        if (!fs::remove(currentPackagePath)) {
+                            throw std::runtime_error("Could not remove old package file");
+                        }
+                    }
 
 #ifdef _WIN32
-                ShellExecuteA(nullptr, "open", outputDir.string().c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
+                    if (!MoveFileExA(tmpPackage.c_str(), currentPackagePath.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+                        throw std::runtime_error("Failed to replace package file");
+                    }
+#else
+                    fs::rename(tmpPackage, currentPackagePath);
 #endif
+
+                    size_t added_count = assetsToAdd.size();
+                    assetsToAdd.clear();
+                    AddLog(ImVec4(0,1,0,1), "Built package with %zu assets", added_count);
+                }
+                catch (const std::exception& e) {
+                    success = false;
+                    if (db) sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr);
+
+                    if (fs::exists(tmpPackage)) {
+                        fs::remove(tmpPackage);
+                    }
+
+                    AddLog(ImVec4(1,0,0,1), "Build failed: %s", e.what());
+                }
+
+                if (db) {
+                    sqlite3_close(db);
+                }
             }
-            else {
-                AddLog(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "File selection canceled");
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Logs");
+        ImGui::BeginChild("Logs", ImVec2(0, 150), true);
+        {
+            std::lock_guard<std::mutex> lock(logMutex);
+            const auto now = std::chrono::steady_clock::now();
+
+            for (auto it = logEntries.begin(); it != logEntries.end();) {
+                const float age = std::chrono::duration<float>(now - it->timestamp).count();
+
+                if (age > LOG_DISPLAY_TIME) {
+                    it = logEntries.erase(it);
+                } else {
+                    ImGui::PushStyleColor(ImGuiCol_Text, it->color);
+                    ImGui::TextWrapped("[%.1fs] %s", LOG_DISPLAY_TIME - age, it->message.c_str());
+                    ImGui::PopStyleColor();
+                    ++it;
+                }
             }
-        } catch (const std::exception& e) {
-            AddLog(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: %s", e.what());
+        }
+        ImGui::EndChild();
+
+        if (ImGui::Button("Decompress .sassets")) {
+            try {
+                AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Opening file dialog...");
+                auto dialog = pfd::open_file(
+                    "Select Asset Package",
+                    "",
+                    {"Asset Packages (.sassets)", "*.sassets"},
+                    pfd::opt::none
+                );
+
+
+                if (!dialog.result().empty()) {
+                    const fs::path packagePath = dialog.result()[0];
+                    AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Selected file: %s", packagePath.string().c_str());
+
+                    if (!fs::exists(packagePath)) {
+                        throw std::runtime_error("File does not exist: " + packagePath.string());
+                    }
+
+                    fs::path outputDir = packagePath.parent_path() /
+                                       (packagePath.stem().string() + "_decompressed");
+                    int counter = 1;
+                    while (fs::exists(outputDir)) {
+                        outputDir = packagePath.parent_path() /
+                                  (packagePath.stem().string() + "_decompressed_" + std::to_string(counter++));
+                    }
+
+                    AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Creating output directory: %s", outputDir.string().c_str());
+                    fs::create_directories(outputDir);
+
+                    if (!fs::exists(outputDir)) {
+                        throw std::runtime_error("Failed to create output directory");
+                    }
+
+                    AddLog(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Starting decompression...");
+                    ProcessPackageFile(packagePath, outputDir);
+                    AddLog(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Decompression completed successfully!");
+
+#ifdef _WIN32
+                    ShellExecuteA(nullptr, "open", outputDir.string().c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
+#endif
+                }
+                else {
+                    AddLog(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "File selection canceled");
+                }
+            } catch (const std::exception& e) {
+                AddLog(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: %s", e.what());
+            }
         }
     }
 

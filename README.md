@@ -19,7 +19,8 @@ Make sure you have the following installed:
 ``` 
 mkdir build
 cd build
-cmake .. 
+cmake -B build
+cmake --build build
 ```
 or using the not ready Makefile
 ```
