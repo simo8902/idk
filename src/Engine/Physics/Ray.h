@@ -24,7 +24,7 @@ public:
         return m_direction;
     }
 
-    static Ray getRayFromScreenPoint(const glm::vec2 & ndc,const std::shared_ptr<Camera> & m_Camera) {
+    static Ray getRayFromScreenPoint(const glm::vec2 & ndc,const std::shared_ptr<IDK::Graphics::Camera> & m_Camera) {
         glm::vec4 rayStart_NDC(ndc.x, ndc.y, -1.0f, 1.0f);
         glm::vec4 rayEnd_NDC(ndc.x, ndc.y, 0.0f, 1.0f);
 

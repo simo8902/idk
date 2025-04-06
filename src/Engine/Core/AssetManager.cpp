@@ -121,7 +121,7 @@ void AssetManager::setRootFolder(const std::shared_ptr<AssetItem>& root) {
     rootFolder = root;
 }
 
-const std::unordered_map<std::string, std::shared_ptr<Shader>> & AssetManager::getShaders() const {
+const std::unordered_map<std::string, std::shared_ptr<IDK::Graphics::Shader>> & AssetManager::getShaders() const {
     return shaders;
 }
 
@@ -133,7 +133,7 @@ std::string AssetManager::getRootPath() const {
     return rootPath;
 }
 
-std::shared_ptr<Shader> AssetManager::getShaderByName(const std::string& shaderName) const {
+std::shared_ptr<IDK::Graphics::Shader> AssetManager::getShaderByName(const std::string& shaderName) const {
     /*
     auto it = shaderNameToUUID.find(shaderName);
     if (it != shaderNameToUUID.end()) {
@@ -153,7 +153,7 @@ bool AssetManager::removeShader(const std::string& uuidStr) {
     return false;
 }
 
-std::shared_ptr<Shader> AssetManager::getShader(const std::string& name) {
+std::shared_ptr<IDK::Graphics::Shader> AssetManager::getShader(const std::string& name) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
         return it->second;
@@ -191,6 +191,6 @@ bool AssetManager::addAsset(const std::shared_ptr<AssetItem> &asset) {
 }
 
 
-bool AssetManager::addShader(const std::shared_ptr<Shader>& shader) {
+bool AssetManager::addShader(const std::shared_ptr<IDK::Graphics::Shader>& shader) {
     return false;
 }

@@ -20,7 +20,7 @@ class Shader;
 
 class DeferredRenderer final : public IRenderDeferred {
 public:
-    DeferredRenderer(const std::shared_ptr<Scene>& scene, const std::shared_ptr<Camera>& camera,
+    DeferredRenderer(const std::shared_ptr<IDK::Scene>& scene, const std::shared_ptr<IDK::Graphics::Camera>& camera,
                      GLFWwindow* window, const std::string& rendererType);
     ~DeferredRenderer() override;
 
@@ -55,9 +55,9 @@ public:
 private:
     GLuint gPosition, gNormal, gAlbedoSpec;
 
-    std::shared_ptr<Shader> shaderProgram = ShaderManager::Instance().getShaderProgram();
-    std::shared_ptr<Shader> lightingShader = ShaderManager::Instance().getLightShader();
-    std::shared_ptr<Shader> finalPassShader = ShaderManager::Instance().getFinalPassShader();
+    std::shared_ptr<IDK::Graphics::Shader> shaderProgram = ShaderManager::Instance().getShaderProgram();
+    std::shared_ptr<IDK::Graphics::Shader> lightingShader = ShaderManager::Instance().getLightShader();
+    std::shared_ptr<IDK::Graphics::Shader> finalPassShader = ShaderManager::Instance().getFinalPassShader();
 
     GLFWwindow* window;
     std::string rendererType;
@@ -71,8 +71,8 @@ private:
     GLuint quadVAO, quadVBO;
     int width, height;
 
-    std::shared_ptr<Scene> scene;
-    std::shared_ptr<Camera> camera;
+    std::shared_ptr<IDK::Scene> scene;
+    std::shared_ptr<IDK::Graphics::Camera> camera;
     std::shared_ptr<LightManager> lightManager;
 };
 

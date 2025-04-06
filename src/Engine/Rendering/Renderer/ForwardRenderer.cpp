@@ -7,7 +7,7 @@
 #include "Collider.h"
 #include "MeshRenderer.h"
 
-ForwardRenderer::ForwardRenderer(const std::shared_ptr<Scene>& scene, const std::shared_ptr<Camera>& camera,
+ForwardRenderer::ForwardRenderer(const std::shared_ptr<IDK::Scene>& scene, const std::shared_ptr<IDK::Graphics::Camera>& camera,
                                  GLFWwindow* window, const std::string& rendererType)
     : scene(scene), camera(camera), window(window), rendererType(rendererType),
       FBO(0), texture_id(0), RBO(0), width(0), height(0)
@@ -75,7 +75,7 @@ void ForwardRenderer::render() {
 
         }
 
-        if (const auto & meshRenderer = obj->getComponent<MeshRenderer>())
+        if (const auto & meshRenderer = obj->getComponent<IDK::Components::MeshRenderer>())
         {
             shaderProgram->Use();
             shaderProgram->setMat4("view", viewF);

@@ -5,14 +5,17 @@
 #ifndef LUPUSFIRE_CORE_TRANSFORM_H
 #define LUPUSFIRE_CORE_TRANSFORM_H
 
-#include "Component.h"
+#include "../ECS/Component.h"
 #include "gtx/matrix_decompose.hpp"
 
 class Transform final : public Component {
 public:
     explicit Transform()
-        : Component("Transform"), modelMatrix(glm::mat4(1.0f)), position(),
-          rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)), m_scale(glm::vec3(1.0f))
+        : Component("Transform"),
+          modelMatrix(glm::mat4(1.0f)),
+          position(glm::vec3(0.0f)),
+          rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
+          m_scale(glm::vec3(1.0f))
     {
     }
 

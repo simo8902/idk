@@ -5,18 +5,20 @@
 #ifndef SELECTIONMANAGER_H
 #define SELECTIONMANAGER_H
 
-#include <Component.h>
+#include <../../Engine/ECS/Component.h>
 #include <memory>
 #include "AssetItem.h"
 #include "Entity.h"
 #include "SelectionEvent.h"
 
-class Mesh;
-class Material;
-class GameObject;
-class Light;
-class Camera;
-class Shader;
+namespace IDK::Graphics
+{
+    class Mesh;
+    class Material;
+    class Light;
+    class Camera;
+    class Shader;
+}
 
 class SelectionManager {
 public:
@@ -28,29 +30,26 @@ public:
     std::shared_ptr<Entity> getSelectedObject() const;
     void registerListener(std::function<void(const SelectionEvent&)> listener);
 
-    void selectMesh(const std::shared_ptr<Mesh>& mesh);
-    void selectMaterial(const std::shared_ptr<Material>& material);
-    void selectLight(const std::shared_ptr<Light>& light);
-    void selectCamera(const std::shared_ptr<Camera>& camera);
-    void selectShader(const std::shared_ptr<Shader>& shader);
+    void selectMesh(const std::shared_ptr<IDK::Graphics::Mesh>& mesh);
+    void selectMaterial(const std::shared_ptr<IDK::Graphics::Material>& material);
+    void selectLight(const std::shared_ptr<IDK::Graphics::Light>& light);
+    void selectCamera(const std::shared_ptr<IDK::Graphics::Camera>& camera);
+    void selectShader(const std::shared_ptr<IDK::Graphics::Shader>& shader);
     void selectFolder(const std::shared_ptr<AssetItem>& folder);
-    void selectGameObject(const std::shared_ptr<GameObject> & gameobject);
 
     void selectVirtualAsset(const std::shared_ptr<AssetItem>& asset);
 
-    std::shared_ptr<Material> getSelectedMaterial() const;
-    std::shared_ptr<Mesh> getSelectedMesh() const;
-    std::shared_ptr<Shader> getSelectedShader() const;
+    std::shared_ptr<IDK::Graphics::Material> getSelectedMaterial() const;
+    std::shared_ptr<IDK::Graphics::Mesh> getSelectedMesh() const;
+    std::shared_ptr<IDK::Graphics::Shader> getSelectedShader() const;
     std::shared_ptr<AssetItem> getSelectedFolder() const;
-    std::shared_ptr<GameObject> getSelectedGameObject() const;
     std::shared_ptr<Entity> getSelectedEntity() const;
 
-    std::shared_ptr<Mesh> selectedMesh;
-    std::shared_ptr<Material> selectedMaterial;
-    std::shared_ptr<GameObject> selectedGameObject;
-    std::shared_ptr<Light> selectedLight;
-    std::shared_ptr<Camera> selectedCamera;
-    std::shared_ptr<Shader> selectedShader;
+    std::shared_ptr<IDK::Graphics::Mesh> selectedMesh;
+    std::shared_ptr<IDK::Graphics::Material> selectedMaterial;
+    std::shared_ptr<IDK::Graphics::Light> selectedLight;
+    std::shared_ptr<IDK::Graphics::Camera> selectedCamera;
+    std::shared_ptr<IDK::Graphics::Shader> selectedShader;
     std::shared_ptr<AssetItem> selectedFolder;
 
     void selectComponent(const std::shared_ptr<Entity>& component);
@@ -75,8 +74,8 @@ public:
         }*/
     }
 
-    std::shared_ptr<Light> getSelectedLight() const { return selectedLight; }
-    std::shared_ptr<Camera> getSelectedCamera() const { return selectedCamera; }
+    std::shared_ptr<IDK::Graphics::Light> getSelectedLight() const { return selectedLight; }
+    std::shared_ptr<IDK::Graphics::Camera> getSelectedCamera() const { return selectedCamera; }
 
     void clearSelections() {}
 

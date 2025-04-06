@@ -5,47 +5,46 @@
 #ifndef MESHFILTER_H
 #define MESHFILTER_H
 
-#include "Component.h"
+#include "../ECS/Component.h"
 #include "Mesh.h"
 
-class MeshFilter final : public Component {
-public:
-    explicit MeshFilter() : Component("MeshFilter")
-    {}
+namespace IDK::Components
+{
+    class MeshFilter final : public Component, public std::enable_shared_from_this<MeshFilter> {
+    public:
+        MeshFilter() : Component("MeshFilter") {}
+        ~MeshFilter() override = default;
 
-    ~MeshFilter() override = default;
-
-    const std::string & getName() const override {
-        return name;
-    }
-    void setName(const std::string &newName) override {
-        name = newName;
-    }
-
-    void setMesh(const std::shared_ptr<Mesh>& mesh) {
-        this->mesh = mesh;
-        if(mesh) {
-            name = mesh->getName();
+        const std::string & getName() const override {
+            return name;
         }
-       // UpdateMesh();
-    }
-
-    const std::shared_ptr<Mesh> &getMesh() const {
-        return mesh;
-    }
-    void clearMesh() {}
-
-    void UpdateMesh(){
-        if (mesh) {
-            mesh->SetupMesh();
+        void setName(const std::string &newName) override {
+            name = newName;
         }
-    }
 
-private:
-    std::shared_ptr<Mesh> mesh;
+        void setMesh(const std::shared_ptr<IDK::Graphics::Mesh>& mesh) {
+            this->mesh = mesh;
+            if(mesh) {
+                name = mesh->getName();
+            }
+            // UpdateMesh();
+        }
 
-    std::string name;
-    std::weak_ptr<GameObject> m_owner;
-};
+        const std::shared_ptr<IDK::Graphics::Mesh> &getMesh() const {
+            return mesh;
+        }
+        void clearMesh() {}
+
+        void UpdateMesh(){
+            if (mesh) {
+                mesh->SetupMesh();
+            }
+        }
+
+    private:
+        std::shared_ptr<IDK::Graphics::Mesh> mesh;
+        std::string name;
+    };
+}
 
 #endif //MESHFILTER_H

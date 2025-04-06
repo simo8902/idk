@@ -5,29 +5,36 @@
 #ifndef MESHRENDERER_H
 #define MESHRENDERER_H
 
-#include "Component.h"
+#include "../ECS/Component.h"
 #include "Mesh.h"
 #include "MeshFilter.h"
 #include "Shader.h"
 
-class MeshRenderer final : public Component{
-public:
-    explicit MeshRenderer(const std::shared_ptr<MeshFilter> &meshFilter)
-        : Component("MeshRenderer"), meshFilter(meshFilter)
-    {
-    }
+namespace IDK::Components
+{
+    class MeshRenderer final : public Component{
+    public:
+        MeshRenderer() : Component("MeshRenderer") {}
 
-    void Render(const Shader* shader) const
-    {
-        if (!meshFilter || !meshFilter->getMesh()) {
-            std::cerr << "[MeshRenderer] Cannot render: missing mesh filter, mesh or shader.\n";
-            return;
+        explicit MeshRenderer(const std::shared_ptr<IDK::Components::MeshFilter>& filter)
+            : Component("MeshRenderer"), meshFilter(filter) {}
+
+        void setMeshFilter(const std::shared_ptr<IDK::Components::MeshFilter>& filter) {
+            meshFilter = filter;
         }
 
-        meshFilter->getMesh()->Draw(*shader);
-    }
-private:
-    std::shared_ptr<MeshFilter> meshFilter;
-};
+        void Render(const IDK::Graphics::Shader* shader) const
+        {
+            if (!meshFilter || !meshFilter->getMesh()) {
+                std::cerr << "[MeshRenderer] Cannot render: missing mesh filter, mesh or shader.\n";
+                return;
+            }
+
+            meshFilter->getMesh()->Draw(*shader);
+        }
+    private:
+        std::shared_ptr<IDK::Components::MeshFilter> meshFilter;
+    };
+}
 
 #endif //MESHRENDERER_H

@@ -5,12 +5,13 @@
 #ifndef LUPUSFIRE_CORE_GAMEOBJECT_H
 #define LUPUSFIRE_CORE_GAMEOBJECT_H
 
+/*
 #include <iostream>
 #include <vector>
 #include <memory>
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
-#include "Component.h"
+#include "../ECS/Component.h"
 #include "Transform.h"
 
 #include "Selectable.h"
@@ -147,7 +148,7 @@ protected:
     std::vector<std::shared_ptr<Component>> m_components;
     friend std::ostream& operator <<(std::ostream& os, const GameObjectType& type);
 
-};
+};*/
 
 
 #endif

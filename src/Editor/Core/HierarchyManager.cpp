@@ -16,7 +16,7 @@
 
 const std::vector<std::shared_ptr<Entity>> HierarchyManager::m_emptyVector = {};
 
-void HierarchyManager::initialize(Renderer* renderer, std::shared_ptr<Scene> scene) {
+void HierarchyManager::initialize(IDK::Renderer* renderer, std::shared_ptr<IDK::Scene> scene) {
     m_renderer = renderer;
     m_scene = scene;
 }
@@ -51,10 +51,10 @@ void HierarchyManager::renderEntityRow(const std::shared_ptr<Entity>& entity, si
     }
 
     ImGui::TableSetColumnIndex(1);
-    ImGui::Text("%s", entity->getType().c_str());
+    ImGui::Text("%s", entity->getType());
 
-    ImGui::TableSetColumnIndex(2);
-    ImGui::Text("%s", entity->isVisible() ? "Visible" : "Hidden");
+   // ImGui::TableSetColumnIndex(2);
+  //  ImGui::Text("%s", entity->isVisible() ? "Visible" : "Hidden");
 }
 
 void HierarchyManager::handleSelectionClear() {

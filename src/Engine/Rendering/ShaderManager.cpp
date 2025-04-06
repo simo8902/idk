@@ -14,22 +14,22 @@
 ShaderManager::ShaderManager() {
     std::cerr << "ShaderManager()" << std::endl;
 
-    shaderProgram = std::make_shared<Shader>(
+    shaderProgram = std::make_shared<IDK::Graphics::Shader>(
                SOURCE_DIR "/src/shaders/basic.vert",
                SOURCE_DIR "/src/shaders/basic.frag"
            );
 
-    lightShader = std::make_shared<Shader>(
+    lightShader = std::make_shared<IDK::Graphics::Shader>(
        SOURCE_DIR "/src/shaders/lightShader.vert",
        SOURCE_DIR "/src/shaders/lightShader.frag"
    );
 
-    finalPassShader = std::make_shared<Shader>(
+    finalPassShader = std::make_shared<IDK::Graphics::Shader>(
         SOURCE_DIR "/src/shaders/finalPass.vert",
         SOURCE_DIR "/src/shaders/finalPass.frag"
     );
 
-    skyShader = std::make_shared<Shader> (
+    skyShader = std::make_shared<IDK::Graphics::Shader> (
         SOURCE_DIR "/src/shaders/sky.vert",
     SOURCE_DIR "/src/shaders/sky.frag"
     );
@@ -190,7 +190,7 @@ void ShaderManager::LoadShader(const std::filesystem::path& path) {
                       << " (Vertex: \"" << vertPath.string()
                       << "\", Fragment: \"" << fragPath.string() << "\")\n";*/
 
-            auto shader = std::make_shared<Shader>(vertPath.string().c_str(), fragPath.string().c_str());
+            auto shader = std::make_shared<IDK::Graphics::Shader>(vertPath.string().c_str(), fragPath.string().c_str());
 
             if (shader->isValid()) {
                 shaders[baseName] = shader;
@@ -201,7 +201,7 @@ void ShaderManager::LoadShader(const std::filesystem::path& path) {
                 throw std::runtime_error("Failed to compile combined shader: " + baseName);
             }
         } else if (extension == ".glsl") {
-            auto shader = std::make_shared<Shader>(path.string().c_str(), true);
+            auto shader = std::make_shared<IDK::Graphics::Shader>(path.string().c_str(), true);
 
             if (shader->isValid()) {
                 shaders[baseName] = shader;
@@ -244,7 +244,7 @@ void ShaderManager::HandleFileDrop(const std::vector<std::string>& paths) {
     }
 }
 
-std::shared_ptr<Shader> ShaderManager::GetShader(const std::string& name) {
+std::shared_ptr<IDK::Graphics::Shader> ShaderManager::GetShader(const std::string& name) {
     std::lock_guard<std::mutex> lock(shaderMutex);
     auto it = shaders.find(name);
     return it != shaders.end() ? it->second : nullptr;

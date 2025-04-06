@@ -23,7 +23,7 @@ public:
         updateModelMatrix();
     }
 
-    void Draw(Shader& wireframe) override {
+    void Draw(IDK::Graphics::Shader& wireframe) override {
         wireframe.Use();
 
         glBindVertexArray(VAO);

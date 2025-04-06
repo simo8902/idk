@@ -89,7 +89,7 @@ public:
         return true;
     }
 
-    void Draw(Shader& wireframe) override  {
+    void Draw(IDK::Graphics::Shader& wireframe) override  {
         if (collider) {
             glBindVertexArray(VAO);
 

@@ -28,7 +28,7 @@ public:
         m_modelMatrix = glm::translate(glm::mat4(1.0f), m_position);
     }
 
-    void Draw(Shader &wireframe) override {
+    void Draw(IDK::Graphics::Shader &wireframe) override {
         if(capsuleCollider) {
             wireframe.Use();
             drawWireframeCapsule(m_modelMatrix, radius, height);

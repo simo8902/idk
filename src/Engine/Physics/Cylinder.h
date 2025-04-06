@@ -6,19 +6,14 @@
 #define CYLINDER_H
 
 #include "CylinderCollider.h"
-#include "GameObject.h"
 
-class Cylinder final : public GameObject {
+class Cylinder final {
 public:
-    explicit Cylinder(const std::string &name): GameObject(std::move(name))
-    {}
+    explicit Cylinder(const std::string &name){}
+    ~Cylinder() = default;
 
-    ~Cylinder() override = default;
-
-    GameObjectType getType() const override {
-        return GameObjectType::Cylinder;
-    }
     void addComponents() {
+        /*
         const auto & cylinderMesh = std::make_shared<Mesh>("CylinderMesh");
         const auto & cylinderTransform = getComponent<Transform>();
         if (cylinderTransform) {
@@ -33,6 +28,7 @@ public:
         const auto & meshRenderer = addComponent<MeshRenderer>(meshFilter);
         const auto & cylinderCollider = addComponent<CylinderCollider>(cylinderTransform->getPosition(), 2.0f, 0.5f);
         cylinderMesh->CreateCylinder(0.5f, 0.5f, 2.0f, 30);
+*/
     }
 
 private:

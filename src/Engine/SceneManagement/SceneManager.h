@@ -18,38 +18,25 @@ public:
         return instance;
     }
 
-    void addObject(const std::shared_ptr<GameObject>& obj) {
-        if (obj && std::find(rootObjects.begin(), rootObjects.end(), obj) == rootObjects.end()) {
-            rootObjects.push_back(obj);
+    void addEntity(const std::shared_ptr<Entity>& ent) {
+        if (ent && std::ranges::find(entities, ent) == entities.end()) {
+            entities.push_back(ent);
         }
     }
 
-    void addObject(const std::shared_ptr<Entity>& ent) {
-        if (ent) {
-            // Add the Entity's GameObject to the scene
-            auto gameObject = ent->getComponent();
-            if (gameObject && std::find(rootObjects.begin(), rootObjects.end(), gameObject) == rootObjects.end()) {
-                rootObjects.push_back(gameObject);
-            }
+    void removeEntity(const std::shared_ptr<Entity>& ent) {
+        auto it = std::ranges::find(entities, ent);
+        if (it != entities.end()) {
+            entities.erase(it);
         }
     }
 
-    void removeObject(const std::shared_ptr<GameObject>& obj) {
-        auto it = std::find(rootObjects.begin(), rootObjects.end(), obj);
-        if (it != rootObjects.end()) {
-            rootObjects.erase(it);
-        }
-    }
-
-    const std::vector<std::shared_ptr<GameObject>>& getRootObjects() const {
-        return rootObjects;
-    }
-    const std::vector<std::shared_ptr<Entity>>& getAllEntities() const {
+    const std::vector<std::shared_ptr<Entity>>& getEntities() const {
         return entities;
     }
+
 private:
     SceneManager() = default;
-    std::vector<std::shared_ptr<GameObject>> rootObjects;
     std::vector<std::shared_ptr<Entity>> entities;
 };
 

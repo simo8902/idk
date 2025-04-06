@@ -10,328 +10,357 @@
 #include "Sphere.h"
 #include "Cylinder.h"
 #include "Entity.h"
+#include "Registry.h"
 #include "SceneManager.h"
 #include "ShaderManager.h"
 
-Scene::Scene(const std::shared_ptr<Camera> & camera): skyboxTexture(0), skyVAO(0), skyVBO(0) {
-    std::cerr << "SCENE()" << std::endl;
+namespace IDK
+{
+    Scene::Scene(const std::shared_ptr<IDK::Graphics::Camera> & camera): skyboxTexture(0), skyVAO(0), skyVBO(0) {
+        std::cerr << "SCENE()" << std::endl;
 
-    lightManager = std::make_shared<LightManager>();
+        lightManager = std::make_shared<LightManager>();
 
-    glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
-    const auto &directionalLight = std::make_shared<DirectionalLight>(
-        "Main Light",
-        lightDirection,
-        glm::vec3(0.9f, 0.9f, 0.9f), // Ambient
-        glm::vec3(1.0f, 1.0f, 1.0f), // Diffuse
-        glm::vec3(1.0f, 1.0f, 1.0f) // Specular
-    );
-    directionalLight->updateDirectionFromRotation();
+        glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+        const auto &directionalLight = std::make_shared<DirectionalLight>(
+            "Main Light",
+            lightDirection,
+            glm::vec3(0.9f, 0.9f, 0.9f), // Ambient
+            glm::vec3(1.0f, 1.0f, 1.0f), // Diffuse
+            glm::vec3(1.0f, 1.0f, 1.0f) // Specular
+        );
+        directionalLight->updateDirectionFromRotation();
 
-    lightManager->addDirectionalLight(directionalLight);
+        lightManager->addDirectionalLight(directionalLight);
 
-    // this->skyboxTexture = skyboxTexture;
-    // std::cerr << "Scene::CTOR" << std::endl;
+        // this->skyboxTexture = skyboxTexture;
+        // std::cerr << "Scene::CTOR" << std::endl;
 
-    /*
-    if (!camera || !lightManager) {
-        std::cerr << "[Scene] One or more parameters are null!" << std::endl;
-        throw std::runtime_error("Scene ctor received null parameters");
-    }*/
+        /*
+        if (!camera || !lightManager) {
+            std::cerr << "[Scene] One or more parameters are null!" << std::endl;
+            throw std::runtime_error("Scene ctor received null parameters");
+        }*/
 
-    // setupSky();
-}
+        // setupSky();
+    }
 
-Scene::~Scene() {
-    for (const auto& comp : components) {
-        if (!comp) {
-            std::cerr << "[ERROR] nullptr component before clearing" << std::endl;
+    Scene::~Scene() {
+        for (const auto& comp : components) {
+            if (!comp) {
+                std::cerr << "[ERROR] nullptr component before clearing" << std::endl;
+            }
         }
+
+        components.clear();
+
+        if (skyVAO) glDeleteVertexArrays(1, &skyVAO);
+        if (skyVBO) glDeleteBuffers(1, &skyVBO);
+        if (skyboxTexture) glDeleteTextures(1, &skyboxTexture);
     }
 
-    components.clear();
-
-    if (skyVAO) glDeleteVertexArrays(1, &skyVAO);
-    if (skyVBO) glDeleteBuffers(1, &skyVBO);
-    if (skyboxTexture) glDeleteTextures(1, &skyboxTexture);
-}
-
-const std::vector<std::shared_ptr<Entity>> & Scene::getComponents() const {
-    return components;
-}
-
-void Scene::createObjects() {
-    const auto& rootFolder = AssetManager::getInstance().getRootFolder();
-
-    // -----------------------------------------------------------------------------
-    // CAPSULE
-    // -----------------------------------------------------------------------------
-    const auto&  capsule = std::make_shared<Capsule>("Capsule");
-    capsule->addComponents();
-    const auto& capsuleEntity = std::make_shared<Entity>(capsule);
-    components.emplace_back(capsuleEntity);
-
-    //const auto& capsuleAsset = CreateGameObjectAssetItem(capsule);
-
-    auto capsuleEntAsset = std::make_shared<AssetItem>(capsule->getName(), AssetType::Entity, "", true);
-
-    capsuleEntAsset->setEntityObject(capsuleEntity);
-
-    //SceneManager::getInstance().addObject(capsule);
-    //SceneManager::getInstance().addObject(capsuleEntity);
-
-    if (rootFolder) {
-        rootFolder->addChild(capsuleEntAsset);
-        std::cerr << "[SCENE] Added Entity directly to ROOT: " << capsuleEntAsset->getName() << std::endl;
-    } else {
-        std::cerr << "[SCENE] Root folder not found!" << std::endl;
-        return;
+    const std::vector<std::shared_ptr<Entity>> & Scene::getComponents() const {
+        return components;
     }
 
-    /*
-    std::cerr << "Before getInstance()" << std::endl;
-    auto& assetManager = AssetManager::getInstance();
-    std::cerr << "After getInstance()" << std::endl;
+    void Scene::createObjects() {
+        const auto& rootFolder = AssetManager::getInstance().getRootFolder();
 
-    std::cerr << "Before getRootFolder()" << std::endl;
-    auto rootFolder = AssetManager::getInstance().getRootFolder();
-    std::cerr << "After getRootFolder(): " << rootFolder << std::endl;*/
+        Registry& registry = Registry::instance();
 
-    /*
-    auto sceneFolder  = AssetManager::getInstance().getRootFolder()->getChildByName("Scene");
-    std::cerr << "Scene Folder: " << sceneFolder->getName()  << std::endl;
-    if (sceneFolder) {
-        sceneFolder->addChild(capsuleAsset);
-        std::cerr << "Added GameObject to Scene folder: " << capsuleAsset->getName() << std::endl;
-    }else if (!sceneFolder) {
-        std::cerr << "Scene folder not found!" << std::endl;
-        return;
-    }*/
+        // -----------------------------------------------------------------------------
+        // CAPSULE
+        // -----------------------------------------------------------------------------
+        /*
+            const auto&  capsule = std::make_shared<Capsule>("Capsule");
+            capsule->addComponents();
+            const auto& capsuleEntity = std::make_shared<Entity>(capsule);
+            components.emplace_back(capsuleEntity);
 
-    // -----------------------------------------------------------------------------
-    // CUBE
-    // -----------------------------------------------------------------------------
-    // AssetManager::getInstance().registerVirtualAsset(cube);
+            //const auto& capsuleAsset = CreateGameObjectAssetItem(capsule);
 
-    const auto& cube = std::make_shared<Cube>("Cube");
-    cube->Initialize();
-    const auto&  cubeEntity = std::make_shared<Entity>(cube);
-    components.emplace_back(cubeEntity);
+            auto capsuleEntAsset = std::make_shared<AssetItem>(capsule->getName(), AssetType::Entity, "", true);
 
-    SceneManager::getInstance().addObject(cube);
-    SceneManager::getInstance().addObject(cubeEntity);
+            capsuleEntAsset->setEntityObject(capsuleEntity);
 
-    auto cubeEntAsset = std::make_shared<AssetItem>(cube->getName(), AssetType::Entity, "", true);
+            //SceneManager::getInstance().addObject(capsule);
+            //SceneManager::getInstance().addObject(capsuleEntity);
 
-    cubeEntAsset->setEntityObject(cubeEntity);
+            if (rootFolder) {
+                rootFolder->addChild(capsuleEntAsset);
+                std::cerr << "[SCENE] Added Entity directly to ROOT: " << capsuleEntAsset->getName() << std::endl;
+            } else {
+                std::cerr << "[SCENE] Root folder not found!" << std::endl;
+                return;
+            }*/
 
-    if (rootFolder) {
-        rootFolder->addChild(cubeEntAsset);
-        std::cerr << "[SCENE] Added GameObject directly to ROOT: " << cubeEntAsset->getName() << std::endl;
-    } else {
-        std::cerr << "[SCENE] Root folder not found!" << std::endl;
-        return;
+        /*
+        std::cerr << "Before getInstance()" << std::endl;
+        auto& assetManager = AssetManager::getInstance();
+        std::cerr << "After getInstance()" << std::endl;
+
+        std::cerr << "Before getRootFolder()" << std::endl;
+        auto rootFolder = AssetManager::getInstance().getRootFolder();
+        std::cerr << "After getRootFolder(): " << rootFolder << std::endl;*/
+
+        /*
+        auto sceneFolder  = AssetManager::getInstance().getRootFolder()->getChildByName("Scene");
+        std::cerr << "Scene Folder: " << sceneFolder->getName()  << std::endl;
+        if (sceneFolder) {
+            sceneFolder->addChild(capsuleAsset);
+            std::cerr << "Added GameObject to Scene folder: " << capsuleAsset->getName() << std::endl;
+        }else if (!sceneFolder) {
+            std::cerr << "Scene folder not found!" << std::endl;
+            return;
+        }*/
+
+        // -----------------------------------------------------------------------------
+        // CUBE
+        // -----------------------------------------------------------------------------
+        // AssetManager::getInstance().registerVirtualAsset(cube);
+
+        auto cube = std::make_shared<Cube>("Cube");
+
+        std::shared_ptr<Entity> cubeEntity = cube->getEntity();
+
+        components.emplace_back(std::shared_ptr<Entity>(cubeEntity));
+        SceneManager::getInstance().addEntity(std::shared_ptr<Entity>(cubeEntity));
+
+        auto cubeEntAsset = std::make_shared<AssetItem>("Cube", AssetType::Entity, "", true);
+
+        cubeEntAsset->setEntityObject(cubeEntity);
+
+        if (rootFolder) {
+            rootFolder->addChild(cubeEntAsset);
+            std::cerr << "[SCENE] Added GameObject directly to ROOT: " << cubeEntAsset->getName() << std::endl;
+        } else {
+            std::cerr << "[SCENE] Root folder not found!" << std::endl;
+            return;
+        }
+
+
+        /*
+        const auto& cube = std::make_shared<Cube>("Cube");
+        cube->Initialize();
+        const auto&  cubeEntity = std::make_shared<Entity>(cube);
+        components.emplace_back(cubeEntity);
+
+        SceneManager::getInstance().addObject(cube);
+        SceneManager::getInstance().addObject(cubeEntity);
+
+        auto cubeEntAsset = std::make_shared<AssetItem>(cube->getName(), AssetType::Entity, "", true);
+
+        cubeEntAsset->setEntityObject(cubeEntity);
+
+        if (rootFolder) {
+            rootFolder->addChild(cubeEntAsset);
+            std::cerr << "[SCENE] Added GameObject directly to ROOT: " << cubeEntAsset->getName() << std::endl;
+        } else {
+            std::cerr << "[SCENE] Root folder not found!" << std::endl;
+            return;
+        }*/
+
+        /*
+        auto sceneFolder = AssetManager::getInstance().getRootFolder()->getChildByName("Scene");
+        std::cerr << "asd: " <<sceneFolder << std::endl;
+        if (sceneFolder) {
+            sceneFolder->addChild(cubeAsset);
+            std::cerr << "Added GameObject to Scene folder: " << cube->getName() << std::endl;
+        }*/
+
+
+
+        // auto cubeEntity = std::make_shared<Entity>(cube);
+        // components.emplace_back(cubeEntity);
+
+        /*
+        if (std::shared_ptr<AssetItem> asset = std::dynamic_pointer_cast<AssetItem>(cube))
+        {
+            std::cout << "Cube is an AssetItem!" << std::endl;
+            std::cout << "Name: " << asset->getName() << ", Type: " << static_cast<int>(asset->getType()) << std::endl;
+        } else {
+            std::cout << "Cube is NOT an AssetItem!" << std::endl;
+        }*/
+
+        // -----------------------------------------------------------------------------
+        // CYLINDER
+        // -----------------------------------------------------------------------------
+
+        const auto&  cylinder = std::make_shared<Cylinder>("Cylinder");
+        cylinder->addComponents();
+
+        //  const auto&  cylinderEntity = std::make_shared<Entity>(cylinder);
+        // components.emplace_back(cylinderEntity);
+        // auto cylinderEntAsset = std::make_shared<AssetItem>(cylinder->getName(), AssetType::Entity, "", true);
+
+        //  SceneManager::getInstance().addObject(cylinder);
+        //  SceneManager::getInstance().addObject(cylinderEntity);
+
+        //  cylinderEntAsset->setEntityObject(cylinderEntity);
+
+        if (rootFolder) {
+            //     rootFolder->addChild(cylinderEntAsset);
+        }
+
+        // -----------------------------------------------------------------------------
+        // SPHERE
+        // -----------------------------------------------------------------------------
+
+        /*
+        const auto& sphere = std::make_shared<Sphere>("Sphere");
+        sphere->addComponents();
+
+        const auto& sphereEntity = std::make_shared<Entity>(sphere);
+        components.emplace_back(sphereEntity);
+
+       // const auto &sphereAsset = CreateGameObjectAssetItem(sphere);
+       // SceneManager::getInstance().addObject(sphere);
+
+        auto sphereEntAsset = std::make_shared<AssetItem>(sphere->getName(), AssetType::Entity, "", true);
+        SceneManager::getInstance().addObject(sphere);
+        SceneManager::getInstance().addObject(sphereEntity);
+
+        sphereEntAsset->setEntityObject(sphereEntity);
+
+        if (rootFolder) {
+            rootFolder->addChild(sphereEntAsset);
+        }*/
     }
-   
-    /*
-    auto sceneFolder = AssetManager::getInstance().getRootFolder()->getChildByName("Scene");
-    std::cerr << "asd: " <<sceneFolder << std::endl;
-    if (sceneFolder) {
-        sceneFolder->addChild(cubeAsset);
-        std::cerr << "Added GameObject to Scene folder: " << cube->getName() << std::endl;
-    }*/
 
+    void Scene::renderSky() {
+        glDepthFunc(GL_LEQUAL);
+        glDepthMask(GL_FALSE);
 
+        auto skyShader = ShaderManager::Instance().getSkyShader();
+        skyShader->Use();
 
-   // auto cubeEntity = std::make_shared<Entity>(cube);
-   // components.emplace_back(cubeEntity);
+        glm::mat4 view = glm::mat4(glm::mat3(m_Camera->getViewMatrix()));
+        glm::mat4 projection = m_Camera->getProjectionMatrix();
 
-    /*
-    if (std::shared_ptr<AssetItem> asset = std::dynamic_pointer_cast<AssetItem>(cube))
-    {
-        std::cout << "Cube is an AssetItem!" << std::endl;
-        std::cout << "Name: " << asset->getName() << ", Type: " << static_cast<int>(asset->getType()) << std::endl;
-    } else {
-        std::cout << "Cube is NOT an AssetItem!" << std::endl;
-    }*/
+        glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1000.0f));
+        skyShader->setMat4("view", view);
+        skyShader->setMat4("projection", projection);
+        skyShader->setMat4("model", model);
 
-    // -----------------------------------------------------------------------------
-    // CYLINDER
-    // -----------------------------------------------------------------------------
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+        skyShader->setInt("skybox", 0);
 
-    const auto&  cylinder = std::make_shared<Cylinder>("Cylinder");
-    cylinder->addComponents();
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
 
-    const auto&  cylinderEntity = std::make_shared<Entity>(cylinder);
-    components.emplace_back(cylinderEntity);
-    auto cylinderEntAsset = std::make_shared<AssetItem>(cylinder->getName(), AssetType::Entity, "", true);
+        glBindVertexArray(skyVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
 
-    SceneManager::getInstance().addObject(cylinder);
-    SceneManager::getInstance().addObject(cylinderEntity);
-
-    cylinderEntAsset->setEntityObject(cylinderEntity);
-
-    if (rootFolder) {
-        rootFolder->addChild(cylinderEntAsset);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+        glCullFace(GL_BACK);
+        glDisable(GL_CULL_FACE);
     }
 
-    // -----------------------------------------------------------------------------
-    // SPHERE
-    // -----------------------------------------------------------------------------
+    void Scene::DrawGrid(float gridSize, float gridStep) const {
+        struct Vertex {
+            glm::vec3 position;
+        };
 
-    const auto& sphere = std::make_shared<Sphere>("Sphere");
-    sphere->addComponents();
+        std::vector<Vertex> gridVertices;
 
-    const auto& sphereEntity = std::make_shared<Entity>(sphere);
-    components.emplace_back(sphereEntity);
+        for (float i = -gridSize; i <= gridSize; i += gridStep) {
+            // Lines parallel to X-axis
+            gridVertices.push_back({{i, 0.0f, -gridSize}});
+            gridVertices.push_back({{i, 0.0f, gridSize}});
 
-   // const auto &sphereAsset = CreateGameObjectAssetItem(sphere);
-   // SceneManager::getInstance().addObject(sphere);
+            // Lines parallel to Z-axis
+            gridVertices.push_back({{-gridSize, 0.0f, i}});
+            gridVertices.push_back({{gridSize, 0.0f, i}});
+        }
 
-    auto sphereEntAsset = std::make_shared<AssetItem>(sphere->getName(), AssetType::Entity, "", true);
-    SceneManager::getInstance().addObject(sphere);
-    SceneManager::getInstance().addObject(sphereEntity);
+        const auto & shaderProgram = ShaderManager::Instance().getShaderProgram();
 
-    sphereEntAsset->setEntityObject(sphereEntity);
+        shaderProgram->Use();
+        shaderProgram->setVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
 
-    if (rootFolder) {
-        rootFolder->addChild(sphereEntAsset);
-    }
-}
+        glm::mat4 model = gridTransform.getModelMatrix();
+        shaderProgram->setMat4("model", model);
 
-void Scene::renderSky() {
-    glDepthFunc(GL_LEQUAL);
-    glDepthMask(GL_FALSE);
+        GLuint gridVAO;
+        glGenVertexArrays(1, &gridVAO);
+        glBindVertexArray(gridVAO);
 
-    auto skyShader = ShaderManager::Instance().getSkyShader();
-    skyShader->Use();
+        GLuint gridVBO;
+        glGenBuffers(1, &gridVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
+        glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(Vertex), gridVertices.data(), GL_STATIC_DRAW);
 
-    glm::mat4 view = glm::mat4(glm::mat3(m_Camera->getViewMatrix()));
-    glm::mat4 projection = m_Camera->getProjectionMatrix();
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) nullptr);
 
-    glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1000.0f));
-    skyShader->setMat4("view", view);
-    skyShader->setMat4("projection", projection);
-    skyShader->setMat4("model", model);
+        glBindVertexArray(gridVAO);
+        glDrawArrays(GL_LINES, 0, gridVertices.size());
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-    skyShader->setInt("skybox", 0);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
-
-    glBindVertexArray(skyVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
-
-    glDepthMask(GL_TRUE);
-    glDepthFunc(GL_LESS);
-    glCullFace(GL_BACK);
-    glDisable(GL_CULL_FACE);
-}
-
-void Scene::DrawGrid(float gridSize, float gridStep) const {
-    struct Vertex {
-        glm::vec3 position;
-    };
-
-    std::vector<Vertex> gridVertices;
-
-    for (float i = -gridSize; i <= gridSize; i += gridStep) {
-        // Lines parallel to X-axis
-        gridVertices.push_back({{i, 0.0f, -gridSize}});
-        gridVertices.push_back({{i, 0.0f, gridSize}});
-
-        // Lines parallel to Z-axis
-        gridVertices.push_back({{-gridSize, 0.0f, i}});
-        gridVertices.push_back({{gridSize, 0.0f, i}});
+        glDeleteVertexArrays(1, &gridVAO);
+        glDeleteBuffers(1, &gridVBO);
     }
 
-    const auto & shaderProgram = ShaderManager::Instance().getShaderProgram();
 
-    shaderProgram->Use();
-    shaderProgram->setVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
+    void Scene::setupSky() {
+        float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
 
-    glm::mat4 model = gridTransform.getModelMatrix();
-    shaderProgram->setMat4("model", model);
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
 
-    GLuint gridVAO;
-    glGenVertexArrays(1, &gridVAO);
-    glBindVertexArray(gridVAO);
+             1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
 
-    GLuint gridVBO;
-    glGenBuffers(1, &gridVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
-    glBufferData(GL_ARRAY_BUFFER, gridVertices.size() * sizeof(Vertex), gridVertices.data(), GL_STATIC_DRAW);
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) nullptr);
+            -1.0f,  1.0f, -1.0f,
+             1.0f,  1.0f, -1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
 
-    glBindVertexArray(gridVAO);
-    glDrawArrays(GL_LINES, 0, gridVertices.size());
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+             1.0f, -1.0f,  1.0f
+        };
 
-    glDeleteVertexArrays(1, &gridVAO);
-    glDeleteBuffers(1, &gridVBO);
-}
+        glGenVertexArrays(1, &skyVAO);
+        glGenBuffers(1, &skyVBO);
 
+        glBindVertexArray(skyVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
 
-void Scene::setupSky() {
-    float skyboxVertices[] = {
-        // positions
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
-
-    glGenVertexArrays(1, &skyVAO);
-    glGenBuffers(1, &skyVBO);
-
-    glBindVertexArray(skyVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 }

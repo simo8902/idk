@@ -101,7 +101,7 @@ public:
         glBindVertexArray(0);
     }
 
-    void Draw(Shader &wireframe) override {
+    void Draw(IDK::Graphics::Shader &wireframe) override {
         if(sphereCollider) {
             wireframe.Use();
             glBindVertexArray(VAO);

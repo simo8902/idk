@@ -7,7 +7,7 @@
 #include "Collider.h"
 #include "MeshRenderer.h"
 
-DeferredRenderer::DeferredRenderer(const std::shared_ptr<Scene>& scene, const std::shared_ptr<Camera>& camera,
+DeferredRenderer::DeferredRenderer(const std::shared_ptr<IDK::Scene>& scene, const std::shared_ptr<IDK::Graphics::Camera>& camera,
                                    GLFWwindow* window, const std::string& rendererType)
     : gPosition(0),
         gNormal(0),
@@ -228,7 +228,7 @@ void DeferredRenderer::RenderGeometryPass()const {
 
         }
 
-        if (const auto & meshRenderer = obj->getComponent<MeshRenderer>())
+        if (const auto & meshRenderer = obj->getComponent<IDK::Components::MeshRenderer>())
         {
             shaderProgram->Use();
             shaderProgram->setMat4("view", viewF);

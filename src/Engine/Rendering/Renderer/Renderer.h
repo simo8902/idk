@@ -21,88 +21,96 @@
 #include "IRenderDeferred.h"
 #include "IRenderForward.h"
 
-class Renderer final {
-public:
-    explicit Renderer(const std::shared_ptr<Scene>& scene, const std::shared_ptr<Camera>& camera
-        , GLFWwindow* window, const std::string& rendererType);
-    virtual ~Renderer();
+namespace IDK
+{
+    class Renderer;
+    class InspectorManager;
 
-    void render();
-void renderSceneView();
-    void renderImGuizmo() const;
-    void onWindowResize(int width, int height);
+    class Renderer final
+    {
+    public:
+        explicit Renderer(const std::shared_ptr<IDK::Scene>& scene, const std::shared_ptr<IDK::Graphics::Camera>& camera
+            , GLFWwindow* window, const std::string& rendererType);
+        virtual ~Renderer();
 
-    const std::shared_ptr<Camera> & getCamera() const {
-        return m_Camera;
-    }
+        void render();
+        void renderSceneView();
+        void renderImGuizmo() const;
+        void onWindowResize(int width, int height);
 
-    void SetupDockingLayout(const ImGuiID & dockspace_id);
-    void renderEntityTree(const std::shared_ptr<Entity>& entity) const;
+        const std::shared_ptr<IDK::Graphics::Camera> & getCamera() const {
+            return m_Camera;
+        }
 
-    void ShaderDebugUI() const;
-    void renderToolbar();
-    void renderImGuiLayout();
-    void renderHierarchy(const std::vector<std::shared_ptr<Entity>>& components) const;
-    void renderInspector();
-    void renderProjectExplorer();
-    void mouseMovementCallback(float xOffset, float yOffset, bool constrainPitch) const;
-    void scrollCallback(float yoffset) const;
-    void processInput(GLFWwindow* window);
-    void RenderContextMenu() const;
-    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+        void SetupDockingLayout(const ImGuiID & dockspace_id);
+        void renderEntityTree(const std::shared_ptr<Entity>& entity) const;
 
-    void setMouseButtonCallback() const;
-    void setScrollCallback() const;
-    void setCursorPosCallback() const;
-    void setKeyCallback() const;
-    void framebuffer_size_callback(GLFWwindow* window, const int &width, const int &height);
-    void framebuffer_size_callback_static(const int width, const int height) const;
+        void ShaderDebugUI() const;
+        void renderToolbar();
+        void renderImGuiLayout();
+        void renderHierarchy(const std::vector<std::shared_ptr<Entity>>& components) const;
+        void renderInspector();
+        void renderProjectExplorer();
+        void mouseMovementCallback(float xOffset, float yOffset, bool constrainPitch) const;
+        void scrollCallback(float yoffset) const;
+        void processInput(GLFWwindow* window);
+        void RenderContextMenu() const;
+        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-    bool m_HasLoadedLayout = false;
-    void renderEntityTable(const std::vector<std::shared_ptr<Entity>>& entities) const;
-    void renderEntityRow(const std::shared_ptr<Entity>& entity, size_t index) const;
+        void setMouseButtonCallback() const;
+        void setScrollCallback() const;
+        void setCursorPosCallback() const;
+        void setKeyCallback() const;
+        void framebuffer_size_callback(GLFWwindow* window, const int &width, const int &height);
+        void framebuffer_size_callback_static(const int width, const int height) const;
 
-private:
-    bool showAssetManager;
-    std::shared_ptr<IRenderDeferred> currentDeferred;
-    std::shared_ptr<IRenderForward> currentForward;
+        bool m_HasLoadedLayout = false;
+        void renderEntityTable(const std::vector<std::shared_ptr<Entity>>& entities) const;
+        void renderEntityRow(const std::shared_ptr<Entity>& entity, size_t index) const;
+        void renderConsoleDebugWindow() const;
 
-    bool isDeferred = false, isForward = false;
+    private:
+        bool showAssetManager;
+        std::shared_ptr<IRenderDeferred> currentDeferred;
+        std::shared_ptr<IRenderForward> currentForward;
 
-    bool framebufferResized = true;
-    bool m_FirstFrame = true;
-    float m_ToolbarHeight = 40.0f;
-    ImGuiID m_TopDockID = 0, m_HierarchyDockID = 0;
+        bool isDeferred = false, isForward = false;
 
-    int newWidth = 0;
-    int newHeight = 0;
+        bool framebufferResized = true;
+        bool m_FirstFrame = true;
+        float m_ToolbarHeight = 40.0f;
+        ImGuiID m_TopDockID = 0, m_HierarchyDockID = 0;
 
-    bool dockspace_initialized = false;
-    bool noLightSelectedLogged = false;
+        int newWidth = 0;
+        int newHeight = 0;
 
-    const float selectionRadius = 0.5f;
+        bool dockspace_initialized = false;
+        bool noLightSelectedLogged = false;
 
-    Renderer* myRenderer;
-    GLFWwindow* m_Window;
+        const float selectionRadius = 0.5f;
 
-    const std::shared_ptr<Scene>& scene;
-    const std::shared_ptr<Camera> & m_Camera;
+        IDK::Renderer* myRenderer;
+        GLFWwindow* m_Window;
 
-    bool m_rightMouseButtonPressed = false;
-    double m_lastX = 0.0f, m_lastY = 0.0f;
-    double deltaTime = 0.0f;
-    double lastFrame = 0.0f;
-    double m_initialYaw{}, m_initialPitch{};
+        const std::shared_ptr<IDK::Scene>& scene;
+        const std::shared_ptr<IDK::Graphics::Camera> & m_Camera;
 
-    float lastX = 400, lastY = 300;
+        bool m_rightMouseButtonPressed = false;
+        double m_lastX = 0.0f, m_lastY = 0.0f;
+        double deltaTime = 0.0f;
+        double lastFrame = 0.0f;
+        double m_initialYaw{}, m_initialPitch{};
 
-    FPSCounter fpsCounter;
-   // HierarchyManager hierarchyManager;
-    InspectorManager inspectorManager;
-    ProjectExplorer projectExplorer;
+        float lastX = 400, lastY = 300;
 
-    ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
-    ImGuizmo::MODE currentGizmoMode = ImGuizmo::WORLD;
-};
+        FPSCounter fpsCounter;
+        // HierarchyManager hierarchyManager;
+        IDK::Editor::InspectorManager inspectorManager;
+        ProjectExplorer projectExplorer;
+
+        ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
+        ImGuizmo::MODE currentGizmoMode = ImGuizmo::WORLD;
+    };
+}
 
 #endif

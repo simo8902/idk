@@ -13,9 +13,13 @@
 #include "LightManager.h"
 #include "Scene.h"
 #include "SelectionManager.h"
+#include "Renderer.h"
 
+namespace IDK
+{
+    class Renderer;
+}
 class Scene;
-class Renderer;
 class Entity;
 
 class HierarchyManager {
@@ -28,7 +32,7 @@ public:
         return instance;
     }
 
-    void initialize(Renderer* renderer, std::shared_ptr<Scene> scene);
+    void initialize(IDK::Renderer* renderer, std::shared_ptr<IDK::Scene> scene);
     void renderHierarchyContent();
 
     /*
@@ -82,8 +86,8 @@ private:
     void handleSelectionClear();
 
     // Dependencies
-    Renderer* m_renderer = nullptr;
-    std::shared_ptr<Scene> m_scene;
+    IDK::Renderer* m_renderer = nullptr;
+    std::shared_ptr<IDK::Scene> m_scene;
 };
 
 

@@ -12,59 +12,46 @@
 #include "GameObject.h"
 #include "Shader.h"
 
-class Scene {
-public:
-    Scene(const std::shared_ptr<Camera> & camera);
-    ~Scene();
+namespace IDK
+{
+    class Scene {
+    public:
+        using Ptr = std::shared_ptr<Scene>;
 
-    std::vector<std::shared_ptr<Entity>> components;
+        Scene(const std::shared_ptr<IDK::Graphics::Camera> & camera);
+        ~Scene();
 
-    const std::vector<std::shared_ptr<Entity>>& getComponents() const;
+        std::vector<std::shared_ptr<Entity>> components;
 
-    void createObjects();
+        const std::vector<std::shared_ptr<Entity>>& getComponents() const;
 
-    void setCamera(const std::shared_ptr<Camera> & cam) {
-        m_Camera = cam;
-    }
+        void createObjects();
 
-    void DrawGrid(float gridSize, float gridStep) const;
-
-    void setupSky();
-    void renderSky();
-    static std::vector<std::shared_ptr<Light>> lights;
-
-    std::shared_ptr<LightManager> getLightManager() const {
-        return lightManager;
-    }
-
-    std::shared_ptr<AssetItem> CreateGameObjectAssetItem(const std::shared_ptr<GameObject>& obj) {
-        /*
-        if (!obj) {
-            std::cerr << "CreateGameObjectAssetItem: GameObject is null!" << std::endl;
-            return nullptr;
+        void setCamera(const std::shared_ptr<IDK::Graphics::Camera> & cam) {
+            m_Camera = cam;
         }
-        auto assetItem = std::make_shared<AssetItem>(obj->getName(), AssetType::GameObject, "", true);
-        if (!assetItem) {
-            std::cerr << "CreateGameObjectAssetItem: Failed to create AssetItem!" << std::endl;
-            return nullptr;
+
+        void DrawGrid(float gridSize, float gridStep) const;
+
+        void setupSky();
+        void renderSky();
+        static std::vector<std::shared_ptr<IDK::Graphics::Light>> lights;
+
+        std::shared_ptr<LightManager> getLightManager() const {
+            return lightManager;
         }
-        assetItem->setGameObject(obj);
-        std::cerr << "Created GameObject AssetItem: " << assetItem->getName() << std::endl;
-        return assetItem;*/
-        return nullptr;
-    }
 
-private:
-    GLuint skyboxTexture;
-    GLuint skyVAO, skyVBO;
+    private:
+        GLuint skyboxTexture;
+        GLuint skyVAO, skyVBO;
 
-    std::shared_ptr<Shader> finalPassShader;
+        std::shared_ptr<IDK::Graphics::Shader> finalPassShader;
 
-    Transform gridTransform;
-    std::vector<std::shared_ptr<DirectionalLight>> directionalLights;
+        Transform gridTransform;
+        std::vector<std::shared_ptr<DirectionalLight>> directionalLights;
 
-    std::shared_ptr<Camera> m_Camera;
-    std::shared_ptr<LightManager> lightManager;
-};
-
+        std::shared_ptr<IDK::Graphics::Camera> m_Camera;
+        std::shared_ptr<LightManager> lightManager;
+    };
+}
 #endif

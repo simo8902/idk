@@ -12,8 +12,8 @@
 #include "IRenderForward.h"
 
 class ForwardRenderer : public IRenderForward {
-    std::shared_ptr<Scene> scene;
-    std::shared_ptr<Camera> camera;
+    std::shared_ptr<IDK::Scene> scene;
+    std::shared_ptr<IDK::Graphics::Camera> camera;
     GLFWwindow* window;
     std::string rendererType;
 
@@ -22,10 +22,10 @@ class ForwardRenderer : public IRenderForward {
     GLuint RBO;
     int width;
     int height;
-    std::shared_ptr<Shader> shaderProgram = ShaderManager::Instance().getShaderProgram();
+    std::shared_ptr<IDK::Graphics::Shader> shaderProgram = ShaderManager::Instance().getShaderProgram();
 
 public:
-    ForwardRenderer(const std::shared_ptr<Scene>& scene, const std::shared_ptr<Camera>& camera,
+    ForwardRenderer(const std::shared_ptr<IDK::Scene>& scene, const std::shared_ptr<IDK::Graphics::Camera>& camera,
                     GLFWwindow* window, const std::string& rendererType);
     ~ForwardRenderer() override;
 

@@ -22,7 +22,6 @@ ProjectExplorer::ProjectExplorer(){
         rootFolder = AssetManager::getInstance().getRootFolder();
         if(rootFolder)
         {
-            // Make sure the path is correct (SOURCE_DIR/ROOT) if that's where your assets are.
             rootFolder->ScanDirectory((fs::path(SOURCE_DIR) / "ROOT").string());
         }
     }).detach();
@@ -201,9 +200,9 @@ void ProjectExplorer::RenderGameObject(const std::shared_ptr<Entity>& entity, fl
 
     const char* icon = "[Object]";
 
-    if (entity->hasComponent<Light>()) icon = "[Light]";
-    if (entity->hasComponent<Camera>()) icon = "[Camera]";
-    if (entity->hasComponent<MeshRenderer>()) icon = "[Mesh]";
+    if (entity->hasComponent<IDK::Graphics::Light>()) icon = "[Light]";
+    if (entity->hasComponent<IDK::Graphics::Camera>()) icon = "[Camera]";
+   // if (entity->hasComponent<IDK::Graphics::MeshRenderer>()) icon = "[Mesh]";
 
     if (ImGui::Button((std::string(icon) + "##" + entity->getName()).c_str(), ImVec2(iconSize, iconSize))) {
         SelectionManager::getInstance().select(entity);

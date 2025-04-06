@@ -41,9 +41,9 @@ public:
         : isVirtual_(isVirtual), name_(name), type_(type), path_(path),
             uuid_(boost::uuids::random_generator()()) {
 
-        std::cerr << "[AssetItem.h] " << "Name::" << name
+        std::cout << "[AssetItem.h] " << "Name::" << name
                   << " Type::" << static_cast<int>(type)
-                  << " Virtual::" << (isVirtual ? "Yes" : "No") << std::endl;
+                  << " Virtual::" << (isVirtual ? "Yes" : "No") << "\n";
 
     }
     virtual ~AssetItem() {}
@@ -106,25 +106,19 @@ public:
             }
         }*/
         if (name_ == "ROOT") {
-            for (const auto& obj : SceneManager::getInstance().getRootObjects()) {
-                auto entity = std::make_shared<Entity>(obj);
+            for (const auto& obj : SceneManager::getInstance().getEntities()) {
+
+                auto entity = std::make_shared<Entity>(*obj);
                 auto child = std::make_shared<AssetItem>(obj->getName(), AssetType::Entity, "", true);
                 child->setEntityObject(entity);
                 addChild(child);
                 std::cerr << "Added Entity: " << obj->getName() << " directly to ROOT (Virtual)" << std::endl;
+
             }
         } else
-        if (type_ == AssetType::GameObject) {
-            if (auto obj = gameObject_.lock()) {
-                for (const auto& childObj : obj->getChildren()) {
-                    auto child = std::make_shared<AssetItem>(childObj->getName(), AssetType::GameObject, "", true);
-                    child->setGameObject(childObj);
-                    addChild(child);
-                    std::cerr << "[AssetItem.h] Added child GameObject: " << childObj->getName() << " (Virtual)" << std::endl;
-                }
-            }
-        }else if (type_ == AssetType::Entity) {
-            if (const auto &obj = entities.lock()) {
+        if (type_ == AssetType::Entity) {
+            if (const auto &obj = entities.lock())
+            {
                 for (const auto& childObj : obj->getChildren()) {
                     auto child = std::make_shared<AssetItem>(childObj->getName(), AssetType::Entity, "", true);
                     child->setEntityObject(childObj);
@@ -194,11 +188,7 @@ public:
     }
 
     virtual const std::string& getName() const {
-        if (isVirtual_ && type_ == AssetType::GameObject) {
-            if (const auto& obj = gameObject_.lock()) {
-                return obj->getName();
-            }
-        } else if (isVirtual_ && type_ == AssetType::Entity) {
+        if (isVirtual_ && type_ == AssetType::Entity) {
             if (const auto& ent = entities.lock()) {
                 return ent->getName();
             }
@@ -232,17 +222,10 @@ public:
     const std::vector<std::shared_ptr<AssetItem>>& getChildren() const { return children; }
     std::shared_ptr<AssetItem> getParent() const { return parent_.lock(); }
 
-    void setGameObject(const std::shared_ptr<GameObject>& obj) {
-        gameObject_ = obj;
-    }
-
     void setEntityObject(const std::shared_ptr<Entity>& obj) {
         entities = obj;
     }
 
-    std::shared_ptr<GameObject> getGameObject() const {
-        return gameObject_.lock();
-    }
     std::shared_ptr<Entity> getEntity() const {
         return entities.lock();
     }
@@ -258,7 +241,6 @@ public:
 
 private:
     bool isVirtual_ = false;
-    std::weak_ptr<GameObject> gameObject_;
     std::weak_ptr<Entity> entities;
     mutable std::mutex mutex_;
 

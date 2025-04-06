@@ -9,18 +9,14 @@
 #include "MeshRenderer.h"
 #include "SphereCollider.h"
 
-class Sphere final : public GameObject {
+class Sphere final {
 public:
-    explicit Sphere(const std::string& name)
-        : GameObject(name) {}
+    explicit Sphere(const std::string& name){}
 
-    ~Sphere() override {}
-
-    GameObjectType getType() const override {
-        return GameObjectType::Sphere;
-    }
+    ~Sphere() {}
 
     void addComponents() {
+        /*
         const auto & sphereMesh = std::make_shared<Mesh>("SphereMesh");
         const auto & sphereTransform = getComponent<Transform>();
         if (sphereTransform) {
@@ -34,6 +30,7 @@ public:
 
         auto meshRenderer = addComponent<MeshRenderer>(meshFilter);
         const auto & sphereCollider = addComponent<SphereCollider>(sphereTransform->getPosition(), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
+*/
     }
 
 private:

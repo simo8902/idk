@@ -5,7 +5,7 @@
 #ifndef CORE_COLLIDER_H
 #define CORE_COLLIDER_H
 
-#include "Component.h"
+#include "../ECS/Component.h"
 #include "Ray.h"
 #include "Shader.h"
 
@@ -15,7 +15,7 @@ public:
      : Component(name) {}
 
     virtual bool intersectsRay(const Ray& ray, const glm::mat4& transformMatrix, float disnce) = 0;
-    virtual void Draw(Shader& wireframe) = 0 ;
+    virtual void Draw(IDK::Graphics::Shader& wireframe) = 0 ;
 };
 
 #endif

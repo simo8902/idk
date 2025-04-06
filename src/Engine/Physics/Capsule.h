@@ -12,9 +12,9 @@
 
 #include "Selectable.h"
 
-class Capsule final : public GameObject, public Selectable  {
+class Capsule final :  public Selectable  {
 public:
-    explicit Capsule(const std::string& name):GameObject(name){}
+    explicit Capsule(const std::string& name){}
     ~Capsule() override {}
 
     std::string getName() const override {
@@ -29,10 +29,9 @@ public:
         std::cout << "Capsule deselected: " << name << std::endl;
     }
 
-    GameObjectType getType() const override {
-        return GameObjectType::Capsule;
-    }
+
     void addComponents() {
+        /*
         const auto & capsuleMesh = std::make_shared<Mesh>("CapsuleMesh");
         const auto & capsuleTransform = getComponent<Transform>();
         if (capsuleTransform) {
@@ -45,6 +44,7 @@ public:
 
         const auto & meshRenderer = addComponent<MeshRenderer>(meshFilter);
         const auto & collider = addComponent<CapsuleCollider>(capsuleTransform->getPosition(), 1.0f, 2.0f);
+        */
     }
 
 private:

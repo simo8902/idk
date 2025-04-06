@@ -11,7 +11,7 @@
 #include "Light.h"
 #include <iostream>
 
-class DirectionalLight : public Light {
+class DirectionalLight : public IDK::Graphics::Light {
 public:
     glm::vec3 direction;
     glm::vec3 ambient;

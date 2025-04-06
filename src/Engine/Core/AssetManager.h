@@ -24,13 +24,13 @@ public:
 
     // ================================================================================================
     bool HasAsset(const std::string& uuidStr) {return assets.find(uuidStr) != assets.end();}
-    bool addShader(const std::shared_ptr<Shader>& shader);
-    std::shared_ptr<Shader> getShaderByUUID(const std::string &uuidStr) const;
+    bool addShader(const std::shared_ptr<IDK::Graphics::Shader>& shader);
+    std::shared_ptr<IDK::Graphics::Shader> getShaderByUUID(const std::string &uuidStr) const;
     bool hasShader(const std::string &uuidStr) const;
-    std::shared_ptr<Shader> getShader(const std::string& name);
+    std::shared_ptr<IDK::Graphics::Shader> getShader(const std::string& name);
     bool removeShader(const std::string &uuidStr);
-    const std::unordered_map<std::string, std::shared_ptr<Shader> > &getShaders() const;
-    std::shared_ptr<Shader> getShaderByName(const std::string& shaderName) const;
+    const std::unordered_map<std::string, std::shared_ptr<IDK::Graphics::Shader> > &getShaders() const;
+    std::shared_ptr<IDK::Graphics::Shader> getShaderByName(const std::string& shaderName) const;
 
     // ================================================================================================
     AssetType determineAssetType(const std::string& extension);
@@ -108,10 +108,10 @@ private:
     std::string sourcePath;
 
     std::unordered_map<std::string, std::shared_ptr<AssetItem>> assets;
-    std::unordered_map<std::string, std::shared_ptr<Shader>> shaders;
+    std::unordered_map<std::string, std::shared_ptr<IDK::Graphics::Shader>> shaders;
 
-    std::vector<std::shared_ptr<Shader>> runtimeShaders;
-    std::vector<std::shared_ptr<Shader>> predefinedShaders;
+    std::vector<std::shared_ptr<IDK::Graphics::Shader>> runtimeShaders;
+    std::vector<std::shared_ptr<IDK::Graphics::Shader>> predefinedShaders;
    // std::unordered_map<std::string, std::shared_ptr<Material> > materials;
     std::unordered_map<std::string, std::string> shaderNameToUUID;
 

@@ -123,6 +123,8 @@ target_include_directories(idk_core PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/SceneManagement
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utilities
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Lighting
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/ECS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/ECS/Utils
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Editor/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Editor/Utilities
         ${LIBDATA_PATH}
